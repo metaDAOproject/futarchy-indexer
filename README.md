@@ -7,3 +7,8 @@ The indexer is made of 3 components:
 - the indexer service which contacts an RPC periodically to poll for any orders on not yet concluded proposals; the indexer will consolidate the order data into candles then store these in a database
 - a postgres database
 - a hasura instance which exposes a real-time GraphQL read-only API over the postgres data
+
+# Contributors
+
+After cloning:
+- run `pnpm install` in the project directory

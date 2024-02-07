@@ -1,0 +1,20 @@
+{
+  "name": "@themetadao/indexer-client",
+  "description": "indexer React client",
+  "private": "false",
+  "main": "dist",
+  "scripts": {
+    "build": "",
+    "publish": ""
+  },
+  "dependencies": {
+    "graphql-ws": "^5.14.3"
+  },
+  "peerDependencies": {
+    "react": "^18"
+  },
+  "devDependencies": {
+    "react": "18.2.0",
+    "@types/react": "18.2.55"
+  }
+}

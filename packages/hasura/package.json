@@ -1,0 +1,20 @@
+{
+  "name": "@themetadao/indexer-hasura",
+  "description": "indexer IaC for configuring Hasura",
+  "private": "true",
+  "scripts": {
+    "gen-client": "",
+    "gen-metadata": "bun src",
+    "set-metadata": "hasura metadata ",
+    "get-metadata": "hasura metadata export"
+  },
+  "dependencies": {
+    "@themetadao/indexer-db": "workspace:*",
+    "@hasura/metadata": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "hasura-cli": "^2.36.1",
+    "@genql/cli": "^6.3.2"
+  }
+}

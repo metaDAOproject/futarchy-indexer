@@ -1,0 +1,14 @@
+{
+  "name": "@themetadao/indexer-service",
+  "description": "indexer microservice",
+  "private": "true",
+  "scripts": {
+    "start": "bun src"
+  },
+  "dependencies": {
+    "@themetadao/indexer-db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6"
+  }
+}
