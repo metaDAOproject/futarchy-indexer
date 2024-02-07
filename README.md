@@ -10,5 +10,31 @@ The indexer is made of 3 components:
 
 # Contributors
 
-After cloning:
-- run `pnpm install` in the project directory
+After cloning run `pnpm install` in the project directory
+
+Docs on each top-level script below
+
+## `migrate` script
+
+Migrate db to match definition in `packages/database/lib/schema.ts`. Assumes you have set the `FUTARCHY_PG_URL` env var.  
+Also updates the regenerates the graphql client (TODO).
+
+## `sql` script
+
+Run raw sql against the database. Assumes you have set the `FUTARCHY_PG_URL` env var.
+
+![](./docs/assets/pnpm-sql.png)
+
+You can add to the `COMMON_STATEMENTS` const in `packages/database/src/run-sql.ts` if you have a long sql query you want to save for later reuse.
+
+## `update-hasura` script
+
+TODO
+
+## `start-service` script
+
+TODO
+
+## `publish-client` script
+
+TODO

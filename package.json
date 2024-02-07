@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "migrate": "pnpm --filter @themetadao/indexer-db migrate",
+    "sql": "pnpm --filter @themetadao/indexer-db sql",
+    "update-hasura": "echo 'hello world'",
+    "start-service": "echo 'hello world'",
+    "publish-client": "echo 'hello world'"
+    
+  },
+  "devDependencies": {
+    "bun": "1.0.26"
+  }
+}

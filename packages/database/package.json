@@ -4,7 +4,9 @@
   "private": "true",
   "main": "lib",
   "scripts": {
-    "migrate": ""
+    "migrate:create": "drizzle-kit generate:pg --schema=./lib/schema.ts",
+    "migrate": "pnpm migrate:create && bun src/index.ts",
+    "sql": "bun src/run-sql.ts "
   },
   "dependencies": {
     "drizzle-orm": "^0.27.2",
@@ -13,6 +15,8 @@
   "devDependencies": {
     "@types/node": "^20.10.6",
     "@types/pg": "^8.10.9",
+    "ansicolor": "^2.0.1",
+    "as-table": "^1.0.55",
     "drizzle-kit": "^0.19.5"
   }
 }

@@ -6,6 +6,12 @@ settings:
 
 importers:
 
+  .:
+    devDependencies:
+      bun:
+        specifier: 1.0.26
+        version: 1.0.26
+
   packages/database:
     dependencies:
       drizzle-orm:
@@ -21,6 +27,12 @@ importers:
       '@types/pg':
         specifier: ^8.10.9
         version: 8.11.0
+      ansicolor:
+        specifier: ^2.0.1
+        version: 2.0.1
+      as-table:
+        specifier: ^1.0.55
+        version: 1.0.55
       drizzle-kit:
         specifier: ^0.19.5
         version: 0.19.13
@@ -413,6 +425,54 @@ packages:
       fastq: 1.17.1
     dev: true
 
+  /@oven/bun-darwin-aarch64@1.0.26:
+    resolution: {integrity: sha512-7FgUZz2EpMgFdEI9sA68bnHhrnrDBmCwcewpm6641HK0x2RIO1EcFl/7GKSGsD1JmbNfGqxYU16Sc+rgKFtXAg==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@oven/bun-darwin-x64-baseline@1.0.26:
+    resolution: {integrity: sha512-ssVJJs6tAvVZKnCx5bXAXZ05nSbfLHJ4qD/XFlVYb+3aue81YhXzQpbsOr9DShv209rBp9756SqHs9KZH66cbQ==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@oven/bun-darwin-x64@1.0.26:
+    resolution: {integrity: sha512-kWO6ThQEMm4OPfqlhFlWrDRiIFtaUl//bRJfomOHE4BABaP9bdgHjDsaxt0pUWiKP9j9YnPFXtMw91iUbTbCWg==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@oven/bun-linux-aarch64@1.0.26:
+    resolution: {integrity: sha512-YSG6pOFMpXquGf3i4/Ta05NAlsSkiZVk5P5EAlfO1fnJANlkcu1QfD/IYvddQ5YY4aOTwlQFqA29pYxYj+2A/A==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@oven/bun-linux-x64-baseline@1.0.26:
+    resolution: {integrity: sha512-1EjD6t6BFkspGqTRqYGVSQw5eIktDsappweG+1yh/QpmhV95/vDKKoPGXCwoyeSoJIjJMl9VaApX8Fr1vpnUfA==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@oven/bun-linux-x64@1.0.26:
+    resolution: {integrity: sha512-ErEH7yBkWIt01qROMysM6ZQqz8epY+2DtQW0rfjKbaPm8JuEdZVyeA5zoKES3e2J37FUY073MdbwdzE5KPX2cQ==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
   /@types/node@20.11.16:
     resolution: {integrity: sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==}
     dependencies:
@@ -477,9 +537,19 @@ packages:
     engines: {node: '>=12'}
     dev: true
 
+  /ansicolor@2.0.1:
+    resolution: {integrity: sha512-l9miLV3zQ+DRatsmo3vE4OCL5HntkEvaLU825teOrUHFCH+WZEwx3KV4EzfkhUGy90QWWdvhMj1NTzTK6yFbaQ==}
+    dev: true
+
   /array-union@2.1.0:
     resolution: {integrity: sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==}
     engines: {node: '>=8'}
+    dev: true
+
+  /as-table@1.0.55:
+    resolution: {integrity: sha512-xvsWESUJn0JN421Xb9MQw6AsMHRCUknCe0Wjlxvjud80mU4E6hQf1A6NzQKcYNmYw62MfzEtXc+badstZP3JpQ==}
+    dependencies:
+      printable-characters: 1.0.42
     dev: true
 
   /axios@0.21.4:
@@ -522,6 +592,21 @@ packages:
     resolution: {integrity: sha512-a7ZpuTZU1TRtnwyCNW3I5dc0wWNC3VR9S++Ewyk2HHZdrO3CQJqSpd+95Us590V6AL7JqUAH2IwZ/398PmNFgw==}
     engines: {node: '>=4'}
     dev: false
+
+  /bun@1.0.26:
+    resolution: {integrity: sha512-+aSzKvGLE9hWwCRDwvnhoMTDntCYEk5bKn16L0QGD0v630WJMPhazAMxaSJmfq6dSAtiqPpauPpmHbzwoGPjlQ==}
+    cpu: [arm64, x64]
+    os: [darwin, linux]
+    hasBin: true
+    requiresBuild: true
+    optionalDependencies:
+      '@oven/bun-darwin-aarch64': 1.0.26
+      '@oven/bun-darwin-x64': 1.0.26
+      '@oven/bun-darwin-x64-baseline': 1.0.26
+      '@oven/bun-linux-aarch64': 1.0.26
+      '@oven/bun-linux-x64': 1.0.26
+      '@oven/bun-linux-x64-baseline': 1.0.26
+    dev: true
 
   /call-bind@1.0.6:
     resolution: {integrity: sha512-Mj50FLHtlsoVfRfnHaZvyrooHcrlceNZdL/QBvJJVd9Ta55qCQK0gs4ss2oZDeV9zFCs6ewzYgVE5yfVmfFpVg==}
@@ -1488,6 +1573,10 @@ packages:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
     hasBin: true
+    dev: true
+
+  /printable-characters@1.0.42:
+    resolution: {integrity: sha512-dKp+C4iXWK4vVYZmYSd0KBH5F/h1HoZRsbJ82AVKRO3PEo8L4lBS/vLwhVtpwwuYcoIsVY+1JYKR268yn480uQ==}
     dev: true
 
   /qs@6.11.2:

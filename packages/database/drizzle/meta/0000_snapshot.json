@@ -1,0 +1,31 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "id": "b3365997-4889-431a-933a-968573ebe427",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "proposals": {
+      "name": "proposals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}
