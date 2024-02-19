@@ -1,10 +1,10 @@
 import { 
-  bigint, integer, smallint, smallserial,
+  bigint, doublePrecision, integer, smallint, smallserial,
   index, pgTable, primaryKey,
   boolean, timestamp, varchar
 } from 'drizzle-orm/pg-core';
 
-// Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1/files
+// Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
 // Incorporated ideas from 0xNallok's version
 // https://github.com/R-K-H/openbook-v2-datastore/blob/master/timescale/models/001_tables.up.sql
 
@@ -23,7 +23,7 @@ const slot = (columnName: string) => bigint(columnName, {mode: 'bigint'});
 export const proposals = pgTable('proposals', {
   proposalAcct: pubkey('proposal_acct').primaryKey(),
   proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
-  autocratVersion: smallint('autocrat_version').notNull()
+  autocratVersion: doublePrecision('autocrat_version').notNull()
 });
 
 export enum MarketType {

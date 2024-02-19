@@ -16,6 +16,10 @@ After cloning run `pnpm install` in the project directory
 
 Docs on each top-level script below
 
+## Env Vars
+- `FUTARCHY_HELIUS_API_KEY`
+- `FUTARCHY_PG_URL`
+
 ## `migrate` script
 
 Migrate db to match definition in `packages/database/lib/schema.ts`. Assumes you have set the `FUTARCHY_PG_URL` env var.  
