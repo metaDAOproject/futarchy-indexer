@@ -1,0 +1,4 @@
+
+async function getProposals(connection: ) {
+  
+}

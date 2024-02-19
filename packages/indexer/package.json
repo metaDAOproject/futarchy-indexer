@@ -3,9 +3,10 @@
   "description": "indexer microservice",
   "private": "true",
   "scripts": {
-    "start": "bun src"
+    "start": "bun src/index.ts"
   },
   "dependencies": {
+    "@solana/web3.js": "^1.90.0",
     "@themetadao/indexer-db": "workspace:*"
   },
   "devDependencies": {

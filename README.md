@@ -39,7 +39,7 @@ TODO
 
 ## `start-service` script
 
-TODO
+Starts the service
 
 ## `publish-client` script
 

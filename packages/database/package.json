@@ -6,7 +6,7 @@
   "scripts": {
     "migrate:create": "drizzle-kit generate:pg --schema=./lib/schema.ts",
     "migrate": "pnpm migrate:create && bun src/index.ts",
-    "sql": "bun src/run-sql.ts "
+    "sql": "bun src/run-sql.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.27.2",
