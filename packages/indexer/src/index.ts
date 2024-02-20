@@ -1,4 +1,4 @@
+import { connection } from './connection';
 
-
-
-console.log(heliusRPCEnpoint);
+const latestBlockHash = await connection.getLatestBlockhash();
+console.log(latestBlockHash);

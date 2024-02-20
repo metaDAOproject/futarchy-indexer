@@ -6,6 +6,9 @@
     "start": "bun src/index.ts"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.28.1-beta.2",
+    "@openbook-dex/openbook-v2": "^0.1.9",
+    "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.90.0",
     "@themetadao/indexer-db": "workspace:*"
   },

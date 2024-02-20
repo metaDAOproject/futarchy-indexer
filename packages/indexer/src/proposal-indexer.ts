@@ -1,4 +1,4 @@
 
-async function getProposals(connection: ) {
+async function getProposals() {
   
 }

@@ -1,0 +1,9 @@
+{
+    "name": "@themetadao/temp-client-copy",
+    "private": "true",
+    "main": "lib",
+    "scripts": {
+        "@solana/spl-token": "^0.3.8",
+        "@solana/web3.js": "^1.90.0"
+    }
+}
