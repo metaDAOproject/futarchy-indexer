@@ -33,15 +33,15 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   
-  # redeploy_app:
-  #   name: Redeploy app on Railway
-  #   needs: build_and_push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Call Redeploy API
-  #       run: |
-  #         curl https://backboard.railway.app/graphql/v2 \
-  #         -X POST \
-  #         -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
-  #         -H "Content-Type: application/json" \
-  #         --data "{\"query\":\"mutation { deploymentRedeploy(id: \\\"${{ secrets.RAILWAY_DEPLOYMENT_ID }}\\\") { status } }\"}" \
+  redeploy_app:
+    name: Redeploy app on Railway
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Redeploy API
+        run: |
+          curl https://backboard.railway.app/graphql/v2 \
+          -X POST \
+          -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data "{\"query\":\"mutation { deploymentRedeploy(id: \\\"${{ secrets.RAILWAY_DEPLOYMENT_ID }}\\\") { status } }\"}" \
