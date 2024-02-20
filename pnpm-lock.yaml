@@ -79,6 +79,9 @@ importers:
       '@themetadao/indexer-db':
         specifier: workspace:*
         version: link:../database
+      '@themetadao/temp-client-copy':
+        specifier: workspace:*
+        version: link:../temp-client-copy
     devDependencies:
       '@types/node':
         specifier: ^20.10.6
