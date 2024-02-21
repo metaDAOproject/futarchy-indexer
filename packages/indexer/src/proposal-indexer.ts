@@ -1,4 +1,5 @@
+import { connection } from './connection';
 
-async function getProposals() {
+export async function getProposals() {
   
 }

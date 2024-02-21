@@ -1,1 +1,0 @@
-Temporarily copying the client code from [the frontend](https://github.com/metaDAOproject/meta-dao-frontend/tree/a8c7f14a371fbc16a8cc399366d61ff3978d7361/lib) until we decide between multi vs monorepo

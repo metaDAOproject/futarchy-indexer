@@ -11,7 +11,7 @@
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.90.0",
     "@themetadao/indexer-db": "workspace:*",
-    "@themetadao/temp-client-copy": "workspace:*"
+    "@themetadao/futarchy-ts": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.6"

@@ -12,6 +12,27 @@ importers:
         specifier: 1.0.26
         version: 1.0.26
 
+  futarchy-ts:
+    dependencies:
+      '@coral-xyz/anchor':
+        specifier: ^0.28.1-beta.2
+        version: 0.28.1-beta.2
+      '@openbook-dex/openbook-v2':
+        specifier: ^0.1.9
+        version: 0.1.10
+      '@solana/spl-token':
+        specifier: ^0.3.8
+        version: 0.3.8(@solana/web3.js@1.90.0)
+      '@solana/web3.js':
+        specifier: ^1.90.0
+        version: 1.90.0
+      '@types/numeral':
+        specifier: ^2.0.4
+        version: 2.0.5
+      numeral:
+        specifier: ^2.0.6
+        version: 2.0.6
+
   packages/database:
     dependencies:
       drizzle-orm:
@@ -76,37 +97,16 @@ importers:
       '@solana/web3.js':
         specifier: ^1.90.0
         version: 1.90.0
+      '@themetadao/futarchy-ts':
+        specifier: workspace:*
+        version: link:../../futarchy-ts
       '@themetadao/indexer-db':
         specifier: workspace:*
         version: link:../database
-      '@themetadao/temp-client-copy':
-        specifier: workspace:*
-        version: link:../temp-client-copy
     devDependencies:
       '@types/node':
         specifier: ^20.10.6
         version: 20.11.16
-
-  packages/temp-client-copy:
-    dependencies:
-      '@coral-xyz/anchor':
-        specifier: ^0.28.1-beta.2
-        version: 0.28.1-beta.2
-      '@openbook-dex/openbook-v2':
-        specifier: ^0.1.9
-        version: 0.1.10
-      '@solana/spl-token':
-        specifier: ^0.3.8
-        version: 0.3.8(@solana/web3.js@1.90.0)
-      '@solana/web3.js':
-        specifier: ^1.90.0
-        version: 1.90.0
-      '@types/numeral':
-        specifier: ^2.0.4
-        version: 2.0.5
-      numeral:
-        specifier: ^2.0.6
-        version: 2.0.6
 
   packages/web-client:
     dependencies:

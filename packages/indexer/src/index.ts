@@ -1,7 +1,5 @@
-import { connection } from './connection';
+import { get } from './proposal-indexer';
 
-const latestBlockHash = await connection.getLatestBlockhash();
-console.log(latestBlockHash);
 
 setInterval(() => {
     console.log(new Date().toISOString());
