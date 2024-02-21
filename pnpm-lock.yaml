@@ -12,27 +12,6 @@ importers:
         specifier: 1.0.26
         version: 1.0.26
 
-  futarchy-ts:
-    dependencies:
-      '@coral-xyz/anchor':
-        specifier: ^0.28.1-beta.2
-        version: 0.28.1-beta.2
-      '@openbook-dex/openbook-v2':
-        specifier: ^0.1.9
-        version: 0.1.10
-      '@solana/spl-token':
-        specifier: ^0.3.8
-        version: 0.3.8(@solana/web3.js@1.90.0)
-      '@solana/web3.js':
-        specifier: ^1.90.0
-        version: 1.90.0
-      '@types/numeral':
-        specifier: ^2.0.4
-        version: 2.0.5
-      numeral:
-        specifier: ^2.0.6
-        version: 2.0.6
-
   packages/database:
     dependencies:
       drizzle-orm:
@@ -63,6 +42,27 @@ importers:
       inquirer:
         specifier: ^9.2.14
         version: 9.2.14
+
+  packages/futarchy-ts:
+    dependencies:
+      '@coral-xyz/anchor':
+        specifier: ^0.28.1-beta.2
+        version: 0.28.1-beta.2
+      '@openbook-dex/openbook-v2':
+        specifier: ^0.1.9
+        version: 0.1.10
+      '@solana/spl-token':
+        specifier: ^0.3.8
+        version: 0.3.8(@solana/web3.js@1.90.0)
+      '@solana/web3.js':
+        specifier: ^1.90.0
+        version: 1.90.0
+      '@types/numeral':
+        specifier: ^2.0.4
+        version: 2.0.5
+      numeral:
+        specifier: ^2.0.6
+        version: 2.0.6
 
   packages/hasura:
     dependencies:
@@ -99,7 +99,7 @@ importers:
         version: 1.90.0
       '@themetadao/futarchy-ts':
         specifier: workspace:*
-        version: link:../../futarchy-ts
+        version: link:../futarchy-ts
       '@themetadao/indexer-db':
         specifier: workspace:*
         version: link:../database
