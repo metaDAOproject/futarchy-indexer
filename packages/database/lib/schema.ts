@@ -20,16 +20,17 @@ const tokenAmount = (columnName: string) => bigint(columnName, {mode: 'bigint'})
 const block = (columnName: string) => bigint(columnName, {mode: 'bigint'});
 const slot = (columnName: string) => bigint(columnName, {mode: 'bigint'});
 
-export const proposals = pgTable('proposals', {
-  proposalAcct: pubkey('proposal_acct').primaryKey(),
-  proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
-  autocratVersion: doublePrecision('autocrat_version').notNull()
-});
-
 export enum MarketType {
-  OPEN_BOOK = 'OPEN_BOOK',
+  OPEN_BOOK_V2 = 'OPEN_BOOK_V2',
+  ORCA = 'ORCA',
   METEORA = 'METEORA',
   JOE_BUILD_AMM = 'JOE_BUILD_AMM' // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
+}
+
+export enum ProposalOutcome {
+  Pending = 'Pending',
+  Passed = 'Passed',
+  Failed = 'Failed'
 }
 
 type NonEmptyList<E> = [E, ...E[]];
@@ -37,6 +38,16 @@ type NonEmptyList<E> = [E, ...E[]];
 function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
   return varchar(columnName, {enum: Object.values(enumObj) as NonEmptyList<T>});
 }
+
+export const proposals = pgTable('proposals', {
+  proposalAcct: pubkey('proposal_acct').primaryKey(),
+  proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
+  autocratVersion: doublePrecision('autocrat_version').notNull(),
+  proposerAcct: pubkey('proposer_acct').notNull(),
+  outcome: pgEnum('outcome', ProposalOutcome).notNull(),
+  descriptionURL: varchar('description_url'),
+  updatedAt: timestamp('updated_at').notNull()
+});
 
 export const markets = pgTable('markets', {
   marketAcct: pubkey('market_acct').primaryKey(),
