@@ -87,7 +87,26 @@ importers:
         specifier: ^20.10.6
         version: 20.11.16
 
-  packages/temp-client-copy: {}
+  packages/temp-client-copy:
+    dependencies:
+      '@coral-xyz/anchor':
+        specifier: ^0.28.1-beta.2
+        version: 0.28.1-beta.2
+      '@openbook-dex/openbook-v2':
+        specifier: ^0.1.9
+        version: 0.1.10
+      '@solana/spl-token':
+        specifier: ^0.3.8
+        version: 0.3.8(@solana/web3.js@1.90.0)
+      '@solana/web3.js':
+        specifier: ^1.90.0
+        version: 1.90.0
+      '@types/numeral':
+        specifier: ^2.0.4
+        version: 2.0.5
+      numeral:
+        specifier: ^2.0.6
+        version: 2.0.6
 
   packages/web-client:
     dependencies:
@@ -652,6 +671,10 @@ packages:
     resolution: {integrity: sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==}
     dependencies:
       undici-types: 5.26.5
+
+  /@types/numeral@2.0.5:
+    resolution: {integrity: sha512-kH8I7OSSwQu9DS9JYdFWbuvhVzvFRoCPCkGxNwoGgaPeDfEPJlcxNvEOypZhQ3XXHsGbfIuYcxcJxKUfJHnRfw==}
+    dev: false
 
   /@types/pg@8.11.0:
     resolution: {integrity: sha512-sDAlRiBNthGjNFfvt0k6mtotoVYVQ63pA8R4EMWka7crawSR60waVYR0HAgmPRs/e2YaeJTD/43OoZ3PFw80pw==}
@@ -1921,6 +1944,10 @@ packages:
     dependencies:
       remove-trailing-separator: 1.1.0
     dev: true
+
+  /numeral@2.0.6:
+    resolution: {integrity: sha512-qaKRmtYPZ5qdw4jWJD6bxEf1FJEqllJrwxCLIm0sQU/A7v2/czigzOb+C2uSiFsa9lBUzeH7M1oK+Q+OLxL3kA==}
+    dev: false
 
   /object-inspect@1.13.1:
     resolution: {integrity: sha512-5qoj1RUiKOMsCCNLV1CBiPYE10sziTsnmNxkAI/rZhiD63CF7IqdFGC/XzjWjpSgLf0LxXX3bDFIh0E18f6UhQ==}

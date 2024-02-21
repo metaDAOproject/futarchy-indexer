@@ -1,6 +1,6 @@
 import { utils } from '@coral-xyz/anchor';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
-import { AUTOCRAT_VERSIONS } from '@/lib/constants';
+import { AUTOCRAT_VERSIONS } from '../constants';
 import { InstructionFieldTypes, InstructionSet } from '../types';
 
 const defaultVersion = AUTOCRAT_VERSIONS[0];

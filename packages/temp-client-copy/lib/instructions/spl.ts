@@ -6,7 +6,7 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from '@solana/spl-token';
-import { AUTOCRAT_VERSIONS } from '@/lib/constants';
+import { AUTOCRAT_VERSIONS } from '../constants';
 import { InstructionFieldTypes, InstructionSet } from '../types';
 
 const defaultVersion = AUTOCRAT_VERSIONS[0];

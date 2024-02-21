@@ -10,15 +10,15 @@ The indexer is made of 3 components:
 
 Since this is just a generic means to cache on-chain data into Postgres then expose a real-time GraphQL API over this data, it could be used for more than just candlestick indexing, but we'll begin with that use-case.
 
+# Secrets
+- `FUTARCHY_HELIUS_API_KEY` used by indexer
+- `FUTARCHY_PG_URL` used by indexer
+
 # Contributors
 
 After cloning run `pnpm install` in the project directory
 
 Docs on each top-level script below
-
-## Env Vars
-- `FUTARCHY_HELIUS_API_KEY`
-- `FUTARCHY_PG_URL`
 
 ## `migrate` script
 

@@ -2,6 +2,7 @@ import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { AutocratProgram, ProgramVersion } from './types';
 
+
 export const OPENBOOK_PROGRAM_ID = new PublicKey('opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb');
 export const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
   'TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN',
@@ -14,8 +15,8 @@ export const TEN_DAYS_IN_SLOTS: number = 10 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 export const QUOTE_LOTS = 0.0001;
 export const BN_0 = new BN(0);
 
-const AUTOCRAT_V0_IDL: AutocratProgram = require('@/lib/idl/autocrat_v0.json');
-const AUTOCRAT_V0_1_IDL: AutocratProgram = require('@/lib/idl/autocrat_v0.1.json');
+const AUTOCRAT_V0_IDL: AutocratProgram = require('./idl/autocrat_v0.json');
+const AUTOCRAT_V0_1_IDL: AutocratProgram = require('./idl/autocrat_v0.1.json');
 
 export const AUTOCRAT_VERSIONS: ProgramVersion[] = [
   {
