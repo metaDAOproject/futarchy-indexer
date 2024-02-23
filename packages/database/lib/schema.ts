@@ -1,5 +1,5 @@
 import { 
-  bigint, doublePrecision, integer, smallint, smallserial,
+  bigint, doublePrecision, integer, numeric, smallint, smallserial,
   index, pgTable, primaryKey,
   boolean, timestamp, varchar
 } from 'drizzle-orm/pg-core';
@@ -22,7 +22,7 @@ const slot = (columnName: string) => bigint(columnName, {mode: 'bigint'});
 
 export enum MarketType {
   OPEN_BOOK_V2 = 'OPEN_BOOK_V2',
-  ORCA = 'ORCA',
+  ORCA_WHIRLPOOL = 'ORCA_WHIRLPOOL',
   METEORA = 'METEORA',
   JOE_BUILD_AMM = 'JOE_BUILD_AMM' // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
 }
@@ -44,6 +44,7 @@ export const proposals = pgTable('proposals', {
   proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
   autocratVersion: doublePrecision('autocrat_version').notNull(),
   proposerAcct: pubkey('proposer_acct').notNull(),
+  initialSlot: slot('initial_slot').notNull(),
   outcome: pgEnum('outcome', ProposalOutcome).notNull(),
   descriptionURL: varchar('description_url'),
   updatedAt: timestamp('updated_at').notNull()
@@ -51,10 +52,12 @@ export const proposals = pgTable('proposals', {
 
 export const markets = pgTable('markets', {
   marketAcct: pubkey('market_acct').primaryKey(),
-  // may be null as market might not be tied to any one proposal (ex: the META spot market)
-  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct),
   marketType: pgEnum('market_type', MarketType).notNull(),
   createTxSig: transaction('create_tx_sig').notNull(),
+
+  // proposal-specific fields may be null as market might not be tied to any one proposal 
+  // (ex: the META spot market)
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct),
 
   baseMintAcct: pubkey('base_mint_acct').references(() => tokens.mintAcct).notNull(),
   quoteMintAcct: pubkey('quote_mint_acct').references(() => tokens.mintAcct).notNull(),
@@ -78,6 +81,26 @@ export const markets = pgTable('markets', {
   activeSlot: slot('active_slot'),
   inactiveSlot: slot('inactive_slot')
 });
+
+export const twaps = pgTable('twaps', {
+  marketAcct: pubkey('market_acct').references(() => markets.marketAcct).notNull(),
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct).notNull(),
+  updatedSlot: slot('updated_slot').notNull(),
+  // max u128 value is 340282366920938463463374607431768211455 (39 digits)
+  // the account field is u128 https://github.com/metaDAOproject/openbook-twap/blob/82690c33a091b82e908843a14ad1a571dfba12b1/programs/openbook-twap/src/lib.rs#L52
+  observationAgg: numeric('observation_agg', {precision: 40, scale: 0}).notNull(),
+  curTwap: tokenAmount('token_amount').notNull(),
+}, table => ({
+  pk: primaryKey(table.marketAcct, table.updatedSlot)
+}));
+
+export const transactions = pgTable('transactions', {
+  acct: pubkey('acct').notNull(),
+  sig: transaction('sig').notNull(),
+  slot: slot('slot').notNull(),
+  blockTime: timestamp('block_time').notNull(),
+  processed: boolean('processed').notNull()
+})
 
 // By indexing specific ATAs, we can track things like market liquidity over time
 // or META circulating supply by taking total META supply minus the treasury's account
@@ -187,7 +210,9 @@ export const candles = pgTable('candles', {
   low: tokenAmount('low'),
   close: tokenAmount('close'),
   // time-weighted average of the candle. If candle was empty, set to prior close
-  average: tokenAmount('average').notNull(),
+  candleAverage: tokenAmount('candle_average').notNull(),
+  // Nullable in case market is not a futarchy market
+  condMarketTwap: tokenAmount('cond_market_twap')
 }, table => ({
   pk: primaryKey(table.marketAcct, table.candleDuration, table.timestamp)
 }));
