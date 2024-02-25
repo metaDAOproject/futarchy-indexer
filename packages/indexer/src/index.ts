@@ -1,3 +1,5 @@
+import { dontDie } from './keep-alive';
+import { indexTransaction } from './instruction-dispatch';
 import { getProposals } from './proposal-indexer';
 import { getTransactionHistory } from './transaction-history';
 
@@ -7,21 +9,12 @@ console.log(`got ${proposals.length} proposals`);
 const proposal = proposals[0];
 const passTwapAcct = proposal.account.openbookTwapPassMarket;
 const txs = await getTransactionHistory(passTwapAcct);
-
-function dontDie() {
-  const startTime = Date.now();
-  setInterval(() => {
-    const aliveForSeconds = Math.round((Date.now() - startTime) / 1000);
-    const aliveForMinutes = Math.floor(aliveForSeconds / 60);
-    const aliveForHours = Math.floor(aliveForMinutes / 60);
-    const aliveForDays = Math.floor(aliveForHours / 24);
-    const aliveFor = 
-      (aliveForDays ? `${aliveForDays}d`: '') +
-      (aliveForHours ? `${aliveForHours % 24}h`.padStart(4, ' ') : '') + 
-      (aliveForMinutes ? `${aliveForMinutes % 60}m`.padStart(4, ' ') : '') + 
-      `${aliveForSeconds % 60}s`.padStart(4, ' ');
-    console.log(`Service alive for ${aliveFor.trimStart()}`);
-  }, 60000);
+const sig = txs[txs.length - 2].signature;
+const result = await indexTransaction(sig);
+if (!result.indexed) {
+  console.log(`ERROR: ${result.error.type}`, result.error.details);
+  console.log(`OG sig: ${sig}`);
+  process.exit(1);
 }
 
 dontDie();
