@@ -1,6 +1,8 @@
-import { VersionedTransactionResponse } from "@solana/web3.js";
 import { connection } from "./connection";
-import { PROGRAM_ID, indexTwapMarketInstruction } from "./openbook-twap/openbook-twap-indexer";
+import { InstructionIndexer } from './indexers/instruction-indexer';
+import { BorshCoder } from '@coral-xyz/anchor';
+import { OpenbookTwapIndexer } from "./indexers/openbook-twap/openbook-twap-indexer";
+import { OpenbookV2Indexer } from "./indexers/openbook-v2/openbook-v2-indexer";
 
 export type IndexTransactionResult<E extends IndexTransactionError> = 
   {indexed: true} |
@@ -11,6 +13,7 @@ export enum IndexTransactionError {
   NoKnownProgream = 'NoKnownProgram',
   MoreSignaturesThanExpected = 'MoreSignaturesThanExpected',
   WrongSignature = 'WrongSignature',
+  FailedToIndexInstruction = 'FailedToIndexInstruction'
 }
 
 export type ErrorDetails = {
@@ -18,13 +21,16 @@ export type ErrorDetails = {
   [IndexTransactionError.NoKnownProgream]: {programs: string[]};
   [IndexTransactionError.MoreSignaturesThanExpected]: {signatures: string[]};
   [IndexTransactionError.WrongSignature]: {signature: string};
+  [IndexTransactionError.FailedToIndexInstruction]: undefined;
 }
 
-type InstructionIndexer = (transaction: VersionedTransactionResponse, instructionIndex: number) => Promise<void>;
+const indexers: InstructionIndexer<any>[] = [
+  OpenbookTwapIndexer,
+  OpenbookV2Indexer
+];
 
-const indexers: {[programId: string]: InstructionIndexer} = {
-  [PROGRAM_ID]: indexTwapMarketInstruction
-}
+const programToIndexer: Record<string, {indexer: InstructionIndexer<any>, coder: BorshCoder}> = 
+  Object.fromEntries(indexers.map(indexer => [indexer.PROGRAM_ID, {indexer, coder: new BorshCoder(indexer.PROGRAM_IDL)}]));
 
 function error<E extends IndexTransactionError>(e: E, details: ErrorDetails[E]): IndexTransactionResult<E> {
   return {indexed: false, error: { type: e, details }};
@@ -32,7 +38,7 @@ function error<E extends IndexTransactionError>(e: E, details: ErrorDetails[E]):
 
 const ok = {indexed: true} as const;
 
-export async function indexTransaction(signature: string): Promise<IndexTransactionResult<any>> {
+export async function indexTransaction(txIdx: number, signature: string): Promise<IndexTransactionResult<any>> {
   const tx = await connection.getTransaction(signature, {
     maxSupportedTransactionVersion: 0
   });
@@ -45,7 +51,7 @@ export async function indexTransaction(signature: string): Promise<IndexTransact
   const { transaction } = tx;
   const { signatures } = transaction;
   /*
-  first ix has 5 signatures. Need to investigate whether all show up in the getSignaturesForAccount response.
+  first tx has 5 signatures. Need to investigate whether all show up in the getSignaturesForAccount response.
   We don't want to process the same tx multiple times.
   if (signatures.length > 1) {
     return error(IndexTransactionError.MoreSignaturesThanExpected, {signatures: tx.transaction.signatures})
@@ -65,9 +71,17 @@ export async function indexTransaction(signature: string): Promise<IndexTransact
     const ix = instructions[i];
     const program = accountKeys.staticAccountKeys[ix.programIdIndex].toBase58();
     programs.push(program);
-    if (program in indexers) {
-      await indexers[program](tx, i);
+    if (program in programToIndexer) {
       matchingProgramFound = true;
+      const {indexer, coder} = programToIndexer[program];
+      const result = await indexer.indexInstruction(
+        {} as any, // TODO: initialize db transaction and pass here
+        txIdx, tx,
+        i, coder.instruction.decode(Buffer.from(ix.data))
+      )
+      if (!result.indexed) {
+        return error(IndexTransactionError.FailedToIndexInstruction, undefined);
+      }
     }
   }
   if (!matchingProgramFound) {
