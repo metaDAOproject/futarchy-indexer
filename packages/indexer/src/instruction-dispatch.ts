@@ -3,6 +3,9 @@ import { InstructionIndexer } from './indexers/instruction-indexer';
 import { BorshCoder } from '@coral-xyz/anchor';
 import { OpenbookTwapIndexer } from "./indexers/openbook-twap/openbook-twap-indexer";
 import { OpenbookV2Indexer } from "./indexers/openbook-v2/openbook-v2-indexer";
+import { AutocratV0Indexer } from "./indexers/autocrat/autocrat-v0-indexer";
+import { AutocratV0_1Indexer } from "./indexers/autocrat/autocrat-v0_1-indexer";
+import { red, yellow } from 'ansicolor';
 
 export type IndexTransactionResult<E extends IndexTransactionError> = 
   {indexed: true} |
@@ -10,7 +13,7 @@ export type IndexTransactionResult<E extends IndexTransactionError> =
 
 export enum IndexTransactionError {
   NoTxReturned = 'NoTxReturned',
-  NoKnownProgream = 'NoKnownProgram',
+  NoKnownProgram = 'NoKnownProgram',
   MoreSignaturesThanExpected = 'MoreSignaturesThanExpected',
   WrongSignature = 'WrongSignature',
   FailedToIndexInstruction = 'FailedToIndexInstruction'
@@ -18,13 +21,15 @@ export enum IndexTransactionError {
 
 export type ErrorDetails = {
   [IndexTransactionError.NoTxReturned]: undefined;
-  [IndexTransactionError.NoKnownProgream]: {programs: string[]};
+  [IndexTransactionError.NoKnownProgram]: {programs: string[]};
   [IndexTransactionError.MoreSignaturesThanExpected]: {signatures: string[]};
   [IndexTransactionError.WrongSignature]: {signature: string};
   [IndexTransactionError.FailedToIndexInstruction]: undefined;
 }
 
 const indexers: InstructionIndexer<any>[] = [
+  AutocratV0Indexer,
+  AutocratV0_1Indexer,
   OpenbookTwapIndexer,
   OpenbookV2Indexer
 ];
@@ -38,6 +43,8 @@ function error<E extends IndexTransactionError>(e: E, details: ErrorDetails[E]):
 
 const ok = {indexed: true} as const;
 
+
+
 export async function indexTransaction(txIdx: number, signature: string): Promise<IndexTransactionResult<any>> {
   const tx = await connection.getTransaction(signature, {
     maxSupportedTransactionVersion: 0
@@ -45,8 +52,37 @@ export async function indexTransaction(txIdx: number, signature: string): Promis
   if (tx == null || tx === undefined) {
     return error(IndexTransactionError.NoTxReturned, undefined);
   }
+
+  /*
+  type CachedTransactionResponse = {
+    blockTime?: number;
+    slot: number;
+    version: number | string;
+    meta?: {
+      computeUnitsConsumed?: number;
+      err?: {} | string;
+      fee: number;
+      innerInstructions: {
+        index: number;
+        instructions: [
+
+        ]
+      }[]
+    }
+  }
+
+
+  const thing = tx.meta!.innerInstructions![0];
+  const innerIx = thing.instructions[0]
+  innerIx.
+  const meta = tx.meta!;
+  meta?.innerInstructions
+  */
+
   // TODO: maybe do something with inner instructions
   // tx.meta?.innerInstructions
+
+  // console.log(JSON.stringify(tx));
 
   const { transaction } = tx;
   const { signatures } = transaction;
@@ -74,10 +110,32 @@ export async function indexTransaction(txIdx: number, signature: string): Promis
     if (program in programToIndexer) {
       matchingProgramFound = true;
       const {indexer, coder} = programToIndexer[program];
+      const ixIdx = i;
+      const prefix = `[${new Date(tx.blockTime! * 1000).toISOString()}] ${txIdx}.${ixIdx}. ${indexer.PROGRAM_IDL.name}`;
+      const secondLogMessage = (tx.meta?.logMessages ?? [])[1];
+      switch (secondLogMessage) {
+        case "Program log: Instruction: IdlCreateAccount":
+          console.log(yellow(`${prefix} skipping IdlCreateAccount transaction ${signature}`));
+          continue;
+        case "Program log: Instruction: IdlWrite":
+          console.log(yellow(`${prefix} skipping IdlWrite transaction ${signature}`));
+          continue;
+      }
+      const decoded = coder.instruction.decode(Buffer.from(ix.data));
+      if (decoded == null) {
+        console.log(`${prefix} Cannot decode instruction ${i} of transaction ${signature}`);
+        console.log(tx.meta?.logMessages)
+        continue;
+      }
+      let ixLine = `${prefix} ${decoded.name} ${signature}`;
+      if (tx.meta?.err) {
+        ixLine = red(ixLine);
+      }
+      console.log(ixLine);
       const result = await indexer.indexInstruction(
         {} as any, // TODO: initialize db transaction and pass here
         txIdx, tx,
-        i, coder.instruction.decode(Buffer.from(ix.data))
+        ixIdx, decoded
       )
       if (!result.indexed) {
         return error(IndexTransactionError.FailedToIndexInstruction, undefined);
@@ -85,11 +143,13 @@ export async function indexTransaction(txIdx: number, signature: string): Promis
     }
   }
   if (!matchingProgramFound) {
-    return error(IndexTransactionError.NoKnownProgream, {programs});
+    return error(IndexTransactionError.NoKnownProgram, {programs});
   }
 
   return ok;
 }
+
+
 
 /**
 {
@@ -165,3 +225,5 @@ export async function indexTransaction(txIdx: number, signature: string): Promis
   version: "legacy",
 }
  */
+
+

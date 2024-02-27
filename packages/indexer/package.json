@@ -10,8 +10,10 @@
     "@openbook-dex/openbook-v2": "^0.1.9",
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.90.0",
+    "@themetadao/futarchy-ts": "workspace:*",
     "@themetadao/indexer-db": "workspace:*",
-    "@themetadao/futarchy-ts": "workspace:*"
+    "ansicolor": "^2.0.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.10.6"

@@ -1,13 +1,13 @@
 import { IDL, OpenbookTwap } from "@themetadao/futarchy-ts/lib/idl/openbook_twap";
+import { OPENBOOK_TWAP_PROGRAM_ID } from "@themetadao/futarchy-ts/lib/constants";
 import { Err, InstructionIndexer, Ok } from "../instruction-indexer";
 
 // Doing this rather than class implements pattern due to
 // https://github.com/microsoft/TypeScript/issues/41399
 export const OpenbookTwapIndexer: InstructionIndexer<OpenbookTwap> = {
-  PROGRAM_ID: "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN",
+  PROGRAM_ID: OPENBOOK_TWAP_PROGRAM_ID.toBase58(),
   PROGRAM_IDL: IDL,
   indexInstruction: async (dbTx, txIdx, txRes, ixIdx, ix) => {
-    console.log(`${txIdx}.${ixIdx}. OpenbookTwap ${ix.name}`);
     // TODO: in the future we want to switch on the instruction name and index the openbook program instruction
     //       build the order book, then from that deduce the twap change.
 

@@ -103,6 +103,12 @@ importers:
       '@themetadao/indexer-db':
         specifier: workspace:*
         version: link:../database
+      ansicolor:
+        specifier: ^2.0.1
+        version: 2.0.1
+      zod:
+        specifier: ^3.22.4
+        version: 3.22.4
     devDependencies:
       '@types/node':
         specifier: ^20.10.6
@@ -771,7 +777,6 @@ packages:
 
   /ansicolor@2.0.1:
     resolution: {integrity: sha512-l9miLV3zQ+DRatsmo3vE4OCL5HntkEvaLU825teOrUHFCH+WZEwx3KV4EzfkhUGy90QWWdvhMj1NTzTK6yFbaQ==}
-    dev: true
 
   /array-union@2.1.0:
     resolution: {integrity: sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==}
@@ -2645,4 +2650,3 @@ packages:
 
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-    dev: true

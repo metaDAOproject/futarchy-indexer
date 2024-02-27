@@ -25,7 +25,6 @@ export async function getTransactionHistory(account: PublicKey): Promise<Transac
   while(true) {
     // The Solana RPC tx API has us do a backwards walk
     const transactions = await connection.getSignaturesForAddress(account, {before: earliestSig});
-    console.log(transactions.length);
     if (transactions.length === 0) {
       break;
     }
