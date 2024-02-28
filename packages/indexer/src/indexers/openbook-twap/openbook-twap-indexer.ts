@@ -5,6 +5,7 @@ import { Err, InstructionIndexer, Ok } from "../instruction-indexer";
 // Doing this rather than class implements pattern due to
 // https://github.com/microsoft/TypeScript/issues/41399
 export const OpenbookTwapIndexer: InstructionIndexer<OpenbookTwap> = {
+  PROGRAM_NAME: "OpenbookTwap",
   PROGRAM_ID: OPENBOOK_TWAP_PROGRAM_ID.toBase58(),
   PROGRAM_IDL: IDL,
   indexInstruction: async (dbTx, txIdx, txRes, ixIdx, ix) => {

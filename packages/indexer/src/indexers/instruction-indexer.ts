@@ -6,6 +6,7 @@ export const Ok = {indexed: true};
 export const Err = {indexed: false};
 
 export type InstructionIndexer<IDL extends Idl> = {
+  readonly PROGRAM_NAME: string;
   readonly PROGRAM_ID: string;
   readonly PROGRAM_IDL: IDL;
 

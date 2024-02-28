@@ -1,7 +1,7 @@
 import { 
   bigint, doublePrecision, integer, numeric, smallint, smallserial,
   index, pgTable, primaryKey,
-  boolean, timestamp, varchar
+  boolean, timestamp, varchar, text
 } from 'drizzle-orm/pg-core';
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -94,13 +94,26 @@ export const twaps = pgTable('twaps', {
   pk: primaryKey(table.marketAcct, table.updatedSlot)
 }));
 
+// Essentially represents a queue of work to do. The indexer needs to process each tx in order.
 export const transactions = pgTable('transactions', {
-  acct: pubkey('acct').notNull(),
-  sig: transaction('sig').notNull(),
+  sig: transaction('sig').primaryKey(),
   slot: slot('slot').notNull(),
   blockTime: timestamp('block_time').notNull(),
-  processed: boolean('processed').notNull()
-})
+  processed: boolean('processed').notNull(),
+  failed: boolean('failed').notNull(),
+  payload: text('payload').notNull()
+}, table => ({
+  slotIdx: index('slot_index').on(table.slot)
+}));
+
+// These are responsible for getting all signatures involving an account
+// historically and real time, and writing them to the transactions table for processing.
+// Each proposal / spot market / autocrat version upgrade will result in another entry.
+export const transactionWatchers = pgTable('transaction_watchers', {
+  acct: pubkey('acct').primaryKey(),
+  latestTxSig: transaction('latest_tx_sig'),
+  description: text('description').notNull()
+});
 
 // By indexing specific ATAs, we can track things like market liquidity over time
 // or META circulating supply by taking total META supply minus the treasury's account
