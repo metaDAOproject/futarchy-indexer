@@ -94,12 +94,10 @@ export const twaps = pgTable('twaps', {
   pk: primaryKey(table.marketAcct, table.updatedSlot)
 }));
 
-// Essentially represents a queue of work to do. The indexer needs to process each tx in order.
 export const transactions = pgTable('transactions', {
-  sig: transaction('sig').primaryKey(),
+  txSig: transaction('tx_sig').primaryKey(),
   slot: slot('slot').notNull(),
   blockTime: timestamp('block_time').notNull(),
-  processed: boolean('processed').notNull(),
   failed: boolean('failed').notNull(),
   payload: text('payload').notNull()
 }, table => ({
@@ -111,9 +109,37 @@ export const transactions = pgTable('transactions', {
 // Each proposal / spot market / autocrat version upgrade will result in another entry.
 export const transactionWatchers = pgTable('transaction_watchers', {
   acct: pubkey('acct').primaryKey(),
-  latestTxSig: transaction('latest_tx_sig'),
+  latestTxSig: transaction('latest_tx_sig').references(() => transactions.txSig),
+  latestSlot: slot('latest_slot').notNull(),
   description: text('description').notNull()
 });
+
+export const transactionWatcherTransactions = pgTable('transaction_watcher_transactions', {
+  watcherAcct: pubkey('watcher_acct').references(() => transactionWatchers.acct).notNull(),
+  txSig: transaction('tx_sig').references(() => transactions.txSig).notNull(),
+  slot: slot('slot').notNull()
+}, table => ({
+  pk: primaryKey(table.watcherAcct, table.txSig),
+  slotIdx: index('slot_index').on(table.watcherAcct, table.slot)
+}));
+
+enum IndexerImplementation {
+  AutocratV0OpenbookV2 = 'AutocratV0OpenbookV2'
+}
+
+export const indexers = pgTable('indexers', {
+  name: varchar('name', {length: 100}).primaryKey(),
+  implementation: pgEnum('implementation', IndexerImplementation).notNull(),
+  latestSlotProcessed: slot('latest_slot_processed').notNull()
+});
+
+export const indexerAccountDependencies = pgTable('indexer_account_dependencies', {
+  name: varchar('name', {length: 100}).references(() => indexers.name).notNull(),
+  acct: pubkey('acct').references(() => transactionWatchers.acct).notNull(),
+  latestTxSigProcessed: transaction('latest_tx_sig_processed').references(() => transactions.txSig)
+}, table => ({
+  pk: primaryKey(table.name, table.acct)
+}));
 
 // By indexing specific ATAs, we can track things like market liquidity over time
 // or META circulating supply by taking total META supply minus the treasury's account

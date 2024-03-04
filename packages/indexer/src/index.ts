@@ -6,6 +6,7 @@ import { PublicKey } from '@solana/web3.js';
 import { OpenbookTwapIndexer } from './indexers/openbook-twap/openbook-twap-indexer';
 import { AutocratV0_1Indexer } from './indexers/autocrat/autocrat-v0_1-indexer';
 import { AutocratV0Indexer } from './indexers/autocrat/autocrat-v0-indexer';
+import { connection } from './connection';
 
 //const proposals = await getProposals();
 //console.log(`got ${proposals.length} proposals`);
@@ -14,6 +15,7 @@ import { AutocratV0Indexer } from './indexers/autocrat/autocrat-v0-indexer';
 //const passTwapAcct = proposal.account.openbookTwapPassMarket;
 //const prop9PassTwapAcct = new PublicKey("GpLACVBR3DMxNDfeFMKrhNnycs7ghdCwJeXSvccL5a3Z");
 //const prop10PassTwapAcct = new PublicKey("EgAtJ6WXAiXEQfTL2ci8dLY2dnynLP4tsspF9u8uiiAn");
+
 const openbookTwapProgram = OpenbookTwapIndexer.PROGRAM_ID;
 const autocratV0_1 = AutocratV0_1Indexer.PROGRAM_ID;
 const autocratV0 = AutocratV0Indexer.PROGRAM_ID;
@@ -33,5 +35,6 @@ for (let i = 0; i < Math.min(50, chronologicalOrderTxs.length); ++i) {
     process.exit(1);
   }
 }
+
 
 dontDie();
