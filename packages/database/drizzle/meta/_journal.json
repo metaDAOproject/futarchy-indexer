@@ -43,6 +43,13 @@
       "when": 1709527592058,
       "tag": "0005_fresh_ares",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1709528260178,
+      "tag": "0006_shiny_rachel_grey",
+      "breakpoints": true
     }
   ]
 }

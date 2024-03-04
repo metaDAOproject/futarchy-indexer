@@ -110,7 +110,11 @@ export const transactions = pgTable('transactions', {
 export const transactionWatchers = pgTable('transaction_watchers', {
   acct: pubkey('acct').primaryKey(),
   latestTxSig: transaction('latest_tx_sig').references(() => transactions.txSig),
-  latestSlot: slot('latest_slot').notNull(),
+  /**
+   * This may be significantly higher than the slot of the latest signature. The invariant here
+   * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
+   */
+  checkedUpToSlot: slot('checked_up_to_slot').notNull(),
   description: text('description').notNull()
 });
 
