@@ -1,6 +1,6 @@
-import { connection } from './connection';
+import { connection } from '../connection';
 import { PublicKey } from '@solana/web3.js';
-import { get, set } from './local-cache';
+import { get, set } from '../local-cache';
 
 export type TransactionMeta = Awaited<ReturnType<typeof connection['getSignaturesForAddress']>>[number];
 
@@ -12,7 +12,8 @@ function txFromString(str: string): TransactionMeta {
   return JSON.parse(str);
 }
 
-export async function getTransactionHistory(account: PublicKey): Promise<TransactionMeta[]> {
+export async function getTransactionHistory(account: PublicKey, range?: {before?: string; after?: string;}): Promise<TransactionMeta[]> {
+  const {before, after} = range ?? {};
   const cacheKey = ['transactions', account.toBase58()];
   const cachedAccount = await get(cacheKey);
   if (cachedAccount !== undefined) {
@@ -40,6 +41,15 @@ export async function getTransactionHistory(account: PublicKey): Promise<Transac
     latestTime = transactions[largestSlotIndex].blockTime!;
     history.push(...transactions);
   }
+  history.reverse(); // Now earliest transaction comes first.
+  
+  // TODO: validate that initial transaction includes the creation of the account
+  const firstTx = history[0];
+  if (firstTx === undefined) {
+    throw new Error(`No history exists for account ${account.toBase58()}`);
+  }
+  
+
   set(cacheKey, history.map(txToString));
   return history;
 }

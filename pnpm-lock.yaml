@@ -106,10 +106,19 @@ importers:
       ansicolor:
         specifier: ^2.0.1
         version: 2.0.1
+      bs58:
+        specifier: ^4.0.1
+        version: 4.0.1
+      match-discriminated-union:
+        specifier: ^1.0.0
+        version: 1.0.0
       zod:
         specifier: ^3.22.4
         version: 3.22.4
     devDependencies:
+      '@types/bs58':
+        specifier: ^4.0.1
+        version: 4.0.4
       '@types/node':
         specifier: ^20.10.6
         version: 20.11.16
@@ -656,6 +665,13 @@ packages:
       - utf-8-validate
     dev: false
 
+  /@types/bs58@4.0.4:
+    resolution: {integrity: sha512-0IEpMFXXQi2zXaXl9GJ3sRwQo0uEkD+yFOv+FnAU5lkPtcu6h61xb7jc2CFPEZ5BUOaiP13ThuGc9HD4R8lR5g==}
+    dependencies:
+      '@types/node': 20.11.16
+      base-x: 3.0.9
+    dev: true
+
   /@types/connect@3.4.38:
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
     dependencies:
@@ -805,7 +821,6 @@ packages:
     resolution: {integrity: sha512-H7JU6iBHTal1gp56aKoaa//YUxEaAOUiydvrV/pILqIHXTtqxSkATOnDA2u+jZ/61sD+L/412+7kzXRtWukhpQ==}
     dependencies:
       safe-buffer: 5.2.1
-    dev: false
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -1835,6 +1850,10 @@ packages:
     dependencies:
       es5-ext: 0.10.62
     dev: true
+
+  /match-discriminated-union@1.0.0:
+    resolution: {integrity: sha512-1P7vVC8pwb3NEIRdYz8YSq5Mdnjx/xMH/D8FAqKuDMMbuiGN4LQMtX8YcwUpd3mXRd6ORjnSnibrK/Iq+ObHZw==}
+    dev: false
 
   /memoizee@0.4.15:
     resolution: {integrity: sha512-UBWmJpLZd5STPm7PMUlOw/TSy972M+z8gcyQ5veOnSDRREz/0bmpyTfKt3/51DhEBqCZQn1udM/5flcSPYhkdQ==}

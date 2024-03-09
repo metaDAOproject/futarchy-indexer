@@ -31,8 +31,8 @@ An indexer depends on one or more transaction watchers. Once it sees all its dep
 
 Why do we want multiple indexers?
 - This allows no-downtime upgrades to the indexing and transaction caching logic. 
-  - If a bug is identified in prior indexer logic, we simply create a new indexer starting at slot 0 which will overwrite existing data until it catches up with the existing indexer, at which point we can switch off the existing buggy indexer.
-  - If a bug is identified in the transaction caching logic, we update the logic then start a new indexer at 0 which will overrite existing data using the corrected transactions.
+  - If a bug is identified in prior indexer logic, we simply create a new indexer starting at slot 0 which will overwrite existing data until it catches up with the existing indexer, at which point we can remove the duplicate indexer.
+  - If a bug is identified in the transaction caching logic, we update the logic then set the transaction watcher's slot back to 0, and start a new indexer at 0 which will overrite existing data using the corrected transactions.
 - As we upgrade the Meta DAO we'll need to watch different sets of accounts. For example autocrat V0 and V0.1 have different programs and DAO accounts and should be represented by different watchers. Once we switch from OpenBook to an in-house AMM, we'll also need a new watcher. Multiple wathcers / indexers in parallel means we can index data for proposals based on old and new accounts in parallel, and not lose the ability to index historical proposal data even as the DAO is upgraded
 
 ## Secrets

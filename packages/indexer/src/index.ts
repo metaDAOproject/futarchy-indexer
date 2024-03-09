@@ -1,12 +1,12 @@
-import { dontDie } from './keep-alive';
-import { IndexTransactionError, indexTransaction } from './instruction-dispatch';
 import { getProposals } from './proposal-indexer';
-import { getTransactionHistory } from './transaction-history';
+import { getTransactionHistory } from './transaction/history';
 import { PublicKey } from '@solana/web3.js';
 import { OpenbookTwapIndexer } from './indexers/openbook-twap/openbook-twap-indexer';
 import { AutocratV0_1Indexer } from './indexers/autocrat/autocrat-v0_1-indexer';
 import { AutocratV0Indexer } from './indexers/autocrat/autocrat-v0-indexer';
-import { connection } from './connection';
+import { startTransactionWatchers } from './transaction/watcher';
+import { startIndexers } from './indexers';
+import { getTransaction } from './transaction/serializer';
 
 //const proposals = await getProposals();
 //console.log(`got ${proposals.length} proposals`);
@@ -21,20 +21,31 @@ const autocratV0_1 = AutocratV0_1Indexer.PROGRAM_ID;
 const autocratV0 = AutocratV0Indexer.PROGRAM_ID;
 const txs = await getTransactionHistory(new PublicKey(openbookTwapProgram));
 const chronologicalOrderTxs = txs.reverse();
+/*
 for (let i = 0; i < Math.min(50, chronologicalOrderTxs.length); ++i) {
   const sig = chronologicalOrderTxs[i].signature;
-  const result = await indexTransaction(i, sig);
-  if (!result.indexed) {
-    switch (result.error.type) {
-      case IndexTransactionError.NoKnownProgram:
-        console.log(`No known program for tx ${i}`);
-        continue;
-    }
-    console.log(`ERROR: ${result.error.type}`, result.error.details);
-    console.log(`Index ${i}, Signature: ${sig}`);
+  const serializeResult = await getTransaction(sig);
+  if (serializeResult.success) {
+    console.log(`${i}. success ${sig}`);
+  } else {
+    console.log(`${i}.  failed ${sig}`);
+    console.log(serializeResult.error);
     process.exit(1);
   }
+  // const result = await indexTransaction(i, sig);
+  // if (!result.indexed) {
+  //   switch (result.error.type) {
+  //     case IndexTransactionError.NoKnownProgram:
+  //       console.log(`No known program for tx ${i}`);
+  //       continue;
+  //   }
+  //   console.log(`ERROR: ${result.error.type}`, result.error.details);
+  //   console.log(`Index ${i}, Signature: ${sig}`);
+  //   process.exit(1);
+  // }
 }
+*/
 
 
-dontDie();
+startTransactionWatchers();
+//startIndexers();
