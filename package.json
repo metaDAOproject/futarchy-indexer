@@ -4,6 +4,7 @@
     "sql": "pnpm --filter @themetadao/indexer-db sql",
     "update-hasura": "echo 'hello world'",
     "start-service": "pnpm --filter @themetadao/indexer-service start",
+    "test": "pnpm --filter @themetadao/indexer-service test",
     "publish-client": "echo 'hello world'"
     
   },

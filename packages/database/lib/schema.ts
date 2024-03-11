@@ -1,5 +1,5 @@
 import { 
-  bigint, doublePrecision, integer, numeric, smallint, smallserial,
+  bigint, doublePrecision, integer, numeric, smallint,
   index, pgTable, primaryKey,
   boolean, timestamp, varchar, text
 } from 'drizzle-orm/pg-core';
@@ -111,10 +111,16 @@ export const transactionWatchers = pgTable('transaction_watchers', {
   acct: pubkey('acct').primaryKey(),
   latestTxSig: transaction('latest_tx_sig').references(() => transactions.txSig),
   /**
+   * We can use this to monitor if the transaction history is being cleared by the rpc. 
+   * Ideally this should not change once set.
+   */
+  firstTxSig: transaction('first_tx_sig'),
+  /**
    * This may be significantly higher than the slot of the latest signature. The invariant here
    * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
    */
   checkedUpToSlot: slot('checked_up_to_slot').notNull(),
+  serializerLogicVersion: smallint('serializer_logic_version').notNull(),
   description: text('description').notNull()
 });
 
@@ -161,7 +167,7 @@ export const tokens = pgTable('tokens', {
   name: varchar('name', {length: 30}).notNull(),
   symbol: varchar('symbol', {length: 10}).notNull(),
   supply: tokenAmount('supply').notNull(),
-  decimals: smallserial('decimals').notNull(),
+  decimals: smallint('decimals').notNull(),
   updatedAt: timestamp('updated_at').notNull()
 });
 

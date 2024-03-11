@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const CACHE_DIR = path.resolve(__dirname, 'cache');
-const CACHE_LOCALLY = true; // TODO: turn off when ready to actually start indexing
+const CACHE_LOCALLY = false; // TODO: turn off when ready to actually start indexing
 
 if (!fs.existsSync(CACHE_DIR)) {
   await fs.promises.mkdir(CACHE_DIR);

@@ -5,6 +5,38 @@ import { resolveAccounts, ResolveAccountsError } from "./account-resolver";
 import * as base58 from 'bs58';
 import { connection } from "../connection";
 
+/**
+ * This version should be bumped every time we update this file.
+ * It will reset all the transaction watchers to slot 0
+ * TODO: it should also create new indexers
+ */
+export const SERIALIZED_TRANSACTION_LOGIC_VERSION = 0;
+
+// bigint isn't JSON serializable
+// https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-1006088574
+export function serialize(transaction: Transaction, pretty = false): string {
+  return JSON.stringify(
+    transaction,
+    (_, value) => typeof value === "bigint" ? `BIGINT:${value.toString()}` : value,
+    pretty ? 2 : 0
+  );
+}
+
+const bigintEncodingPattern = /^BIGINT:[0-9]+$/;
+export function deserialize(json: string): Result<Transaction, {type: 'ZodError', error: z.ZodError}> {
+  const deserialized = JSON.parse(
+    json,
+    (_, value) => typeof value === 'string' && bigintEncodingPattern.test(value) ? BigInt(value.split(':')[1]) : value
+  );
+  const parsed = SerializableTransaction.safeParse(deserialized);
+  if (parsed.success) {
+    return Ok(parsed.data);
+  } else {
+    return Err({type: 'ZodError', error: parsed.error});
+  }
+}
+
+
 export const SerializableTokenMeta = z.strictObject({
   mint: z.string(),
   owner: z.string(),
@@ -31,17 +63,22 @@ export const SerializableInstruction = z.strictObject({
   accounts: z.array(z.number())
 });
 
+export const SerializableTransactionError = z.strictObject({
+  InstructionError: z.tuple([
+    z.number(),
+    z.union([z.string(), z.strictObject({Custom: z.number()})])
+  ]).optional(),
+  InsufficientFundsForRent: z.strictObject({
+    account_index: z.number()
+  }).optional()
+}).optional();
+
 export const SerializableTransaction = z.strictObject({
   blockTime: z.number(),
   slot: z.number(),
   recentBlockhash: z.string(),
   computeUnitsConsumed: z.bigint(),
-  err: z.strictObject({
-    InstructionError: z.tuple([
-      z.number(),
-      z.strictObject({Custom: z.number()})
-    ]).optional(),
-  }).optional(),
+  err: SerializableTransactionError,
   fee: z.bigint(),
   signatures: z.array(z.string()),
   version: z.union([z.literal('legacy'), z.literal(0)]),
@@ -146,7 +183,7 @@ function parseInstructions(outer: Message['compiledInstructions'], inner: NonNul
     const curOuter = outer[outerI];
     // TODO: figure out why the outer and inner instruction types don't have a stackHeight member even though the rpc always returns this.
     //       perhaps we need to patch web3 libs or there's some edge case we aren't aware of.
-    if ((curOuter as any).stackHeight !== null) {
+    if ('stackHeight' in curOuter) {
       return Err({
         type: GetTransactionErrorType.OuterIxStackHeightNonNull,
         outerInstruction: curOuter
@@ -182,6 +219,7 @@ function parseInstructions(outer: Message['compiledInstructions'], inner: NonNul
         data: curInner.data,
         accounts: curInner.accounts
       });
+      curStackHeight = innerStackHeight;
     }
   }
   return Ok(instructions);
@@ -247,9 +285,9 @@ export async function getTransaction(signature: string): Promise<Result<Transact
     blockTime: txResponse.blockTime,
     slot: txResponse.slot,
     recentBlockhash: txResponse.transaction.message.recentBlockhash,
-    computeUnitsConsumed: txResponse.meta?.computeUnitsConsumed,
-    err: txResponse.meta?.err,
-    fee: txResponse.meta?.fee,
+    computeUnitsConsumed: BigInt(txResponse.meta?.computeUnitsConsumed!),
+    err: txResponse.meta?.err ?? undefined,
+    fee: BigInt(txResponse.meta?.fee!),
     signatures: txResponse.transaction.signatures,
     version: txResponse.version,
     logMessages: txResponse.meta?.logMessages,

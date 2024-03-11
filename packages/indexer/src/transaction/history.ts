@@ -1,55 +1,56 @@
 import { connection } from '../connection';
 import { PublicKey } from '@solana/web3.js';
-import { get, set } from '../local-cache';
 
 export type TransactionMeta = Awaited<ReturnType<typeof connection['getSignaturesForAddress']>>[number];
 
-function txToString(tx: TransactionMeta): string {
-  return JSON.stringify(tx);
+function throwInvariantViolation(account: PublicKey, after: string | undefined, before: string | undefined, violation: string) {
+  throw new Error(`Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`);
 }
 
-function txFromString(str: string): TransactionMeta {
-  return JSON.parse(str);
-}
+export async function getTransactionHistory(account: PublicKey, largerThanSlot: bigint, range?: {after?: string; before?: string;}): Promise<TransactionMeta[]> {
+  const {after, before} = range ?? {};
 
-export async function getTransactionHistory(account: PublicKey, range?: {before?: string; after?: string;}): Promise<TransactionMeta[]> {
-  const {before, after} = range ?? {};
-  const cacheKey = ['transactions', account.toBase58()];
-  const cachedAccount = await get(cacheKey);
-  if (cachedAccount !== undefined) {
-    return cachedAccount.map(txFromString);
-  }
-  let latestTime: number | undefined;
-  let earliestTime: number | undefined;
-  let earliestSig: string | undefined;
   const history: TransactionMeta[] = [];
+
+  let earliestSig: string | undefined = before;
+  
   while(true) {
     // The Solana RPC tx API has us do a backwards walk
-    const transactions = await connection.getSignaturesForAddress(account, {before: earliestSig});
+    const transactions = await connection.getSignaturesForAddress(account, {before: earliestSig}, 'confirmed');
     if (transactions.length === 0) {
       break;
     }
-    let largestSlotIndex = 0;
-    let smallestSlotIndex = 0;
+    const sigToIndex = new Map<string, number>();
+    let reachedAfter = false;
     for (let i = 0; i < transactions.length; ++i) {
       const cur = transactions[i];
-      if (cur.slot > transactions[largestSlotIndex].slot) largestSlotIndex = i;
-      if (cur.slot < transactions[smallestSlotIndex].slot) smallestSlotIndex = i;
+      const prev = transactions[i - 1];
+      if (sigToIndex.has(cur.signature)) {
+        throwInvariantViolation(account, after, before, `duplicate signature ${cur.signature} at indices ${sigToIndex.get(cur.signature)} and ${i}`);
+      }
+      if (prev !== undefined && cur.slot > prev.slot) {
+        // Transactions are assumed to be in time descending order.
+        throwInvariantViolation(account, after, before, `index ${i - 1} signature ${prev.signature} has slot ${prev.slot} while index ${i} signature ${cur.signature} has slot ${cur.slot}`);
+      }
+      if (cur.slot < largerThanSlot) {
+        throwInvariantViolation(account, after, before, `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`);
+      }
+      if (cur.signature === after) {
+        reachedAfter = true;
+        break;
+      }
+      history.push(cur);
+      earliestSig = cur.signature;
     }
-    earliestTime = transactions[smallestSlotIndex].blockTime!;
-    earliestSig = transactions[smallestSlotIndex].signature;
-    latestTime = transactions[largestSlotIndex].blockTime!;
-    history.push(...transactions);
+    if (earliestSig && sigToIndex.has(earliestSig)) {
+      throwInvariantViolation(account, after, before, `account contained before value of ${earliestSig}`);
+    }
+    if (reachedAfter) {
+      break;
+    }
   }
-  history.reverse(); // Now earliest transaction comes first.
-  
-  // TODO: validate that initial transaction includes the creation of the account
-  const firstTx = history[0];
-  if (firstTx === undefined) {
-    throw new Error(`No history exists for account ${account.toBase58()}`);
-  }
-  
 
-  set(cacheKey, history.map(txToString));
+  history.reverse(); // Now earliest transaction comes first.
+
   return history;
 }
