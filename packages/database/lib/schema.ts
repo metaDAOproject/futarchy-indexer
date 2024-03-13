@@ -99,7 +99,8 @@ export const transactions = pgTable('transactions', {
   slot: slot('slot').notNull(),
   blockTime: timestamp('block_time').notNull(),
   failed: boolean('failed').notNull(),
-  payload: text('payload').notNull()
+  payload: text('payload').notNull(),
+  serializerLogicVersion: smallint('serializer_logic_version').notNull(),
 }, table => ({
   slotIdx: index('slot_index').on(table.slot)
 }));
@@ -114,7 +115,7 @@ export const transactionWatchers = pgTable('transaction_watchers', {
    * We can use this to monitor if the transaction history is being cleared by the rpc. 
    * Ideally this should not change once set.
    */
-  firstTxSig: transaction('first_tx_sig'),
+  firstTxSig: transaction('first_tx_sig').references(() => transactions.txSig),
   /**
    * This may be significantly higher than the slot of the latest signature. The invariant here
    * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
