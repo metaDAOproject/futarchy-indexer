@@ -1,4 +1,4 @@
-import { getDBConnection, drizzle } from '../lib';
+import { getDBConnection, sql } from '../lib';
 import { green } from 'ansicolor';
 import table from 'as-table';
 import inquirer from 'inquirer';
@@ -26,7 +26,7 @@ async function main() {
   const arg = process.argv[2];
   const statement = arg ?? await chooseCommonStatement();
   console.log(green(statement));
-  const result = await db.execute(drizzle.sql.raw(statement));
+  const result = await db.execute(sql.raw(statement));
   if (result.rowCount) {
     console.log('total:', result.rowCount);
     console.log(table(result.rows));

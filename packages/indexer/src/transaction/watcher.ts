@@ -3,6 +3,24 @@ import { getDBConnection, schema, eq} from "@themetadao/indexer-db";
 import { SERIALIZED_TRANSACTION_LOGIC_VERSION, getTransaction, serialize } from "./serializer";
 import { getTransactionHistory } from "./history";
 
+/*
+$ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
+> @themetadao/indexer-db@ sql /workspaces/meta-repo/repos/futarchy-indexer/packages/database
+> bun src/run-sql.ts "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
+
+select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'
+total: 6
+table_catalog  table_schema  table_name            column_name               ordinal_position
+---------------------------------------------------------------------------------------------
+railway        public        transaction_watchers  acct                      1               
+railway        public        transaction_watchers  latest_tx_sig             2               
+railway        public        transaction_watchers  description               3               
+railway        public        transaction_watchers  checked_up_to_slot        4               
+railway        public        transaction_watchers  first_tx_sig              5               
+railway        public        transaction_watchers  serializer_logic_version  6               
+$ pnpm sql "insert into transaction_watchers values ('TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN', NULL, 'openbookv2 twap watcher', 0, NULL, 0)"
+*/
+
 type TransactionWatcherRecord = typeof schema.transactionWatchers._.model.select;
 type TransactionRecord = typeof schema.transactions._.model.insert;
 
@@ -45,6 +63,7 @@ class TransactionWatcher {
       this.checkedUpToSlot,
       {after: this.latestTxSig}
     );
+    console.log(`history after ${this.latestTxSig} is length ${history.length}`);
     const db = await getDBConnection();
     const acct = this.account.toBase58();
     for (const signatureInfo of history) {
@@ -63,9 +82,12 @@ class TransactionWatcher {
         throw new Error(`watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`);
         process.exit(1);
       }
+      console.log(`querying for ${signature}`);
       const maybeCurTxRecord = await db.select().from(schema.transactions).where(eq(schema.transactions.txSig, signature)).execute();
       if (maybeCurTxRecord.length === 0 || maybeCurTxRecord[0].serializerLogicVersion < SERIALIZED_TRANSACTION_LOGIC_VERSION) {
+        console.log(`upserting ${signature}`);
         const parseTxResult = await getTransaction(signature);
+        console.log(`serialized ${signature}`);
         if (!parseTxResult.success) {
           console.log(`Failed to parse tx ${signature}`);
           console.log(JSON.stringify(parseTxResult.error));
@@ -92,12 +114,14 @@ class TransactionWatcher {
         }
         // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
         //       be a no-op in the happy path
+        console.log(`inserting ${signature} to ${acct} watcher pivot`);
         await db.insert(schema.transactionWatcherTransactions).values({
           txSig: signature,
           slot,
           watcherAcct: acct
         }).onConflictDoNothing();
         // TODO: perhaps only checkedUpToSlot update at the end is necessary
+        console.log(`updating watcher after ${signature}`);
         const updateResult = await db.update(schema.transactionWatchers)
           .set({
             acct,
@@ -113,6 +137,7 @@ class TransactionWatcher {
           process.exit(1);
         }
       }
+      console.log(`done with ${signature}`);
     }
     // TODO update checkedUpToSlot to latest confirmed slot. If we don't do this, then checkedUpToSlot would only be updated once there's a new
     // transaction, and this would mean indexers would stall in cases where some of the dependent watchers don't have frequent transactions.

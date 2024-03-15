@@ -14,6 +14,7 @@ export async function getTransactionHistory(account: PublicKey, largerThanSlot: 
 
   let earliestSig: string | undefined = before;
   
+  let page = 1;
   while(true) {
     // The Solana RPC tx API has us do a backwards walk
     const transactions = await connection.getSignaturesForAddress(account, {before: earliestSig}, 'confirmed');
@@ -45,6 +46,8 @@ export async function getTransactionHistory(account: PublicKey, largerThanSlot: 
     if (earliestSig && sigToIndex.has(earliestSig)) {
       throwInvariantViolation(account, after, before, `account contained before value of ${earliestSig}`);
     }
+    console.log(`page ${page} for ${account.toBase58()} (${history.length} total)`);
+    page++;
     if (reachedAfter) {
       break;
     }
