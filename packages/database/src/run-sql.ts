@@ -23,17 +23,21 @@ async function chooseCommonStatement(): Promise<string> {
 
 async function main() {
   const db = await getDBConnection();
-  const arg = process.argv[2];
-  const statement = arg ?? await chooseCommonStatement();
-  console.log(green(statement));
-  const result = await db.execute(sql.raw(statement));
-  if (result.rowCount) {
-    console.log('total:', result.rowCount);
-    console.log(table(result.rows));
-    return;
+  try {
+    const arg = process.argv[2];
+    const statement = arg ?? await chooseCommonStatement();
+    console.log(green(statement));
+    const result = await db.con.execute(sql.raw(statement));
+    if (result.rowCount) {
+      console.log('total:', result.rowCount);
+      console.log(table(result.rows));
+      return;
+    }
+    // TODO: pretty print other types of output
+    console.log(result);
+  } finally {
+    db.client.release();
   }
-  // TODO: pretty print other types of output
-  console.log(result);
 }
 
 main()

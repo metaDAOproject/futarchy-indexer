@@ -3,9 +3,13 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 
 async function main() {
   const db = await getDBConnection();
-  console.log('migration started');
-  await migrate(db, {migrationsFolder: 'drizzle'});
-  console.log('migration finished');
+  try {
+    console.log('migration started');
+    await migrate(db.con, {migrationsFolder: 'drizzle'});
+    console.log('migration finished');
+  } finally {
+    db.client.release();
+  }
 }
 
 main()

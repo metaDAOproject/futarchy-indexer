@@ -14,12 +14,12 @@ const pool = new Pool({
 });
 
 export async function getDBConnection() {
-  await pool.connect();
-  return drizzle(pool, {schema: schemaDefs});
+  const client = await pool.connect();
+  return {con: drizzle(pool, {schema: schemaDefs}), client};
 }
 
 export type DBTransaction = 
-  Parameters<Parameters<(Awaited<ReturnType<typeof getDBConnection>>)['transaction']>[0]>[0];
+  Parameters<Parameters<(Awaited<ReturnType<typeof getDBConnection>>)['con']['transaction']>[0]>[0];
 
 export const schema = schemaDefs;
 export {eq, sql} from 'drizzle-orm';
