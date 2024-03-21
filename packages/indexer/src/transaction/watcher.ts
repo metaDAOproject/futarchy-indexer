@@ -2,6 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { getDBConnection, schema, eq} from "@themetadao/indexer-db";
 import { SERIALIZED_TRANSACTION_LOGIC_VERSION, getTransaction, serialize } from "./serializer";
 import { getTransactionHistory } from "./history";
+import { connection } from "../connection";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
@@ -37,6 +38,7 @@ class TransactionWatcher {
   private pollerIntervalId: ReturnType<typeof setInterval> | undefined;
   private rpcWebsocket: number | undefined;
   private stopped: boolean;
+  private backfilling: boolean;
   public constructor({acct, description, latestTxSig, checkedUpToSlot, serializerLogicVersion}: TransactionWatcherRecord) {
     this.account = new PublicKey(acct);
     this.description = description;
@@ -44,6 +46,7 @@ class TransactionWatcher {
     this.checkedUpToSlot = checkedUpToSlot;
     this.logicVersion = serializerLogicVersion;
     this.stopped = false;
+    this.backfilling = false;
     this.start();
   }
 
@@ -54,12 +57,15 @@ class TransactionWatcher {
     await this.backfillFromLatest();
     // TODO: add websocket for realtime updates (might be lossy, but would allow us to increase poll time meaning less rpc costs)
     this.pollerIntervalId = setInterval(() => {
-      if (this.stopped) return;
       this.backfillFromLatest();
-    }, 60000);
+    }, 10000);
   }
 
   private async backfillFromLatest() {
+    if (this.stopped) return;
+    if (this.backfilling) return;
+    this.backfilling = true;
+    const latestConfirmedSlot = BigInt(await connection.getSlot('confirmed'));
     const history = await getTransactionHistory(
       this.account,
       this.checkedUpToSlot,
@@ -69,6 +75,7 @@ class TransactionWatcher {
     const db = await getDBConnection();
     try {
       const acct = this.account.toBase58();
+      let priorSlot = this.checkedUpToSlot;
       for (const signatureInfo of history) {
         if (this.stopped) {
           console.log(`Stopped watcher for ${acct} mid backfill`);
@@ -112,36 +119,57 @@ class TransactionWatcher {
             console.log(`Failed to upsert ${signature}. ${JSON.stringify(transactionRecord)}`);
             process.exit(1);
           }
-          // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
-          //       be a no-op in the happy path
-          await db.con.insert(schema.transactionWatcherTransactions).values({
-            txSig: signature,
-            slot,
-            watcherAcct: acct
-          }).onConflictDoNothing();
-          // TODO: perhaps only checkedUpToSlot update at the end is necessary
-          const updateResult = await db.con.update(schema.transactionWatchers)
-            .set({
-              acct,
-              latestTxSig: signature,
-              firstTxSig: curWatcherRecord.firstTxSig ?? signature,
-              serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-              checkedUpToSlot: slot // TODO, I think this breaks for many txs in the same slot. more evidence that update should only happen after history is traversed
-            })
-            .where(eq(schema.transactionWatchers.acct, acct))
-            .returning({acct: schema.transactionWatchers.acct});
-          if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
-            console.log(`Failed to update tx watcher for acct ${acct} on tx ${signature}`);
-            process.exit(1);
-          }
         }
+        // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
+        //       be a no-op in the happy path
+        await db.con.insert(schema.transactionWatcherTransactions).values({
+          txSig: signature,
+          slot,
+          watcherAcct: acct
+        }).onConflictDoNothing();
+        // We could opt to only update slot at end, but updating it now means indexers can progress while a backfill is in progress.
+        // That's preferrable since the backfill could be a lot of transactions and it could stall if there are any bugs in the tx backup logic
+        // We can't set the checked up to slot as the current tx's slot, since there might be a tx after this one on the same slot. So we instead
+        // need to set it to the prior tx's slot if that slot is less than the current slot.
+        const newCheckedUpToSlot = slot > priorSlot ? priorSlot : this.checkedUpToSlot;
+        const updateResult = await db.con.update(schema.transactionWatchers)
+          .set({
+            acct,
+            latestTxSig: signature,
+            firstTxSig: curWatcherRecord.firstTxSig ?? signature,
+            serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+            checkedUpToSlot: newCheckedUpToSlot
+          })
+          .where(eq(schema.transactionWatchers.acct, acct))
+          .returning({acct: schema.transactionWatchers.acct});
+        if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
+          console.log(`Failed to update tx watcher for acct ${acct} on tx ${signature}`);
+          process.exit(1);
+        }
+        priorSlot = slot;
+        this.checkedUpToSlot = newCheckedUpToSlot;
         totalTxsIndexed++;
         console.log(`${totalTxsIndexed} done with ${signature}`);
       }
-      // TODO update checkedUpToSlot to latest confirmed slot. If we don't do this, then checkedUpToSlot would only be updated once there's a new
+      // Update checkedUpToSlot to latest confirmed slot. If we don't do this, then checkedUpToSlot would only be updated once there's a new
       // transaction, and this would mean indexers would stall in cases where some of the dependent watchers don't have frequent transactions.
+      // It's possible that this might be the source of bugs if somehow new transactions come in that are before the latest confirmed slot but were
+      // not returned by the RPC's tx history.
+      const newCheckedUpToSlot = this.checkedUpToSlot > latestConfirmedSlot ? this.checkedUpToSlot : latestConfirmedSlot;
+      const updateResult = await db.con.update(schema.transactionWatchers)
+        .set({
+          checkedUpToSlot: newCheckedUpToSlot
+        })
+        .where(eq(schema.transactionWatchers.acct, acct))
+        .returning({acct: schema.transactionWatchers.acct});
+      if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
+        console.log(`Failed to update tx watcher for acct ${acct} at end of backfill`);
+        process.exit(1);
+      }
+      this.checkedUpToSlot = newCheckedUpToSlot;
     } finally {
       db.client.release();
+      this.backfilling = false;
     }
   }
 

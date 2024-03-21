@@ -4,7 +4,8 @@ import table from 'as-table';
 import inquirer from 'inquirer';
 
 const COMMON_STATEMENTS: Record<string, string> = {
-  'all-tables': "select * from pg_catalog.pg_tables where schemaname != 'pg_catalog' AND schemaname != 'information_schema'"
+  'all-tables': "select * from pg_catalog.pg_tables where schemaname != 'pg_catalog' AND schemaname != 'information_schema'",
+  'all-watchers': "select acct, description, serializer_logic_version, latest_tx_sig, checked_up_to_slot from public.transaction_watchers"
 };
 
 async function chooseCommonStatement(): Promise<string> {
