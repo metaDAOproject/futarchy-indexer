@@ -27,8 +27,6 @@ type TransactionRecord = typeof schema.transactions._.model.insert;
 
 const watchers: Record<string, TransactionWatcher> = {};
 
-let totalTxsIndexed = 0;
-
 class TransactionWatcher {
   private account: PublicKey;
   private description: string;
@@ -76,6 +74,7 @@ class TransactionWatcher {
     try {
       const acct = this.account.toBase58();
       let priorSlot = this.checkedUpToSlot;
+      let numIndexed = 0;
       for (const signatureInfo of history) {
         if (this.stopped) {
           console.log(`Stopped watcher for ${acct} mid backfill`);
@@ -148,8 +147,10 @@ class TransactionWatcher {
         }
         priorSlot = slot;
         this.checkedUpToSlot = newCheckedUpToSlot;
-        totalTxsIndexed++;
-        console.log(`${totalTxsIndexed} done with ${signature}`);
+        numIndexed++;
+        if (numIndexed % 50 === 0) {
+          console.log(`(${numIndexed} / ${history.length}) ${acct} watcher`);
+        }
       }
       // Update checkedUpToSlot to latest confirmed slot. If we don't do this, then checkedUpToSlot would only be updated once there's a new
       // transaction, and this would mean indexers would stall in cases where some of the dependent watchers don't have frequent transactions.
@@ -167,6 +168,7 @@ class TransactionWatcher {
         process.exit(1);
       }
       this.checkedUpToSlot = newCheckedUpToSlot;
+      console.log(`${acct} watcher is up to date`);
     } finally {
       db.client.release();
       this.backfilling = false;
