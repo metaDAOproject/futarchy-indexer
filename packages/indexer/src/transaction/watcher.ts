@@ -85,7 +85,7 @@ class TransactionWatcher {
       this.checkedUpToSlot,
       { after: this.latestTxSig }
     );
-    console.log(
+    logger.info(
       `history after ${this.latestTxSig} is length ${history.length}`
     );
     const db = await getDBConnection();
@@ -95,7 +95,7 @@ class TransactionWatcher {
       let numIndexed = 0;
       for (const signatureInfo of history) {
         if (this.stopped) {
-          console.log(`Stopped watcher for ${acct} mid backfill`);
+          logger.info(`Stopped watcher for ${acct} mid backfill`);
           return;
         }
         const { slot: slotAsNum, signature } = signatureInfo;
@@ -129,8 +129,8 @@ class TransactionWatcher {
         ) {
           const parseTxResult = await getTransaction(signature);
           if (!parseTxResult.success) {
-            console.log(`Failed to parse tx ${signature}`);
-            console.log(JSON.stringify(parseTxResult.error));
+            logger.info(`Failed to parse tx ${signature}`);
+            logger.info(JSON.stringify(parseTxResult.error));
             process.exit(1);
           }
           const { ok: serializableTx } = parseTxResult;
@@ -154,7 +154,7 @@ class TransactionWatcher {
             upsertResult.length !== 1 ||
             upsertResult[0].txSig !== signature
           ) {
-            console.log(
+            logger.info(
               `Failed to upsert ${signature}. ${JSON.stringify(
                 transactionRecord
               )}`
@@ -190,7 +190,7 @@ class TransactionWatcher {
           .where(eq(schema.transactionWatchers.acct, acct))
           .returning({ acct: schema.transactionWatchers.acct });
         if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
-          console.log(
+          logger.info(
             `Failed to update tx watcher for acct ${acct} on tx ${signature}`
           );
           process.exit(1);
@@ -199,7 +199,7 @@ class TransactionWatcher {
         this.checkedUpToSlot = newCheckedUpToSlot;
         numIndexed++;
         if (numIndexed % 50 === 0) {
-          console.log(`(${numIndexed} / ${history.length}) ${acct} watcher`);
+          logger.info(`(${numIndexed} / ${history.length}) ${acct} watcher`);
         }
       }
       // Update checkedUpToSlot to latest confirmed slot. If we don't do this, then checkedUpToSlot would only be updated once there's a new
@@ -218,13 +218,13 @@ class TransactionWatcher {
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct });
       if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
-        console.log(
+        logger.info(
           `Failed to update tx watcher for acct ${acct} at end of backfill`
         );
         process.exit(1);
       }
       this.checkedUpToSlot = newCheckedUpToSlot;
-      console.log(`${acct} watcher is up to date`);
+      logger.info(`${acct} watcher is up to date`);
     } finally {
       db.client.release();
       this.backfilling = false;
@@ -268,7 +268,7 @@ export async function startTransactionWatchers() {
             SERIALIZED_TRANSACTION_LOGIC_VERSION
           ) {
             const { acct, serializerLogicVersion } = watcherInDb;
-            console.log(
+            logger.info(
               `reseting ${acct}. existing logic version of ${serializerLogicVersion} current is ${SERIALIZED_TRANSACTION_LOGIC_VERSION}`
             );
             watchers[acct]?.stop();
@@ -296,20 +296,20 @@ export async function startTransactionWatchers() {
         }
       }
       if (watchersToStop.size) {
-        console.log(`Stopping ${watchersToStop.size} watchers:`);
+        logger.info(`Stopping ${watchersToStop.size} watchers:`);
         let i = 0;
         for (const watcherToStopAcct of watchersToStop) {
-          console.log(` ${++i}. ${watcherToStopAcct}`);
+          logger.info(` ${++i}. ${watcherToStopAcct}`);
           watchers[watcherToStopAcct]?.stop();
           delete watchers[watcherToStopAcct];
         }
       }
       if (watchersToStart.size) {
-        console.log(`Starting ${watchersToStart.size} watchers:`);
+        logger.info(`Starting ${watchersToStart.size} watchers:`);
         let i = 0;
         for (const watcherToStartAcct of watchersToStart) {
           const prefix = ` ${++i}. `;
-          console.log(`${prefix}${watcherToStartAcct}`);
+          logger.info(`${prefix}${watcherToStartAcct}`);
           const cur = curWatchersByAccount[watcherToStartAcct];
           watchers[watcherToStartAcct] = new TransactionWatcher(cur);
         }
