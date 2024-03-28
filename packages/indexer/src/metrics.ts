@@ -1,14 +1,14 @@
-import Prometheus from "@lukasdeco/prom-client";
 import express from "express";
+import { Registry, collectDefaultMetrics } from "@lukasdeco/prom-client";
 
 const METRICS_PORT = 8080;
 
 export function startMetricsServer() {
-  const register = new Prometheus.Registry();
+  const register = new Registry();
   register.setDefaultLabels({
     app: "futarchy-indexer",
   });
-  Prometheus.collectDefaultMetrics({
+  collectDefaultMetrics({
     register,
     excludedMetrics: [
       "nodejs_eventloop_lag_seconds",

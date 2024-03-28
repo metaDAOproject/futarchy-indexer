@@ -1,8 +1,13 @@
 import { PublicKey } from "@solana/web3.js";
-import { getDBConnection, schema, eq} from "@themetadao/indexer-db";
-import { SERIALIZED_TRANSACTION_LOGIC_VERSION, getTransaction, serialize } from "./serializer";
+import { getDBConnection, schema, eq } from "@themetadao/indexer-db";
+import {
+  SERIALIZED_TRANSACTION_LOGIC_VERSION,
+  getTransaction,
+  serialize,
+} from "./serializer";
 import { getTransactionHistory } from "./history";
 import { connection } from "../connection";
+import logger from "../logger";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
@@ -22,7 +27,8 @@ railway        public        transaction_watchers  serializer_logic_version  6
 $ pnpm sql "insert into transaction_watchers values ('TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN', NULL, 'openbookv2 twap watcher', 0, NULL, 0)"
 */
 
-type TransactionWatcherRecord = typeof schema.transactionWatchers._.model.select;
+type TransactionWatcherRecord =
+  typeof schema.transactionWatchers._.model.select;
 type TransactionRecord = typeof schema.transactions._.model.insert;
 
 const watchers: Record<string, TransactionWatcher> = {};
@@ -37,7 +43,13 @@ class TransactionWatcher {
   private rpcWebsocket: number | undefined;
   private stopped: boolean;
   private backfilling: boolean;
-  public constructor({acct, description, latestTxSig, checkedUpToSlot, serializerLogicVersion}: TransactionWatcherRecord) {
+  public constructor({
+    acct,
+    description,
+    latestTxSig,
+    checkedUpToSlot,
+    serializerLogicVersion,
+  }: TransactionWatcherRecord) {
     this.account = new PublicKey(acct);
     this.description = description;
     this.latestTxSig = latestTxSig ?? undefined;
@@ -50,7 +62,11 @@ class TransactionWatcher {
 
   private async start() {
     if (this.pollerIntervalId !== undefined) {
-      throw new Error(`Interval was ${this.pollerIntervalId} when starting ${this.account.toBase58()}`);
+      logger.error(
+        `Interval was ${
+          this.pollerIntervalId
+        } when starting ${this.account.toBase58()}`
+      );
     }
     await this.backfillFromLatest();
     // TODO: add websocket for realtime updates (might be lossy, but would allow us to increase poll time meaning less rpc costs)
@@ -67,9 +83,11 @@ class TransactionWatcher {
     const history = await getTransactionHistory(
       this.account,
       this.checkedUpToSlot,
-      {after: this.latestTxSig}
+      { after: this.latestTxSig }
     );
-    console.log(`history after ${this.latestTxSig} is length ${history.length}`);
+    console.log(
+      `history after ${this.latestTxSig} is length ${history.length}`
+    );
     const db = await getDBConnection();
     try {
       const acct = this.account.toBase58();
@@ -84,65 +102,97 @@ class TransactionWatcher {
         const slot = BigInt(slotAsNum);
         // TODO: lock should be done here. It's probably fine for now since we only have 1 instance.
         //       I can think of weird states though where you have this stopped watcher and another started one.
-        // Leaving as todo since optimistic locking might be preferred 
-        const curWatcherRecord = (await db.con.select().from(schema.transactionWatchers).where(eq(schema.transactionWatchers.acct, acct)).execute())[0];
-        const {checkedUpToSlot} = curWatcherRecord;
+        // Leaving as todo since optimistic locking might be preferred
+        const curWatcherRecord = (
+          await db.con
+            .select()
+            .from(schema.transactionWatchers)
+            .where(eq(schema.transactionWatchers.acct, acct))
+            .execute()
+        )[0];
+        const { checkedUpToSlot } = curWatcherRecord;
         if (slot <= checkedUpToSlot) {
-          throw new Error(`watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`);
-          process.exit(1);
+          logger.error(
+            `watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`
+          );
+          process.exit(1); // do we still want to exit?
         }
-        const maybeCurTxRecord = await db.con.select().from(schema.transactions).where(eq(schema.transactions.txSig, signature)).execute();
-        if (maybeCurTxRecord.length === 0 || maybeCurTxRecord[0].serializerLogicVersion < SERIALIZED_TRANSACTION_LOGIC_VERSION) {
+        const maybeCurTxRecord = await db.con
+          .select()
+          .from(schema.transactions)
+          .where(eq(schema.transactions.txSig, signature))
+          .execute();
+        if (
+          maybeCurTxRecord.length === 0 ||
+          maybeCurTxRecord[0].serializerLogicVersion <
+            SERIALIZED_TRANSACTION_LOGIC_VERSION
+        ) {
           const parseTxResult = await getTransaction(signature);
           if (!parseTxResult.success) {
             console.log(`Failed to parse tx ${signature}`);
             console.log(JSON.stringify(parseTxResult.error));
             process.exit(1);
           }
-          const {ok: serializableTx} = parseTxResult;
+          const { ok: serializableTx } = parseTxResult;
           const transactionRecord: TransactionRecord = {
             txSig: signature,
             slot,
             blockTime: new Date(serializableTx.blockTime * 1000), // TODO need to verify if this is correct
             failed: serializableTx.err !== undefined,
             payload: serialize(parseTxResult.ok),
-            serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION
+            serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
           };
-          const upsertResult = await db.con.insert(schema.transactions).values(transactionRecord)
+          const upsertResult = await db.con
+            .insert(schema.transactions)
+            .values(transactionRecord)
             .onConflictDoUpdate({
               target: schema.transactions.txSig,
-              set: transactionRecord
+              set: transactionRecord,
             })
-            .returning({txSig: schema.transactions.txSig});
-          if (upsertResult.length !== 1 || upsertResult[0].txSig !== signature) {
-            console.log(`Failed to upsert ${signature}. ${JSON.stringify(transactionRecord)}`);
+            .returning({ txSig: schema.transactions.txSig });
+          if (
+            upsertResult.length !== 1 ||
+            upsertResult[0].txSig !== signature
+          ) {
+            console.log(
+              `Failed to upsert ${signature}. ${JSON.stringify(
+                transactionRecord
+              )}`
+            );
             process.exit(1);
           }
         }
         // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
         //       be a no-op in the happy path
-        await db.con.insert(schema.transactionWatcherTransactions).values({
-          txSig: signature,
-          slot,
-          watcherAcct: acct
-        }).onConflictDoNothing();
+        await db.con
+          .insert(schema.transactionWatcherTransactions)
+          .values({
+            txSig: signature,
+            slot,
+            watcherAcct: acct,
+          })
+          .onConflictDoNothing();
         // We could opt to only update slot at end, but updating it now means indexers can progress while a backfill is in progress.
         // That's preferrable since the backfill could be a lot of transactions and it could stall if there are any bugs in the tx backup logic
         // We can't set the checked up to slot as the current tx's slot, since there might be a tx after this one on the same slot. So we instead
         // need to set it to the prior tx's slot if that slot is less than the current slot.
-        const newCheckedUpToSlot = slot > priorSlot ? priorSlot : this.checkedUpToSlot;
-        const updateResult = await db.con.update(schema.transactionWatchers)
+        const newCheckedUpToSlot =
+          slot > priorSlot ? priorSlot : this.checkedUpToSlot;
+        const updateResult = await db.con
+          .update(schema.transactionWatchers)
           .set({
             acct,
             latestTxSig: signature,
             firstTxSig: curWatcherRecord.firstTxSig ?? signature,
             serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-            checkedUpToSlot: newCheckedUpToSlot
+            checkedUpToSlot: newCheckedUpToSlot,
           })
           .where(eq(schema.transactionWatchers.acct, acct))
-          .returning({acct: schema.transactionWatchers.acct});
+          .returning({ acct: schema.transactionWatchers.acct });
         if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
-          console.log(`Failed to update tx watcher for acct ${acct} on tx ${signature}`);
+          console.log(
+            `Failed to update tx watcher for acct ${acct} on tx ${signature}`
+          );
           process.exit(1);
         }
         priorSlot = slot;
@@ -163,12 +213,14 @@ class TransactionWatcher {
       }
       const updateResult = await db.con.update(schema.transactionWatchers)
         .set({
-          checkedUpToSlot: newCheckedUpToSlot
+          checkedUpToSlot: newCheckedUpToSlot,
         })
         .where(eq(schema.transactionWatchers.acct, acct))
-        .returning({acct: schema.transactionWatchers.acct});
+        .returning({ acct: schema.transactionWatchers.acct });
       if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
-        console.log(`Failed to update tx watcher for acct ${acct} at end of backfill`);
+        console.log(
+          `Failed to update tx watcher for acct ${acct} at end of backfill`
+        );
         process.exit(1);
       }
       this.checkedUpToSlot = newCheckedUpToSlot;
@@ -182,7 +234,11 @@ class TransactionWatcher {
   public stop() {
     this.stopped = true;
     if (this.pollerIntervalId === undefined) {
-      throw new Error(`Interval was ${this.pollerIntervalId} when stopping ${this.account.toBase58()}`);
+      logger.error(
+        `Interval was ${
+          this.pollerIntervalId
+        } when stopping ${this.account.toBase58()}`
+      );
     }
     clearInterval(this.pollerIntervalId);
     this.pollerIntervalId = undefined;
@@ -207,21 +263,29 @@ export async function startTransactionWatchers() {
         if (!alreadyWatching) {
           watchersToStart.add(watcherInDb.acct);
         } else {
-          if (watcherInDb.serializerLogicVersion !== SERIALIZED_TRANSACTION_LOGIC_VERSION) {
-            const {acct, serializerLogicVersion} = watcherInDb;
-            console.log(`reseting ${acct}. existing logic version of ${serializerLogicVersion} current is ${SERIALIZED_TRANSACTION_LOGIC_VERSION}`);
+          if (
+            watcherInDb.serializerLogicVersion !==
+            SERIALIZED_TRANSACTION_LOGIC_VERSION
+          ) {
+            const { acct, serializerLogicVersion } = watcherInDb;
+            console.log(
+              `reseting ${acct}. existing logic version of ${serializerLogicVersion} current is ${SERIALIZED_TRANSACTION_LOGIC_VERSION}`
+            );
             watchers[acct]?.stop();
             delete watchers[acct];
-            const updated = await db.con.update(schema.transactionWatchers)
+            const updated = await db.con
+              .update(schema.transactionWatchers)
               .set({
                 serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
                 latestTxSig: null,
-                checkedUpToSlot: BigInt(0)
+                checkedUpToSlot: BigInt(0),
               })
               .where(eq(schema.transactionWatchers.acct, acct))
-              .returning({acct: schema.transactionWatchers.acct});
+              .returning({ acct: schema.transactionWatchers.acct });
             if (updated.length !== 1 || updated[0].acct !== acct) {
-              throw new Error(`Failed to update ${acct} watcher. ${JSON.stringify(updated)}`);
+              logger.error(
+                `Failed to update ${acct} watcher. ${JSON.stringify(updated)}`
+              );
             }
           }
         }
@@ -234,7 +298,7 @@ export async function startTransactionWatchers() {
       if (watchersToStop.size) {
         console.log(`Stopping ${watchersToStop.size} watchers:`);
         let i = 0;
-        for(const watcherToStopAcct of watchersToStop) {
+        for (const watcherToStopAcct of watchersToStop) {
           console.log(` ${++i}. ${watcherToStopAcct}`);
           watchers[watcherToStopAcct]?.stop();
           delete watchers[watcherToStopAcct];
