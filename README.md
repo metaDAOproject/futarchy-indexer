@@ -66,6 +66,12 @@ TODO
 
 Starts the service
 
+### `create-tx-watcher` script
+Creates a new transaction watcher on a particular account
+
+### `reset-tx-watcher` script
+Resets an existing transaction watcher to a particular transaction/slot (or resets it back to 0)
+
 ### `publish-client` script
 
 TODO
