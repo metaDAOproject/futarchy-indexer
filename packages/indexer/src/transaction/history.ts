@@ -33,12 +33,12 @@ export async function getTransactionHistory(account: PublicKey, largerThanSlot: 
         // Transactions are assumed to be in time descending order.
         throwInvariantViolation(account, after, before, `index ${i - 1} signature ${prev.signature} has slot ${prev.slot} while index ${i} signature ${cur.signature} has slot ${cur.slot}`);
       }
-      if (cur.slot < largerThanSlot) {
-        throwInvariantViolation(account, after, before, `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`);
-      }
       if (cur.signature === after) {
         reachedAfter = true;
         break;
+      }
+      if (cur.slot < largerThanSlot) {
+        throwInvariantViolation(account, after, before, `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`);
       }
       history.push(cur);
       earliestSig = cur.signature;

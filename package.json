@@ -4,9 +4,10 @@
     "sql": "pnpm --filter @themetadao/indexer-db sql",
     "update-hasura": "echo 'hello world'",
     "start-service": "pnpm --filter @themetadao/indexer-service start",
+    "reset-tx-watcher": "pnpm --filter @themetadao/indexer-service cli txw reset",
+    "create-tx-watcher": "pnpm --filter @themetadao/indexer-service cli txw create",
     "test": "pnpm --filter @themetadao/indexer-service test",
     "publish-client": "echo 'hello world'"
-    
   },
   "devDependencies": {
     "bun": "1.0.26"

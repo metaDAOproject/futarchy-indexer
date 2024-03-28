@@ -4,6 +4,6 @@
     "module": "ESNext",
     "target": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["node", "bun-types"]
+    "types": ["node", "bun-types", "inquirer"]
   }
 }

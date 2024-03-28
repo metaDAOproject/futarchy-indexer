@@ -63,7 +63,7 @@ class TransactionWatcher {
     if (this.stopped) return;
     if (this.backfilling) return;
     this.backfilling = true;
-    const latestConfirmedSlot = BigInt(await connection.getSlot('confirmed'));
+    const latestFinalizedSlot = BigInt(await connection.getSlot('finalized'));
     const history = await getTransactionHistory(
       this.account,
       this.checkedUpToSlot,
@@ -156,7 +156,11 @@ class TransactionWatcher {
       // transaction, and this would mean indexers would stall in cases where some of the dependent watchers don't have frequent transactions.
       // It's possible that this might be the source of bugs if somehow new transactions come in that are before the latest confirmed slot but were
       // not returned by the RPC's tx history.
-      const newCheckedUpToSlot = this.checkedUpToSlot > latestConfirmedSlot ? this.checkedUpToSlot : latestConfirmedSlot;
+      // EDIT: encountered above bug so trying to resolve by switching to finalized slot rather than confirmed.
+      const newCheckedUpToSlot = this.checkedUpToSlot > latestFinalizedSlot ? this.checkedUpToSlot : latestFinalizedSlot;
+      if (newCheckedUpToSlot === latestFinalizedSlot) {
+        console.log(`For acct ${acct}, using finalized slot of ${latestFinalizedSlot}`);
+      }
       const updateResult = await db.con.update(schema.transactionWatchers)
         .set({
           checkedUpToSlot: newCheckedUpToSlot
@@ -193,11 +197,10 @@ export async function startTransactionWatchers() {
     const db = await getDBConnection();
     try {
       const curWatchers = await db.con.select().from(schema.transactionWatchers).execute();
-      console.log(`total watchers in db = ${curWatchers.length}`);
-      console.log(`total watchers in running = ${Object.keys(watchers).length}`);
       const curWatchersByAccount: Record<string, TransactionWatcherRecord> = {};
       const watchersToStart: Set<string> = new Set();
       const watchersToStop: Set<string> = new Set();
+      // TODO: we need a way to reset running watchers if they're slot or tx was rolled back
       for (const watcherInDb of curWatchers) {
         curWatchersByAccount[watcherInDb.acct] = watcherInDb;
         const alreadyWatching = watcherInDb.acct in watchers;
