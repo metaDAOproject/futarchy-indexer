@@ -1,21 +1,26 @@
-import { getProposals } from './proposal-indexer';
-import { getTransactionHistory } from './transaction/history';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
-import { OpenbookTwapIndexer } from './indexers/openbook-twap/openbook-twap-indexer';
-import { AutocratV0_1Indexer } from './indexers/autocrat/autocrat-v0_1-indexer';
-import { AutocratV0Indexer } from './indexers/autocrat/autocrat-v0-indexer';
-import { startTransactionWatchers } from './transaction/watcher';
-import { startIndexers } from './indexers';
-import { getTransaction } from './transaction/serializer';
-import { connection } from './connection';
+import { getProposals } from "./proposal-indexer";
+import { getTransactionHistory } from "./transaction/history";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { OpenbookTwapIndexer } from "./indexers/openbook-twap/openbook-twap-indexer";
+import { AutocratV0_1Indexer } from "./indexers/autocrat/autocrat-v0_1-indexer";
+import { AutocratV0Indexer } from "./indexers/autocrat/autocrat-v0-indexer";
+import { startTransactionWatchers } from "./transaction/watcher";
+import { startIndexers } from "./indexers";
+import { getTransaction } from "./transaction/serializer";
+import { connection } from "./connection";
+import { startMetricsServer } from "./metrics";
 
 //const proposals = await getProposals();
 //console.log(`got ${proposals.length} proposals`);
 //proposals.forEach(proposal => { console.log(JSON.stringify(proposal, null, 2)) });
 //const proposal = proposals[0];
 //const passTwapAcct = proposal.account.openbookTwapPassMarket;
-const prop9PassTwapAcct = new PublicKey("GpLACVBR3DMxNDfeFMKrhNnycs7ghdCwJeXSvccL5a3Z");
-const prop10PassTwapAcct = new PublicKey("EgAtJ6WXAiXEQfTL2ci8dLY2dnynLP4tsspF9u8uiiAn");
+const prop9PassTwapAcct = new PublicKey(
+  "GpLACVBR3DMxNDfeFMKrhNnycs7ghdCwJeXSvccL5a3Z"
+);
+const prop10PassTwapAcct = new PublicKey(
+  "EgAtJ6WXAiXEQfTL2ci8dLY2dnynLP4tsspF9u8uiiAn"
+);
 
 // V0 transactions (from autocrat 0.1) (metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq)
 // z3EFh3BtGMT5Y5suVYDthUFS5v8WioxdDo8HMwMbyfvieyBBN8jazJkMSXBALRfMac2RpZJXsahdNziQfvqVU8m
@@ -73,5 +78,6 @@ console.log("parsed transaction");
 print(await connection.getParsedTransaction(sig, {maxSupportedTransactionVersion: 0}));
 //*/
 
+startMetricsServer();
 startTransactionWatchers();
 //startIndexers();
