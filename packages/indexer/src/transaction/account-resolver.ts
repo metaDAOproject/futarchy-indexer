@@ -4,7 +4,6 @@ import { connection } from '../connection';
 
 export enum ResolveAccountsErrorType {
   AddressTableLookupsInLegacy = 'AddressTableLookupsInLegacy',
-  NoLookupTablesInV0 = 'NoLookupTablesInV0',
   MissingLookupTableResponse = 'MissingLookupTableResponse',
   UnsupportedTransactionVersion = 'UnsupportedTransactionVersion'
 }
@@ -13,9 +12,6 @@ export type ResolveAccountsError =
   {
     type: ResolveAccountsErrorType.AddressTableLookupsInLegacy;
     lookups: MessageAddressTableLookup[];
-  } |
-  {
-    type: ResolveAccountsErrorType.NoLookupTablesInV0;
   } |
   {
     type: ResolveAccountsErrorType.MissingLookupTableResponse;
@@ -37,9 +33,6 @@ export async function resolveAccounts({transaction, version}: VersionedTransacti
       accountKeys = transaction.message.getAccountKeys();
       break;
     case 0:
-      if (transaction.message.addressTableLookups.length === 0) {
-        return Err({type: ResolveAccountsErrorType.NoLookupTablesInV0});
-      }
       // https://solana.stackexchange.com/questions/8652/how-do-i-parse-the-accounts-in-a-versioned-transaction
       const lookupTables: AddressLookupTableAccount[] = [];
       for (const {accountKey} of transaction.message.addressTableLookups) {
