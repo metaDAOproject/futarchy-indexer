@@ -34,4 +34,5 @@ export class Logger {
   }
 }
 
-export default new Logger();
+// TODO: add lint rule preventing default exports (default exports are antithetical to IDE auto refactors)
+export const logger = new Logger();

@@ -1,7 +1,7 @@
 import { AUTOCRAT_VERSIONS } from "@themetadao/futarchy-ts/lib/constants";
 import { IDL, AutocratV0 } from "@themetadao/futarchy-ts/lib/idl/autocrat_v0.1";
 import { InstructionIndexer, Ok } from "../instruction-indexer";
-import logger from "../../logger";
+import { logger } from "../../logger";
 
 const AUTOCRAT_V0_1 = AUTOCRAT_VERSIONS[AUTOCRAT_VERSIONS.length - 2];
 

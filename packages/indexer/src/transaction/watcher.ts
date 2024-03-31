@@ -7,7 +7,7 @@ import {
 } from "./serializer";
 import { getTransactionHistory } from "./history";
 import { connection } from "../connection";
-import logger from "../logger";
+import { logger } from "../logger";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
@@ -62,11 +62,13 @@ class TransactionWatcher {
 
   private async start() {
     if (this.pollerIntervalId !== undefined) {
-      logger.error(
+      const error = new Error(
         `Interval was ${
           this.pollerIntervalId
         } when starting ${this.account.toBase58()}`
-      );
+      )
+      logger.error(error.message);
+      throw error;
     }
     await this.backfillFromLatest();
     // TODO: add websocket for realtime updates (might be lossy, but would allow us to increase poll time meaning less rpc costs)
@@ -115,7 +117,9 @@ class TransactionWatcher {
           logger.error(
             `watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`
           );
-          process.exit(1); // do we still want to exit?
+          // TODO: watcher should not continue since invariant was violated and continuing would result in invalid data, but we also don't want to disrupt other
+          //       processes which have no problems.
+          process.exit(1); 
         }
         const maybeCurTxRecord = await db.con
           .select()
@@ -283,9 +287,11 @@ export async function startTransactionWatchers() {
               .where(eq(schema.transactionWatchers.acct, acct))
               .returning({ acct: schema.transactionWatchers.acct });
             if (updated.length !== 1 || updated[0].acct !== acct) {
-              logger.error(
+              const error = new Error(
                 `Failed to update ${acct} watcher. ${JSON.stringify(updated)}`
               );
+              logger.error(error.message);
+              throw error;
             }
           }
         }

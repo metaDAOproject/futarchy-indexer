@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import logger from "./logger";
+import { logger } from "./logger";
 
 const CACHE_DIR = path.resolve(__dirname, "cache");
 const CACHE_LOCALLY = false; // TODO: turn off when ready to actually start indexing
@@ -26,7 +26,7 @@ export async function get(key: string[]): Promise<string[] | undefined> {
   if (!CACHE_LOCALLY) return undefined;
   const { file } = getFileAndDirPath(key);
   if (fs.existsSync(file)) {
-    console.log(`Cache hit on ${key.join("/")}`);
+    logger.log(`Cache hit on ${key.join("/")}`);
     return (await fs.promises.readFile(file)).toString().split("\n");
   }
   return undefined;

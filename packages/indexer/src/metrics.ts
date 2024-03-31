@@ -1,5 +1,6 @@
 import express from "express";
 import { Registry, collectDefaultMetrics } from "@lukasdeco/prom-client";
+import { logger } from './logger';
 
 const METRICS_PORT = 8080;
 
@@ -18,6 +19,7 @@ export function startMetricsServer() {
 
   const app = express();
 
+  // TODO: add authz layer to all API calls
   app.get("/metrics", function (_, res) {
     res.setHeader("Content-Type", register.contentType);
 
@@ -27,6 +29,6 @@ export function startMetricsServer() {
   });
 
   app.listen(METRICS_PORT, () => {
-    console.log("Prometheus Metrics Servier listening on Port", METRICS_PORT);
+    logger.log(`Prometheus Metrics Servier listening on Port ${METRICS_PORT}`);
   });
 }

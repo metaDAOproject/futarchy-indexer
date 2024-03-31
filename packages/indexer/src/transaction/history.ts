@@ -1,6 +1,6 @@
 import { connection } from "../connection";
 import { PublicKey } from "@solana/web3.js";
-import logger from "../logger";
+import { logger } from "../logger";
 
 export type TransactionMeta = Awaited<
   ReturnType<(typeof connection)["getSignaturesForAddress"]>
@@ -12,9 +12,9 @@ function throwInvariantViolation(
   before: string | undefined,
   violation: string
 ) {
-  logger.error(
-    `Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`
-  );
+  const error = new Error(`Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`);
+  logger.error(error.message);
+  throw error;
 }
 
 export async function getTransactionHistory(
@@ -83,7 +83,7 @@ export async function getTransactionHistory(
         `account contained before value of ${earliestSig}`
       );
     }
-    console.log(
+    logger.log(
       `page ${page} for ${account.toBase58()} (${history.length} total)`
     );
     page++;
