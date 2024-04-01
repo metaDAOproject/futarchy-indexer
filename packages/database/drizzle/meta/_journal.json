@@ -64,6 +64,13 @@
       "when": 1710316845121,
       "tag": "0008_married_vivisector",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1711966211107,
+      "tag": "0009_bouncy_klaw",
+      "breakpoints": true
     }
   ]
 }

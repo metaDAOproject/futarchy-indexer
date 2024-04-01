@@ -39,8 +39,17 @@ function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
   return varchar(columnName, {enum: Object.values(enumObj) as NonEmptyList<T>});
 }
 
+export const daos = pgTable('daos', {
+  daoAcct: pubkey('dao_acct').primaryKey(),
+  name: varchar('name').notNull(),
+  url: varchar('url').notNull(),
+  // In FaaS, each DAO is tied to its own token which futarchic markets will aim to pomp to the moon
+  mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull()
+});
+
 export const proposals = pgTable('proposals', {
   proposalAcct: pubkey('proposal_acct').primaryKey(),
+  daoAcct: pubkey('dao_acct').references(() => daos.daoAcct).notNull(),
   proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
   autocratVersion: doublePrecision('autocrat_version').notNull(),
   proposerAcct: pubkey('proposer_acct').notNull(),
