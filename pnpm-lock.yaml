@@ -89,8 +89,8 @@ importers:
         specifier: ^0.28.1-beta.2
         version: 0.28.1-beta.2
       '@lukasdeco/prom-client':
-        specifier: ^15.1.1
-        version: 15.1.1
+        specifier: ^15.1.4
+        version: 15.1.4
       '@openbook-dex/openbook-v2':
         specifier: ^0.1.9
         version: 0.1.10
@@ -531,8 +531,8 @@ packages:
     dependencies:
       call-bind: 1.0.6
 
-  /@lukasdeco/prom-client@15.1.1:
-    resolution: {integrity: sha512-qOdOtEL8dhrPkYwSUni6SxbR7s/h768e/LS4dFa5Ru0D2A2iqnY2GH7TnQD7xii8WpyLUxMJ8g9Tjs0LmJrhUg==}
+  /@lukasdeco/prom-client@15.1.4:
+    resolution: {integrity: sha512-knwH2nXj47+jdmZEo7Mpv5TURRyVRamgxRBeCnGXu5crZS1rRI70+p0WX7l+V6b/llp7Rs+SjbFJORez5W3ghA==}
     engines: {node: ^16 || ^18 || >=20}
     dependencies:
       '@opentelemetry/api': 1.8.0
