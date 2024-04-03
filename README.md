@@ -72,6 +72,9 @@ Creates a new transaction watcher on a particular account
 ### `reset-tx-watcher` script
 Resets an existing transaction watcher to a particular transaction/slot (or resets it back to 0)
 
+### `validate-tx-watcher`
+Validates whether the cached txs for an account matches the  
+
 ### `publish-client` script
 
 TODO

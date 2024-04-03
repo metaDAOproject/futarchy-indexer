@@ -6,6 +6,7 @@
     "start-service": "pnpm --filter @themetadao/indexer-service start",
     "reset-tx-watcher": "pnpm --filter @themetadao/indexer-service cli txw reset",
     "create-tx-watcher": "pnpm --filter @themetadao/indexer-service cli txw create",
+    "validate-tx-watcher": "pnpm --filter @themetadao/indexer-service cli txw validate",
     "test": "pnpm --filter @themetadao/indexer-service test",
     "publish-client": "echo 'hello world'"
   },

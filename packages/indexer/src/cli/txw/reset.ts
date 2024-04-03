@@ -1,21 +1,13 @@
 import { getDBConnection, schema, eq } from "@themetadao/indexer-db";
 import inquirer from 'inquirer';
+import { selectAccount } from './common/select-account';
 import { getTransaction } from "../../transaction/serializer";
 
 export async function reset() {
+  const account = await selectAccount();
   const db = await getDBConnection();
   try {
-    const accounts = (await db.con.select().from(schema.transactionWatchers)).map(({acct}) => acct);
     const prompt = inquirer.createPromptModule();
-    const ACCOUNT_ANSWER = 'account';
-    const account: string = (await prompt([
-      {
-        type: 'list',
-        name: ACCOUNT_ANSWER,
-        message: 'Select account to reset:',
-        choices: accounts
-      }
-    ]))[ACCOUNT_ANSWER];
     const TX_ANSWER = 'tx';
     const transaction: string = (await prompt([
       {

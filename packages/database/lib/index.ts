@@ -22,4 +22,4 @@ export type DBTransaction =
   Parameters<Parameters<(Awaited<ReturnType<typeof getDBConnection>>)['con']['transaction']>[0]>[0];
 
 export const schema = schemaDefs;
-export {eq, sql} from 'drizzle-orm';
+export {eq, sql, desc, count, lte} from 'drizzle-orm';

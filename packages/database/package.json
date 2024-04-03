@@ -9,7 +9,7 @@
     "sql": "bun src/run-sql.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.27.2",
+    "drizzle-orm": "^0.30.6",
     "pg": "^8.11.3"
   },
   "devDependencies": {
