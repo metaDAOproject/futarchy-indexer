@@ -1,0 +1,15 @@
+name: Build and Apply Hasura Metadata
+on:
+  push:
+    paths:
+      - "packages/hasura/**"
+jobs:
+  update_hasura:
+    name: Update Hasura Configuration based on any metadata changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Apply Hasura metadata
+        run: |
+          cd packages/hasura
+          bun run set-metadata
