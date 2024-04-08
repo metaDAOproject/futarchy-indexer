@@ -6,8 +6,18 @@ jobs:
     name: Update Hasura Configuration based on any metadata changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Apply Hasura metadata
-        run: |
-          cd packages/hasura
-          bun run set-metadata
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Apply hasura metadata
+        uses: tibotiber/hasura-action@master # use a tagged version instead of master
+        with:
+          args: metadata apply
+        env:
+          HASURA_ENDPOINT: ${{ secrets.HASURA_ENDPOINT }}
+          HASURA_ADMIN_SECRET: ${{ secrets.HASURA_ADMIN_SECRET }}
+          HASURA_WORKDIR: packages/hasura # replace this by your own path if needed
+          HASURA_ENGINE_VERSION: v3.0.0
