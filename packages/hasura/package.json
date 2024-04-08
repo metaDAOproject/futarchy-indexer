@@ -5,7 +5,7 @@
   "scripts": {
     "gen-client": "",
     "gen-metadata": "bun src",
-    "set-metadata": "hasura metadata ",
+    "set-metadata": "hasura metadata apply",
     "get-metadata": "hasura metadata export"
   },
   "dependencies": {

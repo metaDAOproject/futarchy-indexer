@@ -1,0 +1,11 @@
+table:
+  name: orders
+  schema: public
+select_permissions:
+  - role: client
+    permission:
+      columns: []
+      filter:
+        actor_acct:
+          _eq: X-User-Wallet
+    comment: ""
