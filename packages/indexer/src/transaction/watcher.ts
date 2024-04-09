@@ -8,7 +8,7 @@ import {
 import { getTransactionHistory } from "./history";
 import { connection } from "../connection";
 import { logger } from "../logger";
-import { Err, Ok, TaggedUnion, match } from "../match";
+import { Err, Ok, TaggedUnion } from "../match";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
@@ -89,20 +89,25 @@ class TransactionWatcher {
 
   private async handleBackfillFromLatest() {
     const backfillRes = await this.backfillFromLatest();
-    match(
-      backfillRes,
-      (ok) => {
-        if (this.account) {
-          logger.info(
-            `successfully ran backfill for acct: ${this.account.toBase58()}`
+    switch (backfillRes.success) {
+      case true:
+        {
+          if (this.account) {
+            logger.info(
+              `successfully ran backfill for acct: ${this.account.toBase58()}`
+            );
+          }
+          logger.info(`success message: ${backfillRes.ok}`);
+        }
+        break;
+      case false:
+        {
+          logger.error(
+            `error running backfill from latest: ${backfillRes.error.type}`
           );
         }
-        logger.info(`success message: ${ok}`);
-      },
-      (err) => {
-        logger.error(`error running backfill from latest: ${err.type}`);
-      }
-    );
+        break;
+    }
   }
 
   private async backfillFromLatest(): Promise<

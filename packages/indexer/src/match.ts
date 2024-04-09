@@ -16,16 +16,3 @@ export function Err<Ok, Err extends TaggedUnion>(error: Err): Result<Ok, Err> {
 export function Ok<Ok, Err extends TaggedUnion>(ok: Ok): Result<Ok, Err> {
   return { success: true, ok };
 }
-
-// Define the match function
-export function match<Ok, Err extends TaggedUnion, T>(
-  result: Result<Ok, Err>,
-  okHandler: (ok: Ok) => T,
-  errorHandler: (err: Err) => T
-): T {
-  if (result.success) {
-    return okHandler(result.ok);
-  } else {
-    return errorHandler(result.error);
-  }
-}
