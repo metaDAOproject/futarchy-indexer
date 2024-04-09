@@ -1,6 +1,9 @@
 name: Build and Apply Hasura Metadata
 on:
   push:
+    branches: [main]
+    paths:
+      - "/packages/hasura/**"
 jobs:
   update_hasura:
     name: Update Hasura Configuration based on any metadata changes
