@@ -16,8 +16,8 @@ jobs:
         uses: tibotiber/hasura-action@master # use a tagged version instead of master
         with:
           args: metadata apply
+          workdir:
         env:
           HASURA_ENDPOINT: ${{ secrets.HASURA_ENDPOINT_MAIN }}
           HASURA_ADMIN_SECRET: ${{ secrets.HASURA_ADMIN_SECRET_MAIN }}
           HASURA_WORKDIR: packages/hasura # replace this by your own path if needed
-          HASURA_ENGINE_VERSION: v3.0.0
