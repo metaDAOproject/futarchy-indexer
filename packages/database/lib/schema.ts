@@ -1,7 +1,8 @@
+import { sql } from 'drizzle-orm';
 import { 
   bigint, doublePrecision, integer, numeric, smallint,
-  index, pgTable, primaryKey,
-  boolean, timestamp, varchar, text
+  index, pgTable, primaryKey, unique,
+  boolean, timestamp, varchar, text, jsonb
 } from 'drizzle-orm/pg-core';
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -33,6 +34,18 @@ export enum ProposalOutcome {
   Failed = 'Failed'
 }
 
+export enum Reactions {
+  ThumbsUp = 'ThumbsUp',
+  Rocket = 'Rocket',
+  Heart = 'Heart',
+  ThumbsDown = 'ThumbsDown',
+  Fire = 'Fire',
+  Eyes = 'Eyes',
+  LaughingFace = 'LaughingFace',
+  FrownyFace = 'FrownyFace',
+  Celebrate = 'Celebrate'
+}
+
 type NonEmptyList<E> = [E, ...E[]];
 
 function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
@@ -43,20 +56,29 @@ export const daos = pgTable('daos', {
   daoAcct: pubkey('dao_acct').primaryKey(),
   name: varchar('name').notNull(),
   url: varchar('url').notNull(),
+  xAccount: varchar('x_account'),
+  gitHub: varchar('github'),
+  description: text('description'),
   // In FaaS, each DAO is tied to its own token which futarchic markets will aim to pomp to the moon
-  mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull()
+  mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull(),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at').notNull().default(sql`now()`),
 });
 
 export const proposals = pgTable('proposals', {
   proposalAcct: pubkey('proposal_acct').primaryKey(),
   daoAcct: pubkey('dao_acct').references(() => daos.daoAcct).notNull(),
   proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
+  title: varchar('title'),
+  description: varchar('description'),
+  categories: jsonb('categories'),
+  content: text('content'),
   autocratVersion: doublePrecision('autocrat_version').notNull(),
   proposerAcct: pubkey('proposer_acct').notNull(),
   initialSlot: slot('initial_slot').notNull(),
-  outcome: pgEnum('outcome', ProposalOutcome).notNull(),
+  status: pgEnum('status', ProposalOutcome).notNull(),
   descriptionURL: varchar('description_url'),
-  updatedAt: timestamp('updated_at').notNull()
+  updatedAt: timestamp('updated_at').default(sql`now()`).notNull()
 });
 
 export const markets = pgTable('markets', {
@@ -274,4 +296,32 @@ export const candles = pgTable('candles', {
   condMarketTwap: tokenAmount('cond_market_twap')
 }, table => ({
   pk: primaryKey(table.marketAcct, table.candleDuration, table.timestamp)
+}));
+
+export const comments = pgTable('comments', {
+  // Need this as we reference this for response and nesting
+  commentId: bigint('comment_id', {mode: 'bigint'}).notNull(),
+  // Generated when comment is created
+  commentorAcct: pubkey('commentor_acct').notNull(),
+  proposalAcct: pubkey('proposal_acct').notNull(),
+  // This will be the body content of the comment
+  content: text('content').notNull(),
+  // Use only if its a responding comment in a chain, we should constrain this so
+  // it references only commentIds which have respondingCommentId with NULL
+  respondingCommentId: bigint('responding_comment_id', {mode: 'bigint'}).references(() => comments.commentId),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`)
+}, table => ({
+  pk: primaryKey(table.commentId, table.commentorAcct, table.proposalAcct),
+  first: unique('commentor_content').on(table.commentorAcct, table.content)
+}));
+
+export const reactions = pgTable('reactions', {
+  reactorAcct: pubkey('reactor_acct').notNull(),
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct).notNull(),
+  reaction: pgEnum('reaction', Reactions).notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+}, table => ({
+  // Note: we maybe should do a unique reactorAcct + proposalAcct, but
+  // at the very least should unique reactorAcct + proposalAcct + reaction
+  pk: primaryKey(table.proposalAcct, table.reaction, table.reactorAcct)
 }));
