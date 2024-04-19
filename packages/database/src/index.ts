@@ -1,15 +1,12 @@
-import { getDBConnection } from '../lib';
+import { usingDb } from '../lib';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 
 async function main() {
-  const db = await getDBConnection();
-  try {
+  await usingDb(async db => {
     console.log('migration started');
-    await migrate(db.con, {migrationsFolder: 'drizzle'});
+    await migrate(db, {migrationsFolder: 'drizzle'});
     console.log('migration finished');
-  } finally {
-    db.client.release();
-  }
+  });
 }
 
 main()

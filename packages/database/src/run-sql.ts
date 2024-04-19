@@ -1,4 +1,4 @@
-import { getDBConnection, sql } from '../lib';
+import { usingDb, sql } from '../lib';
 import { green } from 'ansicolor';
 import table from 'as-table';
 import inquirer from 'inquirer';
@@ -23,22 +23,17 @@ async function chooseCommonStatement(): Promise<string> {
 }
 
 async function main() {
-  const db = await getDBConnection();
-  try {
-    const arg = process.argv[2];
-    const statement = arg ?? await chooseCommonStatement();
-    console.log(green(statement));
-    const result = await db.con.execute(sql.raw(statement));
-    if (result.rowCount) {
-      console.log('total:', result.rowCount);
-      console.log(table(result.rows));
-      return;
-    }
-    // TODO: pretty print other types of output
-    console.log(result);
-  } finally {
-    db.client.release();
+  const arg = process.argv[2];
+  const statement = arg ?? await chooseCommonStatement();
+  console.log(green(statement));
+  const result = await usingDb(db => db.execute(sql.raw(statement)));
+  if (result.rowCount) {
+    console.log('total:', result.rowCount);
+    console.log(table(result.rows));
+    return;
   }
+  // TODO: pretty print other types of output
+  console.log(result);
 }
 
 main()

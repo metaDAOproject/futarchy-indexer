@@ -1,4 +1,4 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schemaDefs from './schema';
 import { Pool } from 'pg';
 
@@ -13,13 +13,18 @@ const pool = new Pool({
   idleTimeoutMillis: 20 * 1000
 });
 
-export async function getDBConnection() {
+export async function usingDb<T>(fn: (connection: NodePgDatabase<typeof schemaDefs>) => Promise<T>): Promise<T> {
   const client = await pool.connect();
-  return {con: drizzle(pool, {schema: schemaDefs}), client};
+  const connection = drizzle(pool, {schema: schemaDefs});
+  try {
+    const result = await fn(connection);
+    return result;
+  } finally {
+    client.release();
+  }
 }
 
-export type DBTransaction = 
-  Parameters<Parameters<(Awaited<ReturnType<typeof getDBConnection>>)['con']['transaction']>[0]>[0];
+export type DBTransaction = Parameters<Parameters<NodePgDatabase<typeof schemaDefs>['transaction']>[0]>[0];
 
 export const schema = schemaDefs;
 export {eq, sql, desc, count, lte} from 'drizzle-orm';
