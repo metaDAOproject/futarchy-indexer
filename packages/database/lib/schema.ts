@@ -303,7 +303,7 @@ export const comments = pgTable('comments', {
   commentId: bigint('comment_id', {mode: 'bigint'}).notNull(),
   // Generated when comment is created
   commentorAcct: pubkey('commentor_acct').notNull(),
-  proposalAcct: pubkey('proposal_acct').notNull(),
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct).notNull(),
   // This will be the body content of the comment
   content: text('content').notNull(),
   // Use only if its a responding comment in a chain, we should constrain this so
@@ -312,12 +312,14 @@ export const comments = pgTable('comments', {
   createdAt: timestamp('created_at').notNull().default(sql`now()`)
 }, table => ({
   pk: primaryKey(table.commentId, table.commentorAcct, table.proposalAcct),
-  first: unique('commentor_content').on(table.commentorAcct, table.content)
+  // Removed for now.
+  // first: unique('commentor_content').on(table.commentorAcct, table.content)
 }));
 
 export const reactions = pgTable('reactions', {
   reactorAcct: pubkey('reactor_acct').notNull(),
-  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct).notNull(),
+  commentId: bigint('comment_id', {mode: 'bigint'}).references(() => comments.commentId),
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct),
   reaction: pgEnum('reaction', Reactions).notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 }, table => ({
@@ -325,3 +327,11 @@ export const reactions = pgTable('reactions', {
   // at the very least should unique reactorAcct + proposalAcct + reaction
   pk: primaryKey(table.proposalAcct, table.reaction, table.reactorAcct)
 }));
+
+export const users = pgTable('users', {
+  // Just the pub key of anything that interacts with the system
+  userAcct: pubkey('user_acct').notNull(),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`)
+}, table => ({
+  userUnique: unique('unique_user').on(table.userAcct) 
+}))
