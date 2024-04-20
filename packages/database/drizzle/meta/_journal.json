@@ -71,6 +71,13 @@
       "when": 1711966211107,
       "tag": "0009_bouncy_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1713609335369,
+      "tag": "0010_young_hex",
+      "breakpoints": true
     }
   ]
 }

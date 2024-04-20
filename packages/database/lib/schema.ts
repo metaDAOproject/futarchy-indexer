@@ -54,8 +54,8 @@ function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
 
 export const daos = pgTable('daos', {
   daoAcct: pubkey('dao_acct').primaryKey(),
-  name: varchar('name').notNull(),
-  url: varchar('url').notNull(),
+  name: varchar('name'),
+  url: varchar('url'),
   xAccount: varchar('x_account'),
   gitHub: varchar('github'),
   description: text('description'),
@@ -79,7 +79,9 @@ export const proposals = pgTable('proposals', {
   status: pgEnum('status', ProposalOutcome).notNull(),
   descriptionURL: varchar('description_url'),
   updatedAt: timestamp('updated_at').default(sql`now()`).notNull()
-});
+}, table => ({
+  uniqueProposal: unique('unique_proposal_acct').on(table.proposalAcct)
+}));
 
 export const markets = pgTable('markets', {
   marketAcct: pubkey('market_acct').primaryKey(),
@@ -133,7 +135,7 @@ export const transactions = pgTable('transactions', {
   payload: text('payload').notNull(),
   serializerLogicVersion: smallint('serializer_logic_version').notNull(),
 }, table => ({
-  slotIdx: index('slot_index').on(table.slot)
+  slotIdx: index('txn_slot_index').on(table.slot)
 }));
 
 // These are responsible for getting all signatures involving an account
@@ -162,7 +164,7 @@ export const transactionWatcherTransactions = pgTable('transaction_watcher_trans
   slot: slot('slot').notNull()
 }, table => ({
   pk: primaryKey(table.watcherAcct, table.txSig),
-  slotIdx: index('slot_index').on(table.watcherAcct, table.slot)
+  slotIdx: index('watcher_slot_index').on(table.watcherAcct, table.slot)
 }));
 
 enum IndexerImplementation {
@@ -300,7 +302,7 @@ export const candles = pgTable('candles', {
 
 export const comments = pgTable('comments', {
   // Need this as we reference this for response and nesting
-  commentId: bigint('comment_id', {mode: 'bigint'}).notNull(),
+  commentId: bigint('comment_id', {mode: 'bigint'}).notNull().primaryKey().unique(),
   // Generated when comment is created
   commentorAcct: pubkey('commentor_acct').notNull(),
   proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct).notNull(),
@@ -310,11 +312,7 @@ export const comments = pgTable('comments', {
   // it references only commentIds which have respondingCommentId with NULL
   respondingCommentId: bigint('responding_comment_id', {mode: 'bigint'}).references(() => comments.commentId),
   createdAt: timestamp('created_at').notNull().default(sql`now()`)
-}, table => ({
-  pk: primaryKey(table.commentId, table.commentorAcct, table.proposalAcct),
-  // Removed for now.
-  // first: unique('commentor_content').on(table.commentorAcct, table.content)
-}));
+});
 
 export const reactions = pgTable('reactions', {
   reactorAcct: pubkey('reactor_acct').notNull(),
