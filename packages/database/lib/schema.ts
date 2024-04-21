@@ -1,3 +1,4 @@
+import { table } from 'console';
 import { sql } from 'drizzle-orm';
 import { 
   bigint, doublePrecision, integer, numeric, smallint,
@@ -55,15 +56,16 @@ function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
 export const daos = pgTable('daos', {
   daoAcct: pubkey('dao_acct').primaryKey(),
   // This data may change with each program upgrade, therefore keeping details separate
-  // makes the most sense. Not flagged as not null given it may take manual intervention.
-  daoId: bigint('dao_id', {mode: 'bigint'}).references(() => daoDetails.daoId),
+  // makes the most sense.
+  daoId: bigint('dao_id', {mode: 'bigint'}).notNull().references(() => daoDetails.daoId),
   programAcct: pubkey('program_acct').notNull().references(() => programs.programAcct),
-  version: integer('version').notNull().references(() => programs.version),
   // In FaaS, each DAO is tied to its own token which futarchic markets will aim to pomp to the moon
   mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull(),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
   updatedAt: timestamp('updated_at').notNull().default(sql`now()`),
-});
+}, table => ({
+  daoProgram: unique('dao_program').on(table.daoId, table.programAcct)
+}));
 
 export const proposals = pgTable('proposals', {
   proposalAcct: pubkey('proposal_acct').primaryKey(),
@@ -341,18 +343,22 @@ export const programs = pgTable('programs', {
   // The top level for parsing through any and all programs.
   // In theory we can make requests from this and fetch all we may want
   // to know.
-  programAcct: pubkey('program_acct').notNull().unique(),
+  programAcct: pubkey('program_acct').notNull().primaryKey(),
   version: integer('version').notNull(),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
   deployedAt: timestamp('deployed_at')
-});
+}, table => ({
+  programVersion: unique('program_version').on(table.programAcct, table.version)
+}));
 
 export const daoDetails = pgTable('dao_details', {
   // This table holds details which while daos upgrade, the info may not.
-  daoId: bigint('dao_id', {mode: 'bigint'}),
-  name: varchar('name'),
-  url: varchar('url'),
-  xAccount: varchar('x_account'),
-  gitHub: varchar('github'),
+  daoId: bigint('dao_id', {mode: 'bigint'}).primaryKey(),
+  name: varchar('name').unique(),
+  url: varchar('url').unique(),
+  xAccount: varchar('x_account').unique(),
+  gitHub: varchar('github').unique(),
   description: text('description'),
-});
+}, table => ({
+  uniqueId: unique('id_name_url').on(table.daoId, table.url, table.name)
+}));
