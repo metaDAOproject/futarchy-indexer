@@ -1,4 +1,3 @@
-import { table } from 'console';
 import { sql } from 'drizzle-orm';
 import { 
   bigint, doublePrecision, integer, numeric, smallint,
