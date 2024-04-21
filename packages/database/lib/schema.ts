@@ -54,11 +54,11 @@ function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
 
 export const daos = pgTable('daos', {
   daoAcct: pubkey('dao_acct').primaryKey(),
-  name: varchar('name'),
-  url: varchar('url'),
-  xAccount: varchar('x_account'),
-  gitHub: varchar('github'),
-  description: text('description'),
+  // This data may change with each program upgrade, therefore keeping details separate
+  // makes the most sense. Not flagged as not null given it may take manual intervention.
+  daoId: bigint('dao_id', {mode: 'bigint'}).references(() => daoDetails.daoId),
+  programAcct: pubkey('program_acct').notNull().references(() => programs.programAcct),
+  version: integer('version').notNull().references(() => programs.version),
   // In FaaS, each DAO is tied to its own token which futarchic markets will aim to pomp to the moon
   mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull(),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
@@ -69,6 +69,7 @@ export const proposals = pgTable('proposals', {
   proposalAcct: pubkey('proposal_acct').primaryKey(),
   daoAcct: pubkey('dao_acct').references(() => daos.daoAcct).notNull(),
   proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
+  // Debatable if we want to keep this in other table.
   title: varchar('title'),
   description: varchar('description'),
   categories: jsonb('categories'),
@@ -327,9 +328,31 @@ export const reactions = pgTable('reactions', {
 }));
 
 export const users = pgTable('users', {
-  // Just the pub key of anything that interacts with the system
+  // Just the pub key of anything that interacts with the system.
+  // Eventually want to add this constraint to the other tables, but for now
+  // want to see how it feels.
   userAcct: pubkey('user_acct').notNull(),
   createdAt: timestamp('created_at').notNull().default(sql`now()`)
 }, table => ({
   userUnique: unique('unique_user').on(table.userAcct) 
-}))
+}));
+
+export const programs = pgTable('programs', {
+  // The top level for parsing through any and all programs.
+  // In theory we can make requests from this and fetch all we may want
+  // to know.
+  programAcct: pubkey('program_acct').notNull().unique(),
+  version: integer('version').notNull(),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`),
+  deployedAt: timestamp('deployed_at')
+});
+
+export const daoDetails = pgTable('dao_details', {
+  // This table holds details which while daos upgrade, the info may not.
+  daoId: bigint('dao_id', {mode: 'bigint'}),
+  name: varchar('name'),
+  url: varchar('url'),
+  xAccount: varchar('x_account'),
+  gitHub: varchar('github'),
+  description: text('description'),
+});
