@@ -1,7 +1,8 @@
+import { sql } from 'drizzle-orm';
 import { 
   bigint, doublePrecision, integer, numeric, smallint,
-  index, pgTable, primaryKey,
-  boolean, timestamp, varchar, text
+  index, pgTable, primaryKey, unique,
+  boolean, timestamp, varchar, text, jsonb
 } from 'drizzle-orm/pg-core';
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -24,13 +25,25 @@ export enum MarketType {
   OPEN_BOOK_V2 = 'OPEN_BOOK_V2',
   ORCA_WHIRLPOOL = 'ORCA_WHIRLPOOL',
   METEORA = 'METEORA',
-  JOE_BUILD_AMM = 'JOE_BUILD_AMM' // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
+  FUTARCHY_AMM = 'FUTARCHY_AMM' // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
 }
 
-export enum ProposalOutcome {
+export enum ProposalStatus {
   Pending = 'Pending',
   Passed = 'Passed',
   Failed = 'Failed'
+}
+
+export enum Reactions {
+  ThumbsUp = 'ThumbsUp',
+  Rocket = 'Rocket',
+  Heart = 'Heart',
+  ThumbsDown = 'ThumbsDown',
+  Fire = 'Fire',
+  Eyes = 'Eyes',
+  LaughingFace = 'LaughingFace',
+  FrownyFace = 'FrownyFace',
+  Celebrate = 'Celebrate'
 }
 
 type NonEmptyList<E> = [E, ...E[]];
@@ -41,22 +54,29 @@ function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
 
 export const daos = pgTable('daos', {
   daoAcct: pubkey('dao_acct').primaryKey(),
-  name: varchar('name').notNull(),
-  url: varchar('url').notNull(),
+  programAcct: pubkey('program_acct').notNull().references(() => programs.programAcct),
+  // This data may change with each program upgrade, therefore keeping details separate
+  // makes the most sense.
+  daoId: bigint('dao_id', {mode: 'bigint'}).references(() => daoDetails.daoId),
   // In FaaS, each DAO is tied to its own token which futarchic markets will aim to pomp to the moon
-  mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull()
-});
+  mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull(),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at').notNull().default(sql`now()`),
+}, table => ({
+  daoProgram: unique('dao_acct_program').on(table.daoAcct, table.programAcct)
+}));
 
 export const proposals = pgTable('proposals', {
   proposalAcct: pubkey('proposal_acct').primaryKey(),
   daoAcct: pubkey('dao_acct').references(() => daos.daoAcct).notNull(),
   proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
+  // NOTE: We can infer this THROUGH dao...
   autocratVersion: doublePrecision('autocrat_version').notNull(),
   proposerAcct: pubkey('proposer_acct').notNull(),
   initialSlot: slot('initial_slot').notNull(),
-  outcome: pgEnum('outcome', ProposalOutcome).notNull(),
+  status: pgEnum('status', ProposalStatus).notNull(),
   descriptionURL: varchar('description_url'),
-  updatedAt: timestamp('updated_at').notNull()
+  updatedAt: timestamp('updated_at').default(sql`now()`).notNull()
 });
 
 export const markets = pgTable('markets', {
@@ -111,7 +131,7 @@ export const transactions = pgTable('transactions', {
   payload: text('payload').notNull(),
   serializerLogicVersion: smallint('serializer_logic_version').notNull(),
 }, table => ({
-  slotIdx: index('slot_index').on(table.slot)
+  slotIdx: index('txn_slot_index').on(table.slot)
 }));
 
 // These are responsible for getting all signatures involving an account
@@ -140,7 +160,7 @@ export const transactionWatcherTransactions = pgTable('transaction_watcher_trans
   slot: slot('slot').notNull()
 }, table => ({
   pk: primaryKey(table.watcherAcct, table.txSig),
-  slotIdx: index('slot_index').on(table.watcherAcct, table.slot)
+  slotIdx: index('watcher_slot_index').on(table.watcherAcct, table.slot)
 }));
 
 enum IndexerImplementation {
@@ -275,3 +295,75 @@ export const candles = pgTable('candles', {
 }, table => ({
   pk: primaryKey(table.marketAcct, table.candleDuration, table.timestamp)
 }));
+
+export const comments = pgTable('comments', {
+  // Need this as we reference this for response and nesting
+  commentId: bigint('comment_id', {mode: 'bigint'}).notNull().primaryKey().unique(),
+  // Generated when comment is created
+  commentorAcct: pubkey('commentor_acct').notNull(),
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct).notNull(),
+  // This will be the body content of the comment
+  content: text('content').notNull(),
+  // Use only if its a responding comment in a chain, we should constrain this so
+  // it references only commentIds which have respondingCommentId with NULL
+  respondingCommentId: bigint('responding_comment_id', {mode: 'bigint'}).references(() => comments.commentId),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`)
+});
+
+export const reactions = pgTable('reactions', {
+  reactorAcct: pubkey('reactor_acct').notNull(),
+  commentId: bigint('comment_id', {mode: 'bigint'}).references(() => comments.commentId),
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct),
+  reaction: pgEnum('reaction', Reactions).notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+}, table => ({
+  // Note: we maybe should do a unique reactorAcct + proposalAcct, but
+  // at the very least should unique reactorAcct + proposalAcct + reaction
+  pk: primaryKey(table.proposalAcct, table.reaction, table.reactorAcct)
+}));
+
+export const users = pgTable('users', {
+  // Just the pub key of anything that interacts with the system.
+  // Eventually want to add this constraint to the other tables, but for now
+  // want to see how it feels.
+  userAcct: pubkey('user_acct').notNull(),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`)
+}, table => ({
+  userUnique: unique('unique_user').on(table.userAcct) 
+}));
+
+export const programs = pgTable('programs', {
+  // The top level for parsing through any and all programs.
+  // In theory we can make requests from this and fetch all we may want
+  // to know.
+  programAcct: pubkey('program_acct').notNull().primaryKey(),
+  version: integer('version').notNull(),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`),
+  deployedAt: timestamp('deployed_at')
+}, table => ({
+  programVersion: unique('program_version').on(table.programAcct, table.version)
+}));
+
+export const daoDetails = pgTable('dao_details', {
+  // This table holds details which while daos upgrade, the info may not.
+  daoId: bigint('dao_id', {mode: 'bigint'}).primaryKey(),
+  name: varchar('name').unique(),
+  url: varchar('url').unique(),
+  xAccount: varchar('x_account').unique(),
+  gitHub: varchar('github').unique(),
+  description: text('description'),
+}, table => ({
+  uniqueId: unique('id_name_url').on(table.daoId, table.url, table.name)
+}));
+
+export const poposalDetails = pgTable('proposal_details', {
+  // This table holds details for proposals which are not part of the indexing service.
+  proposalId: bigint('proposal_id', {mode: 'bigint'}).primaryKey(),
+  // Our reference to on-chain data
+  proposalAcct: pubkey('proposal_acct').notNull().references(() => proposals.proposalAcct),
+  title: varchar('title'),
+  description: varchar('description'),
+  // NOTE: Could be another table for indexing, jsonb view is likely fine.
+  categories: jsonb('categories'),
+  content: text('content'),
+});

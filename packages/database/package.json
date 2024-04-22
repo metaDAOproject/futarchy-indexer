@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.30.6",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "dotenv": "16.4.5"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.7",
@@ -18,7 +19,7 @@
     "@types/pg": "^8.10.9",
     "ansicolor": "^2.0.1",
     "as-table": "^1.0.55",
-    "drizzle-kit": "^0.19.5",
+    "drizzle-kit": "^0.20.16",
     "inquirer": "^9.2.14"
   }
 }
