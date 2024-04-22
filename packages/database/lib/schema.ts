@@ -25,10 +25,10 @@ export enum MarketType {
   OPEN_BOOK_V2 = 'OPEN_BOOK_V2',
   ORCA_WHIRLPOOL = 'ORCA_WHIRLPOOL',
   METEORA = 'METEORA',
-  JOE_BUILD_AMM = 'JOE_BUILD_AMM' // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
+  FUTARCHY_AMM = 'FUTARCHY_AMM' // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
 }
 
-export enum ProposalOutcome {
+export enum ProposalStatus {
   Pending = 'Pending',
   Passed = 'Passed',
   Failed = 'Failed'
@@ -54,36 +54,30 @@ function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
 
 export const daos = pgTable('daos', {
   daoAcct: pubkey('dao_acct').primaryKey(),
+  programAcct: pubkey('program_acct').notNull().references(() => programs.programAcct),
   // This data may change with each program upgrade, therefore keeping details separate
   // makes the most sense.
-  daoId: bigint('dao_id', {mode: 'bigint'}).notNull().references(() => daoDetails.daoId),
-  programAcct: pubkey('program_acct').notNull().references(() => programs.programAcct),
+  daoId: bigint('dao_id', {mode: 'bigint'}).references(() => daoDetails.daoId),
   // In FaaS, each DAO is tied to its own token which futarchic markets will aim to pomp to the moon
   mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull(),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
   updatedAt: timestamp('updated_at').notNull().default(sql`now()`),
 }, table => ({
-  daoProgram: unique('dao_program').on(table.daoId, table.programAcct)
+  daoProgram: unique('dao_acct_program').on(table.daoAcct, table.programAcct)
 }));
 
 export const proposals = pgTable('proposals', {
   proposalAcct: pubkey('proposal_acct').primaryKey(),
   daoAcct: pubkey('dao_acct').references(() => daos.daoAcct).notNull(),
   proposalNum: bigint('proposal_num', {mode: 'bigint'}).notNull(),
-  // Debatable if we want to keep this in other table.
-  title: varchar('title'),
-  description: varchar('description'),
-  categories: jsonb('categories'),
-  content: text('content'),
+  // NOTE: We can infer this THROUGH dao...
   autocratVersion: doublePrecision('autocrat_version').notNull(),
   proposerAcct: pubkey('proposer_acct').notNull(),
   initialSlot: slot('initial_slot').notNull(),
-  status: pgEnum('status', ProposalOutcome).notNull(),
+  status: pgEnum('status', ProposalStatus).notNull(),
   descriptionURL: varchar('description_url'),
   updatedAt: timestamp('updated_at').default(sql`now()`).notNull()
-}, table => ({
-  uniqueProposal: unique('unique_proposal_acct').on(table.proposalAcct)
-}));
+});
 
 export const markets = pgTable('markets', {
   marketAcct: pubkey('market_acct').primaryKey(),
@@ -361,3 +355,15 @@ export const daoDetails = pgTable('dao_details', {
 }, table => ({
   uniqueId: unique('id_name_url').on(table.daoId, table.url, table.name)
 }));
+
+export const poposalDetails = pgTable('proposal_details', {
+  // This table holds details for proposals which are not part of the indexing service.
+  proposalId: bigint('proposal_id', {mode: 'bigint'}).primaryKey(),
+  // Our reference to on-chain data
+  proposalAcct: pubkey('proposal_acct').notNull().references(() => proposals.proposalAcct),
+  title: varchar('title'),
+  description: varchar('description'),
+  // NOTE: Could be another table for indexing, jsonb view is likely fine.
+  categories: jsonb('categories'),
+  content: text('content'),
+});
