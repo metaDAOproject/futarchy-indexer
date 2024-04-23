@@ -338,6 +338,8 @@ export const programs = pgTable('programs', {
   // to know.
   programAcct: pubkey('program_acct').notNull().primaryKey(),
   version: integer('version').notNull(),
+  // For example: autocrat, openbook_twap, openbook, conditional_vault
+  programName: varchar('program_name').notNull(),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
   deployedAt: timestamp('deployed_at')
 }, table => ({
@@ -360,7 +362,7 @@ export const poposalDetails = pgTable('proposal_details', {
   // This table holds details for proposals which are not part of the indexing service.
   proposalId: bigint('proposal_id', {mode: 'bigint'}).primaryKey(),
   // Our reference to on-chain data
-  proposalAcct: pubkey('proposal_acct').notNull().references(() => proposals.proposalAcct),
+  proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct),
   title: varchar('title'),
   description: varchar('description'),
   // NOTE: Could be another table for indexing, jsonb view is likely fine.
