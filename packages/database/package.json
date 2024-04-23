@@ -6,7 +6,8 @@
   "scripts": {
     "migrate:create": "drizzle-kit generate:pg --schema=./lib/schema.ts",
     "migrate": "pnpm migrate:create && bun src/index.ts",
-    "sql": "bun src/run-sql.ts"
+    "sql": "bun src/run-sql.ts",
+    "api": "genql --endpoint https://graph-api.themetadao.org/v1/graphql --output ../futarchy-ts/indexer-client -H \"X-Hasura-Admin-Secret: $HASURA_ADMIN_SECRET\""
   },
   "dependencies": {
     "drizzle-orm": "^0.30.6",
@@ -20,6 +21,7 @@
     "ansicolor": "^2.0.1",
     "as-table": "^1.0.55",
     "drizzle-kit": "^0.20.16",
-    "inquirer": "^9.2.14"
+    "inquirer": "^9.2.14",
+    "@genql/cli": "6.3.3"
   }
 }

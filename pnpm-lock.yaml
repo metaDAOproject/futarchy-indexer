@@ -24,6 +24,9 @@ importers:
         specifier: ^8.11.3
         version: 8.11.3
     devDependencies:
+      '@genql/cli':
+        specifier: 6.3.3
+        version: 6.3.3
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.7
@@ -458,6 +461,10 @@ packages:
 
   '@genql/cli@6.3.2':
     resolution: {integrity: sha512-ZvsrKVwxg3Cfmvf4eLcrz431yLCx1f2eB+/f3i860en0z0hWeiBoChcsEjm74j0q+j/ctBpXf1QP2fsGAHgj6w==}
+    hasBin: true
+
+  '@genql/cli@6.3.3':
+    resolution: {integrity: sha512-Etrdo9uPGXokGWml6agJsxoalz6eOicJ6X82YnL61WBHcJKFZ871BoSfCyCT1dxmXH60q+DDYxgZBCEbMivj4Q==}
     hasBin: true
 
   '@graphql-tools/graphql-file-loader@7.5.17':
@@ -2231,6 +2238,25 @@ snapshots:
   '@fastify/busboy@2.1.0': {}
 
   '@genql/cli@6.3.2':
+    dependencies:
+      '@graphql-tools/graphql-file-loader': 7.5.17(graphql@16.8.1)
+      '@graphql-tools/load': 7.8.14(graphql@16.8.1)
+      fs-extra: 10.1.0
+      graphql: 16.8.1
+      kleur: 4.1.5
+      listr2: 6.6.1
+      lodash: 4.17.21
+      mkdirp: 0.5.6
+      native-fetch: 4.0.2(undici@5.28.3)
+      prettier: 2.8.8
+      qs: 6.11.2
+      rimraf: 2.7.1
+      undici: 5.28.3
+      yargs: 15.4.1
+    transitivePeerDependencies:
+      - enquirer
+
+  '@genql/cli@6.3.3':
     dependencies:
       '@graphql-tools/graphql-file-loader': 7.5.17(graphql@16.8.1)
       '@graphql-tools/load': 7.8.14(graphql@16.8.1)
