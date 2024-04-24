@@ -337,7 +337,7 @@ export const programs = pgTable('programs', {
   // In theory we can make requests from this and fetch all we may want
   // to know.
   programAcct: pubkey('program_acct').notNull().primaryKey(),
-  version: integer('version').notNull(),
+  version: doublePrecision('version').notNull(),
   // For example: autocrat, openbook_twap, openbook, conditional_vault
   programName: varchar('program_name').notNull(),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
@@ -350,6 +350,8 @@ export const daoDetails = pgTable('dao_details', {
   // This table holds details which while daos upgrade, the info may not.
   daoId: bigint('dao_id', {mode: 'bigint'}).primaryKey(),
   name: varchar('name').unique(),
+  // Useful for fetching from a URL
+  slug: varchar('slug').unique(),
   url: varchar('url').unique(),
   xAccount: varchar('x_account').unique(),
   gitHub: varchar('github').unique(),
@@ -364,6 +366,8 @@ export const poposalDetails = pgTable('proposal_details', {
   // Our reference to on-chain data
   proposalAcct: pubkey('proposal_acct').references(() => proposals.proposalAcct),
   title: varchar('title'),
+  // Useful for fetching from a URL
+  slug: varchar('slug').unique(),
   description: varchar('description'),
   // NOTE: Could be another table for indexing, jsonb view is likely fine.
   categories: jsonb('categories'),
