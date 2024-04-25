@@ -59,7 +59,9 @@ export const daos = pgTable('daos', {
   // makes the most sense.
   daoId: bigint('dao_id', {mode: 'bigint'}).references(() => daoDetails.daoId),
   // In FaaS, each DAO is tied to its own token which futarchic markets will aim to pomp to the moon
-  mintAcct: pubkey('mint_acct').references(() => tokens.mintAcct).notNull(),
+  baseAcct: pubkey('base_acct').references(() => tokens.mintAcct).notNull(),
+  quoteAcct: pubkey('quote_acct').references(() => tokens.mintAcct),
+  treasuryAcct: pubkey('treasury_acct'),
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
   updatedAt: timestamp('updated_at').notNull().default(sql`now()`),
 }, table => ({
@@ -76,6 +78,12 @@ export const proposals = pgTable('proposals', {
   initialSlot: slot('initial_slot').notNull(),
   status: pgEnum('status', ProposalStatus).notNull(),
   descriptionURL: varchar('description_url'),
+  pricingModelPassAcct: pubkey('pricing_model_pass_acct'),
+  pricingModelFailAcct: pubkey('pricing_model_fail_acct'),
+  passMarketAcct: pubkey('pass_market_acct'),
+  failMarketAcct: pubkey('fail_market_acct'),
+  baseVault: pubkey('base_vault'),
+  quoteVault: pubkey('quote_vault'),
   updatedAt: timestamp('updated_at').default(sql`now()`).notNull()
 });
 
@@ -372,4 +380,13 @@ export const poposalDetails = pgTable('proposal_details', {
   // NOTE: Could be another table for indexing, jsonb view is likely fine.
   categories: jsonb('categories'),
   content: text('content'),
+});
+
+export const programSystem = pgTable('program_system', {
+  // This makes up what we know and undestand a "working system" to be
+  systemVersion: doublePrecision('system_version').primaryKey(),
+  autocratAcct: pubkey('autocrat_acct').notNull().references(() => programs.programAcct),
+  conditionalVaultAcct: pubkey('conditional_vault_acct').notNull().references(() => programs.programAcct),
+  pricingModelAcct: pubkey('pricing_model_acct').notNull().references(() => programs.programAcct),
+  migratorAcct: pubkey('migrator_acct').references(() => programs.programAcct)
 });
