@@ -1,7 +1,7 @@
 {
   "scripts": {
     "migrate": "pnpm --filter @themetadao/indexer-db migrate",
-    "sync-db": "pnpm --filter @themetadao/idexer-db sync",
+    "sync-db": "pnpm --filter @themetadao/indexer-db sync",
     "sql": "pnpm --filter @themetadao/indexer-db sql",
     "update-hasura": "echo 'hello world'",
     "start-service": "pnpm --filter @themetadao/indexer-service start",
