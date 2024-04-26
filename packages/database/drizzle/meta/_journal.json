@@ -120,6 +120,20 @@
       "when": 1714105731015,
       "tag": "0016_clever_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1714153190050,
+      "tag": "0017_same_princess_powerful",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1714153200033,
+      "tag": "0018_youthful_nomad",
+      "breakpoints": true
     }
   ]
 }
