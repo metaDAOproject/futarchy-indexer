@@ -6,7 +6,8 @@
   "scripts": {
     "migrate:create": "drizzle-kit generate:pg --schema=./lib/schema.ts",
     "migrate": "pnpm migrate:create && bun src/index.ts",
-    "sync": "bun src/index.ts",
+    "migrate:push": "drizzle-kit push:pg --driver=pg --connectionString=$STAGING_FUTARCHY_PG_URL --schema=./lib/schema.ts",
+    "push": "pnpm migrate:push && bun src/index.ts",
     "sql": "bun src/run-sql.ts"
   },
   "dependencies": {
