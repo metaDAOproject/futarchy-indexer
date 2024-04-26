@@ -3,8 +3,14 @@ import * as schemaDefs from './schema';
 import { Pool } from 'pg';
 import 'dotenv/config'
 
+let connectionString = process.env.PRODUCTION_FUTARCHY_PG_URL
+
+if(process.env.DEPLOY_ENVIRONMENT === "STAGING") {
+  connectionString = process.env.STAGING_FUTARCHY_PG_URL
+}
+
 const pool = new Pool({
-  connectionString: process.env.FUTARCHY_PG_URL,
+  connectionString: connectionString,
   // https://stackoverflow.com/a/73997522
   // I noticed that there was always a connection timeout error after 9 loops of the startWatchers interval;
   // it repeats every 5 seconds and immediately after service start.

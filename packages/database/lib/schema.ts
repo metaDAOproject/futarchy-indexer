@@ -206,7 +206,8 @@ export const tokens = pgTable('tokens', {
   symbol: varchar('symbol', {length: 10}).notNull(),
   supply: tokenAmount('supply').notNull(),
   decimals: smallint('decimals').notNull(),
-  updatedAt: timestamp('updated_at').notNull()
+  updatedAt: timestamp('updated_at').notNull(),
+  imageUrl: varchar('image_url')
 });
 
 export enum OrderSide {
@@ -364,6 +365,7 @@ export const daoDetails = pgTable('dao_details', {
   xAccount: varchar('x_account').unique(),
   gitHub: varchar('github').unique(),
   description: text('description'),
+  imageUrl: varchar('image_url')
 }, table => ({
   uniqueId: unique('id_name_url').on(table.daoId, table.url, table.name)
 }));
