@@ -82,8 +82,8 @@ export const proposals = pgTable('proposals', {
   pricingModelFailAcct: pubkey('pricing_model_fail_acct'),
   passMarketAcct: pubkey('pass_market_acct'),
   failMarketAcct: pubkey('fail_market_acct'),
-  baseVault: pubkey('base_vault'),
-  quoteVault: pubkey('quote_vault'),
+  baseVault: pubkey('base_vault').references(() => conditionalVaults.condVaultAcct),
+  quoteVault: pubkey('quote_vault').references(() => conditionalVaults.condVaultAcct),
   updatedAt: timestamp('updated_at').default(sql`now()`).notNull()
 });
 
@@ -399,8 +399,8 @@ export const conditionalVaults = pgTable('conditional_vaults', {
   status: varchar('status'),
   settlmentAuthority: pubkey('settlement_authority').notNull().references(() => daos.treasuryAcct),
   underlyingMintAcct: pubkey('underlying_mint_acct').notNull().references(() => tokens.mintAcct),
-  underlyingTokenAcct: pubkey('underlying_token_account').notNull(),
-  nonce: bigint('nonce', {mode: 'bigint'}).notNull(),
+  underlyingTokenAcct: pubkey('underlying_token_acct').notNull(),
+  nonce: varchar('nonce'),
   condFinalizeTokenMintAcct: pubkey('cond_finalize_token_mint_acct').notNull(),
   condRevertTokenMintAcct: pubkey('cond_revert_token_mint_acct').notNull(),
 });
