@@ -6,6 +6,7 @@ import 'dotenv/config'
 let connectionString = process.env.PRODUCTION_FUTARCHY_PG_URL
 
 if(process.env.DEPLOY_ENVIRONMENT === "STAGING") {
+  console.log("Staging detected using staging URL")
   connectionString = process.env.STAGING_FUTARCHY_PG_URL
 }
 
