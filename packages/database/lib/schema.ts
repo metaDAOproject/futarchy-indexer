@@ -105,6 +105,9 @@ export const markets = pgTable('markets', {
 
   // Monitoring the total supply on either side of the market
   // (helpful in case of AMMs where LPs are not tracked in the makes table)
+  // NOTE: These can be the conditional vault references given the market, in this 
+  // case the bids is where deposits for bids exist (eg the quote token) and for asks
+  // it's where deposits for asks exist (eg the base token)
   bidsTokenAcct: pubkey('bids_token_acct').references(() => tokenAccts.tokenAcct).notNull(),
   asksTokenAcct: pubkey('asks_token_acct').references(() => tokenAccts.tokenAcct).notNull(),
 
