@@ -1,5 +1,5 @@
 {
-  "name": "@themetadao/indexer-client",
+  "name": "@metadaoproject/indexer-client",
   "description": "indexer React client",
   "private": "false",
   "main": "dist",

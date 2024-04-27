@@ -1,5 +1,5 @@
-import { AUTOCRAT_VERSIONS } from "@themetadao/futarchy-ts/lib/constants";
-import { IDL, AutocratV0 } from "@themetadao/futarchy-ts/lib/idl/autocrat_v0";
+import { AUTOCRAT_VERSIONS } from "@metadaoproject/futarchy-sdk/lib/constants";
+import { IDL, AutocratV0 } from "@metadaoproject/futarchy-sdk/lib/idl/autocrat_v0";
 import { Err, InstructionIndexer, Ok } from "../instruction-indexer";
 import { logger } from "../../logger";
 

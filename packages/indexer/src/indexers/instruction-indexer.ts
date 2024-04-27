@@ -1,5 +1,5 @@
 import { VersionedTransactionResponse } from "@solana/web3.js";
-import { DBTransaction } from '@themetadao/indexer-db';
+import { DBTransaction } from '@metadaoproject/indexer-db';
 import { Idl } from '@coral-xyz/anchor';
 
 export const Ok = {indexed: true};

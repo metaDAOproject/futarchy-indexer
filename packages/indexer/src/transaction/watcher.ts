@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { usingDb, schema, eq } from "@themetadao/indexer-db";
+import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
 import {
   SERIALIZED_TRANSACTION_LOGIC_VERSION,
   getTransaction,
@@ -12,7 +12,7 @@ import { Err, Ok, TaggedUnion } from "../match";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
-> @themetadao/indexer-db@ sql /workspaces/meta-repo/repos/futarchy-indexer/packages/database
+> @metadaoproject/indexer-db@ sql /workspaces/meta-repo/repos/futarchy-indexer/packages/database
 > bun src/run-sql.ts "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
 
 select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'
