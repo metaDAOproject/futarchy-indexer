@@ -1,15 +1,15 @@
 {
-  "name": "@themetadao/indexer-hasura",
+  "name": "@metadaoproject/indexer-hasura",
   "description": "indexer IaC for configuring Hasura",
   "private": "true",
   "scripts": {
-    "gen-client": "",
+    "gen-client": "rm -rf ../futarchy-sdk/lib/client/indexer/__generated__ && genql --endpoint https://graph-api.themetadao.org/v1/graphql --output ../futarchy-sdk/lib/client/indexer/__generated__ -H \"X-Hasura-Admin-Secret: $HASURA_GRAPHQL_ADMIN_SECRET\"",
     "gen-metadata": "bun src",
     "set-metadata": "hasura metadata apply",
     "get-metadata": "hasura metadata export"
   },
   "dependencies": {
-    "@themetadao/indexer-db": "workspace:*",
+    "@metadaoproject/indexer-db": "workspace:*",
     "@hasura/metadata": "^1.0.2"
   },
   "devDependencies": {

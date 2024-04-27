@@ -1,10 +1,10 @@
-import { AUTOCRAT_VERSIONS, OPENBOOK_PROGRAM_ID } from '@themetadao/futarchy-ts/lib/constants';
-import { AutocratProgram, DaoState, ProgramVersion, Proposal } from '@themetadao/futarchy-ts/lib/types';
+import { AUTOCRAT_VERSIONS, OPENBOOK_PROGRAM_ID } from '@metadaoproject/futarchy-sdk/lib/constants';
+import { AutocratProgram, DaoState, ProgramVersion, Proposal } from '@metadaoproject/futarchy-sdk/lib/types';
 import { AccountMeta, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { OpenbookV2, IDL as OPENBOOK_IDL } from '@openbook-dex/openbook-v2';
 import { Program, utils } from '@coral-xyz/anchor';
 import { connection, provider } from './connection';
-import { ProposalOutcome, MarketType } from '@themetadao/indexer-db/lib/schema';
+import { ProposalOutcome, MarketType } from '@metadaoproject/indexer-db/lib/schema';
 
 const SUPPORTED_AUTOCRAT_VERSIONS = ['V0.1', 'V0'];
 

@@ -1,7 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
 import { getTransactionHistory } from '../../transaction/history';
 import { selectAccount } from './common/select-account';
-import { usingDb, schema, desc, count, lte } from '@themetadao/indexer-db';
+import { usingDb, schema, desc, count, lte } from '@metadaoproject/indexer-db';
 import { logger } from '../../logger';
 
 export async function validate() {

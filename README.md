@@ -45,12 +45,12 @@ After cloning run `pnpm install` in the project directory
 
 Docs on each top-level script below
 
-### `migrate` script
+### `migrate`
 
 Migrate db to match definition in `packages/database/lib/schema.ts`. Assumes you have set the `FUTARCHY_PG_URL` env var.  
 Also regenerates the graphql client (TODO).
 
-### `sql` script
+### `sql`
 
 Run raw sql against the database. Assumes you have set the `FUTARCHY_PG_URL` env var.
 
@@ -58,23 +58,27 @@ Run raw sql against the database. Assumes you have set the `FUTARCHY_PG_URL` env
 
 You can add to the `COMMON_STATEMENTS` const in `packages/database/src/run-sql.ts` if you have a long sql query you want to save for later reuse.
 
-### `update-hasura` script
+### `update-hasura`
 
 TODO
 
-### `start-service` script
+### `start-service`
 
 Starts the service
 
-### `create-tx-watcher` script
+### `create-tx-watcher`
 Creates a new transaction watcher on a particular account
 
-### `reset-tx-watcher` script
+### `reset-tx-watcher`
 Resets an existing transaction watcher to a particular transaction/slot (or resets it back to 0)
 
 ### `validate-tx-watcher`
 Validates whether the cached txs for an account matches the  
 
-### `publish-client` script
+### `publish-client`
 
 TODO
+
+### `update-hasura-client`
+
+Syncs the current Hasura GraphQL schema types to the client in futarchy-sdk using [genql](https://genql.dev/)

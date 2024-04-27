@@ -1,4 +1,4 @@
-import { usingDb, schema, eq } from "@themetadao/indexer-db";
+import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
 import inquirer from 'inquirer';
 import { selectAccount } from './common/select-account';
 import { getTransaction } from "../../transaction/serializer";

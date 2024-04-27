@@ -1,4 +1,4 @@
-import { usingDb, schema } from "@themetadao/indexer-db";
+import { usingDb, schema } from "@metadaoproject/indexer-db";
 import inquirer from 'inquirer';
 
 export async function selectAccount(): Promise<string> {
