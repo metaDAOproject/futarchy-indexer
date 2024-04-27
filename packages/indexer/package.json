@@ -1,5 +1,5 @@
 {
-  "name": "@themetadao/indexer-service",
+  "name": "@metadaoproject/indexer-service",
   "description": "indexer microservice",
   "private": "true",
   "scripts": {
@@ -13,8 +13,8 @@
     "@openbook-dex/openbook-v2": "^0.1.9",
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.90.0",
-    "@themetadao/futarchy-ts": "workspace:*",
-    "@themetadao/indexer-db": "workspace:*",
+    "@metadaoproject/futarchy-sdk": "workspace:*",
+    "@metadaoproject/indexer-db": "workspace:*",
     "ansicolor": "^2.0.1",
     "bs58": "^4.0.1",
     "commander": "^12.0.0",

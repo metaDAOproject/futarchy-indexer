@@ -1,5 +1,5 @@
-import { IDL, OpenbookTwap } from "@themetadao/futarchy-ts/lib/idl/openbook_twap";
-import { OPENBOOK_TWAP_PROGRAM_ID } from "@themetadao/futarchy-ts/lib/constants";
+import { IDL, OpenbookTwap } from "@metadaoproject/futarchy-sdk/lib/idl/openbook_twap";
+import { OPENBOOK_TWAP_PROGRAM_ID } from "@metadaoproject/futarchy-sdk/lib/constants";
 import { Err, InstructionIndexer, Ok } from "../instruction-indexer";
 
 // Doing this rather than class implements pattern due to

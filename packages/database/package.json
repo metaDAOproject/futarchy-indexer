@@ -1,5 +1,5 @@
 {
-  "name": "@themetadao/indexer-db",
+  "name": "@metadaoproject/indexer-db",
   "description": "indexer database schema and migration runner",
   "private": "true",
   "main": "lib",
