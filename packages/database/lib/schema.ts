@@ -364,6 +364,19 @@ export const daoDetails = pgTable('dao_details', {
   xAccount: varchar('x_account').unique(),
   gitHub: varchar('github').unique(),
   description: text('description'),
+  // Added this in anticipation for web3 auth.
+  creator_acct: pubkey('creator_acct'),
+  // A way for other people to have permissions to make changes.
+  admin_accts: jsonb('admin_accts'),
+  // By initalizing these in the dao details we can reference them on ANY token
+  // which is created through proposals and cascading down through. So the data
+  // will be duplicated, but referencing through this will reduce the burden
+  // of rpc and afford us flexibility with unkown tokens in the UI.
+  // This is a happy medium before we get to onchain data.
+  token_image_url: varchar('token_image_url'),
+  pass_token_image_url: varchar('pass_token_image_url'),
+  fail_token_image_url: varchar('fail_token_image_url'),
+  lp_token_image_url: varchar('lp_token_image_url'),
 }, table => ({
   uniqueId: unique('id_name_url').on(table.daoId, table.url, table.name)
 }));
@@ -380,6 +393,17 @@ export const poposalDetails = pgTable('proposal_details', {
   // NOTE: Could be another table for indexing, jsonb view is likely fine.
   categories: jsonb('categories'),
   content: text('content'),
+  // Added in anticipation for web3 auth.
+  proposer_acct: pubkey('proposer_acct'),
+  // This data is duplicated, given the fact that a proposal initialize can fail,
+  // the capacity in the UI (to store accounts) needs to be set such that you can
+  // unwind what HAS been done (and reclaim). By doing this we're not mapping on anything
+  // that can or should be indexed, this is just a state manager which affords the
+  // above.
+  base_cond_vault_acct: pubkey('base_cond_vault_acct'),
+  quote_cond_vault_acct: pubkey('quote_cond_vault_acct'),
+  pass_market_acct: pubkey('pass_market_acct'),
+  fail_market_acct: pubkey('fail_market_acct'),
 });
 
 export const programSystem = pgTable('program_system', {
