@@ -1,0 +1,49 @@
+table:
+  name: proposals
+  schema: public
+object_relationships:
+  - name: conditionalVaultByQuoteVault
+    using:
+      foreign_key_constraint_on: quote_vault
+  - name: conditional_vault
+    using:
+      foreign_key_constraint_on: base_vault
+  - name: dao
+    using:
+      foreign_key_constraint_on: dao_acct
+array_relationships:
+  - name: comments
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: comments
+          schema: public
+  - name: markets
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: markets
+          schema: public
+  - name: proposal_details
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: proposal_details
+          schema: public
+  - name: reactions
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: reactions
+          schema: public
+  - name: twaps
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: twaps
+          schema: public

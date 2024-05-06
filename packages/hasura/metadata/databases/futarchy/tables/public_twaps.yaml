@@ -1,0 +1,21 @@
+table:
+  name: twaps
+  schema: public
+object_relationships:
+  - name: market
+    using:
+      foreign_key_constraint_on: market_acct
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - token_amount
+        - updated_slot
+        - market_acct
+        - proposal_acct
+        - observation_agg
+      filter: {}
+    comment: Anyone querying graphql with no auth

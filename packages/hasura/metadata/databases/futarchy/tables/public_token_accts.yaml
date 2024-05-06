@@ -1,0 +1,22 @@
+table:
+  name: token_accts
+  schema: public
+object_relationships:
+  - name: token
+    using:
+      foreign_key_constraint_on: mint_acct
+array_relationships:
+  - name: markets
+    using:
+      foreign_key_constraint_on:
+        column: asks_token_acct
+        table:
+          name: markets
+          schema: public
+  - name: marketsByBidsTokenAcct
+    using:
+      foreign_key_constraint_on:
+        column: bids_token_acct
+        table:
+          name: markets
+          schema: public

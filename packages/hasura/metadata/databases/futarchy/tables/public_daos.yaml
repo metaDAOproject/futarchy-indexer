@@ -1,0 +1,40 @@
+table:
+  name: daos
+  schema: public
+object_relationships:
+  - name: dao_detail
+    using:
+      foreign_key_constraint_on: dao_id
+  - name: program
+    using:
+      foreign_key_constraint_on: program_acct
+  - name: token
+    using:
+      foreign_key_constraint_on: base_acct
+  - name: tokenByBaseAcct
+    using:
+      manual_configuration:
+        column_mapping:
+          base_acct: mint_acct
+        insertion_order: null
+        remote_table:
+          name: tokens
+          schema: public
+  - name: tokenByQuoteAcct
+    using:
+      foreign_key_constraint_on: quote_acct
+array_relationships:
+  - name: conditional_vaults
+    using:
+      foreign_key_constraint_on:
+        column: settlement_authority
+        table:
+          name: conditional_vaults
+          schema: public
+  - name: proposals
+    using:
+      foreign_key_constraint_on:
+        column: dao_acct
+        table:
+          name: proposals
+          schema: public

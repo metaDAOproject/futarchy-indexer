@@ -1,0 +1,16 @@
+table:
+  name: program_system
+  schema: public
+object_relationships:
+  - name: program
+    using:
+      foreign_key_constraint_on: autocrat_acct
+  - name: programByConditionalVaultAcct
+    using:
+      foreign_key_constraint_on: conditional_vault_acct
+  - name: programByMigratorAcct
+    using:
+      foreign_key_constraint_on: migrator_acct
+  - name: programByPricingModelAcct
+    using:
+      foreign_key_constraint_on: pricing_model_acct

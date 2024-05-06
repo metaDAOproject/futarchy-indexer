@@ -1,0 +1,55 @@
+table:
+  name: markets
+  schema: public
+object_relationships:
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
+  - name: token
+    using:
+      foreign_key_constraint_on: base_mint_acct
+  - name: tokenAcctByBidsTokenAcct
+    using:
+      foreign_key_constraint_on: bids_token_acct
+  - name: tokenByQuoteMintAcct
+    using:
+      foreign_key_constraint_on: quote_mint_acct
+  - name: token_acct
+    using:
+      foreign_key_constraint_on: asks_token_acct
+array_relationships:
+  - name: candles
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: candles
+          schema: public
+  - name: makes
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: makes
+          schema: public
+  - name: orders
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: orders
+          schema: public
+  - name: takes
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: takes
+          schema: public
+  - name: twaps
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: twaps
+          schema: public

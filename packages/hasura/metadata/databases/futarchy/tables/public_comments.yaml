@@ -1,0 +1,25 @@
+table:
+  name: comments
+  schema: public
+object_relationships:
+  - name: comment
+    using:
+      foreign_key_constraint_on: responding_comment_id
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
+array_relationships:
+  - name: comments
+    using:
+      foreign_key_constraint_on:
+        column: responding_comment_id
+        table:
+          name: comments
+          schema: public
+  - name: reactions
+    using:
+      foreign_key_constraint_on:
+        column: comment_id
+        table:
+          name: reactions
+          schema: public

@@ -1,0 +1,13 @@
+table:
+  name: takes
+  schema: public
+object_relationships:
+  - name: make
+    using:
+      foreign_key_constraint_on: maker_order_tx_sig
+  - name: market
+    using:
+      foreign_key_constraint_on: market_acct
+  - name: order
+    using:
+      foreign_key_constraint_on: order_tx_sig
