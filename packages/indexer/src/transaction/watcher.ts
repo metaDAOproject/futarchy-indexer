@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { ConfirmedSignatureInfo, PublicKey } from "@solana/web3.js";
 import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
 import {
   SERIALIZED_TRANSACTION_LOGIC_VERSION,
@@ -42,6 +42,8 @@ type TransactionWatcherRecord =
 type TransactionRecord = typeof schema.transactions._.model.insert;
 
 const watchers: Record<string, TransactionWatcher> = {};
+
+const disabledWatchers = (process.env.DISABLED_WATCHERS ?? "").split(",");
 
 class TransactionWatcher {
   private account: PublicKey;
@@ -128,11 +130,8 @@ class TransactionWatcher {
       );
     this.backfilling = true;
     const latestFinalizedSlot = BigInt(await connection.getSlot("finalized"));
-    const history = await getTransactionHistory(
-      this.account,
-      this.checkedUpToSlot,
-      { after: this.latestTxSig }
-    );
+    const history =
+      await this.getTransactionHistoryFromFinalizedSlotWithRetry();
     logger.info(
       `history after ${this.latestTxSig} is length ${history.length}`
     );
@@ -150,11 +149,13 @@ class TransactionWatcher {
       //       I can think of weird states though where you have this stopped watcher and another started one.
       // Leaving as todo since optimistic locking might be preferred
       const curWatcherRecord = (
-        await usingDb(db => db
-          .select()
-          .from(schema.transactionWatchers)
-          .where(eq(schema.transactionWatchers.acct, acct))
-          .execute())
+        await usingDb((db) =>
+          db
+            .select()
+            .from(schema.transactionWatchers)
+            .where(eq(schema.transactionWatchers.acct, acct))
+            .execute()
+        )
       )[0];
       const { checkedUpToSlot } = curWatcherRecord;
       if (slot <= checkedUpToSlot) {
@@ -163,11 +164,13 @@ class TransactionWatcher {
         this.stop();
         return Err({ type: WatcherBackfillError.SlotCheckHistoryMismatch });
       }
-      const maybeCurTxRecord = await usingDb(db => db
-        .select()
-        .from(schema.transactions)
-        .where(eq(schema.transactions.txSig, signature))
-        .execute());
+      const maybeCurTxRecord = await usingDb((db) =>
+        db
+          .select()
+          .from(schema.transactions)
+          .where(eq(schema.transactions.txSig, signature))
+          .execute()
+      );
       if (
         maybeCurTxRecord.length === 0 ||
         maybeCurTxRecord[0].serializerLogicVersion <
@@ -191,14 +194,16 @@ class TransactionWatcher {
           payload: serialize(parseTxResult.ok),
           serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
         };
-        const upsertResult = await usingDb(db => db
-          .insert(schema.transactions)
-          .values(transactionRecord)
-          .onConflictDoUpdate({
-            target: schema.transactions.txSig,
-            set: transactionRecord,
-          })
-          .returning({ txSig: schema.transactions.txSig }));
+        const upsertResult = await usingDb((db) =>
+          db
+            .insert(schema.transactions)
+            .values(transactionRecord)
+            .onConflictDoUpdate({
+              target: schema.transactions.txSig,
+              set: transactionRecord,
+            })
+            .returning({ txSig: schema.transactions.txSig })
+        );
         if (upsertResult.length !== 1 || upsertResult[0].txSig !== signature) {
           logger.error(
             `Failed to upsert ${signature}. ${JSON.stringify(
@@ -210,31 +215,35 @@ class TransactionWatcher {
       }
       // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
       //       be a no-op in the happy path
-      await usingDb(db => db
-        .insert(schema.transactionWatcherTransactions)
-        .values({
-          txSig: signature,
-          slot,
-          watcherAcct: acct,
-        })
-        .onConflictDoNothing());
+      await usingDb((db) =>
+        db
+          .insert(schema.transactionWatcherTransactions)
+          .values({
+            txSig: signature,
+            slot,
+            watcherAcct: acct,
+          })
+          .onConflictDoNothing()
+      );
       // We could opt to only update slot at end, but updating it now means indexers can progress while a backfill is in progress.
       // That's preferrable since the backfill could be a lot of transactions and it could stall if there are any bugs in the tx backup logic
       // We can't set the checked up to slot as the current tx's slot, since there might be a tx after this one on the same slot. So we instead
       // need to set it to the prior tx's slot if that slot is less than the current slot.
       const newCheckedUpToSlot =
         slot > priorSlot ? priorSlot : this.checkedUpToSlot;
-      const updateResult = await usingDb(db => db
-        .update(schema.transactionWatchers)
-        .set({
-          acct,
-          latestTxSig: signature,
-          firstTxSig: curWatcherRecord.firstTxSig ?? signature,
-          serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-          checkedUpToSlot: newCheckedUpToSlot,
-        })
-        .where(eq(schema.transactionWatchers.acct, acct))
-        .returning({ acct: schema.transactionWatchers.acct }));
+      const updateResult = await usingDb((db) =>
+        db
+          .update(schema.transactionWatchers)
+          .set({
+            acct,
+            latestTxSig: signature,
+            firstTxSig: curWatcherRecord.firstTxSig ?? signature,
+            serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+            checkedUpToSlot: newCheckedUpToSlot,
+          })
+          .where(eq(schema.transactionWatchers.acct, acct))
+          .returning({ acct: schema.transactionWatchers.acct })
+      );
       if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
         logger.error(
           `Failed to update tx watcher for acct ${acct} on tx ${signature}`
@@ -253,6 +262,7 @@ class TransactionWatcher {
     // It's possible that this might be the source of bugs if somehow new transactions come in that are before the latest confirmed slot but were
     // not returned by the RPC's tx history.
     // EDIT: encountered above bug so trying to resolve by switching to finalized slot rather than confirmed.
+    // EDIT: even switching to finalized didn't really work. This logic needs rethinking
     const newCheckedUpToSlot =
       this.checkedUpToSlot > latestFinalizedSlot
         ? this.checkedUpToSlot
@@ -262,13 +272,15 @@ class TransactionWatcher {
         `For acct ${acct}, using finalized slot of ${latestFinalizedSlot}`
       );
     }
-    const updateResult = await usingDb(db => db
-      .update(schema.transactionWatchers)
-      .set({
-        checkedUpToSlot: newCheckedUpToSlot,
-      })
-      .where(eq(schema.transactionWatchers.acct, acct))
-      .returning({ acct: schema.transactionWatchers.acct }));
+    const updateResult = await usingDb((db) =>
+      db
+        .update(schema.transactionWatchers)
+        .set({
+          checkedUpToSlot: newCheckedUpToSlot,
+        })
+        .where(eq(schema.transactionWatchers.acct, acct))
+        .returning({ acct: schema.transactionWatchers.acct })
+    );
     if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
       logger.error(
         `Failed to update tx watcher for acct ${acct} at end of backfill`
@@ -278,6 +290,50 @@ class TransactionWatcher {
     this.checkedUpToSlot = newCheckedUpToSlot;
     this.backfilling = false;
     return Ok(`${acct} watcher is up to date`);
+  }
+
+  private async getTransactionHistoryFromFinalizedSlotWithRetry() {
+    const maxRetries = 3;
+    const retryDelay = 1000;
+    let maxSignatures = 0;
+    let responseWithMaxSignatures: ConfirmedSignatureInfo[] = [];
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const txSignatures = await getTransactionHistory(
+          this.account,
+          this.checkedUpToSlot,
+          { after: this.latestTxSig }
+        );
+
+        if (txSignatures.length > maxSignatures) {
+          maxSignatures = txSignatures.length;
+          responseWithMaxSignatures = txSignatures;
+        }
+
+        if (i > 0 && txSignatures.length !== maxSignatures) {
+          console.log(
+            "Difference noticed in tx count during getTransactionHistory RPC call attempts. New length is",
+            txSignatures.length,
+            " vs previous length is",
+            maxSignatures
+          );
+        }
+
+        // If all is well, return the response with the max signatures
+        if (txSignatures.length === maxSignatures) {
+          return txSignatures;
+        }
+      } catch (error) {
+        console.error("Error fetching transaction history:", error);
+      }
+
+      // Wait before retrying
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+
+    // Return the response with the max signatures after all retries
+    return responseWithMaxSignatures;
   }
 
   public stop() {
@@ -299,15 +355,17 @@ let updatingWatchers = false;
 export async function startTransactionWatchers() {
   async function getWatchers() {
     updatingWatchers = true;
-    const curWatchers = await usingDb(db => db
-      .select()
-      .from(schema.transactionWatchers)
-      .execute());
+    const curWatchers = await usingDb((db) =>
+      db.select().from(schema.transactionWatchers).execute()
+    );
     const curWatchersByAccount: Record<string, TransactionWatcherRecord> = {};
     const watchersToStart: Set<string> = new Set();
     const watchersToStop: Set<string> = new Set();
+    const enabledWatchers = curWatchers.filter(
+      (w) => !disabledWatchers.includes(w.acct)
+    );
     // TODO: we need a way to reset running watchers if they're slot or tx was rolled back
-    for (const watcherInDb of curWatchers) {
+    for (const watcherInDb of enabledWatchers) {
       curWatchersByAccount[watcherInDb.acct] = watcherInDb;
       const alreadyWatching = watcherInDb.acct in watchers;
       if (!alreadyWatching) {
@@ -323,15 +381,17 @@ export async function startTransactionWatchers() {
           );
           watchers[acct]?.stop();
           delete watchers[acct];
-          const updated = await usingDb(db => db
-            .update(schema.transactionWatchers)
-            .set({
-              serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-              latestTxSig: null,
-              checkedUpToSlot: BigInt(0),
-            })
-            .where(eq(schema.transactionWatchers.acct, acct))
-            .returning({ acct: schema.transactionWatchers.acct }));
+          const updated = await usingDb((db) =>
+            db
+              .update(schema.transactionWatchers)
+              .set({
+                serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+                latestTxSig: null,
+                checkedUpToSlot: BigInt(0),
+              })
+              .where(eq(schema.transactionWatchers.acct, acct))
+              .returning({ acct: schema.transactionWatchers.acct })
+          );
           if (updated.length !== 1 || updated[0].acct !== acct) {
             const error = new Error(
               `Failed to update ${acct} watcher. ${JSON.stringify(updated)}`
