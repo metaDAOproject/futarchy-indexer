@@ -148,21 +148,31 @@ export const transactions = pgTable('transactions', {
 // These are responsible for getting all signatures involving an account
 // historically and real time, and writing them to the transactions table for processing.
 // Each proposal / spot market / autocrat version upgrade will result in another entry.
-export const transactionWatchers = pgTable('transaction_watchers', {
-  acct: pubkey('acct').primaryKey(),
-  latestTxSig: transaction('latest_tx_sig').references(() => transactions.txSig),
+
+export enum TransactionWatchStatus {
+  Active = "active",
+  Failed = "failed",
+  Disabled = "disabled",
+}
+
+export const transactionWatchers = pgTable("transaction_watchers", {
+  acct: pubkey("acct").primaryKey(),
+  latestTxSig: transaction("latest_tx_sig").references(
+    () => transactions.txSig
+  ),
   /**
-   * We can use this to monitor if the transaction history is being cleared by the rpc. 
+   * We can use this to monitor if the transaction history is being cleared by the rpc.
    * Ideally this should not change once set.
    */
-  firstTxSig: transaction('first_tx_sig').references(() => transactions.txSig),
+  firstTxSig: transaction("first_tx_sig").references(() => transactions.txSig),
   /**
    * This may be significantly higher than the slot of the latest signature. The invariant here
    * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
    */
-  checkedUpToSlot: slot('checked_up_to_slot').notNull(),
-  serializerLogicVersion: smallint('serializer_logic_version').notNull(),
-  description: text('description').notNull()
+  checkedUpToSlot: slot("checked_up_to_slot").notNull(),
+  serializerLogicVersion: smallint("serializer_logic_version").notNull(),
+  description: text("description").notNull(),
+  status: pgEnum("status", TransactionWatchStatus).notNull(),
 });
 
 export const transactionWatcherTransactions = pgTable('transaction_watcher_transactions', {
