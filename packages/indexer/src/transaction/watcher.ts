@@ -9,6 +9,7 @@ import { getTransactionHistory } from "./history";
 import { connection } from "../connection";
 import { logger } from "../logger";
 import { Err, Ok, TaggedUnion } from "../match";
+import { TransactionWatchStatus } from "@metadaoproject/indexer-db/lib/schema";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
@@ -31,6 +32,7 @@ $ pnpm sql "insert into transaction_watchers values ('TWAPrdhADy2aTKN5iFZtNnkQYX
 export enum WatcherBackfillError {
   StoppedBackfill = "StoppedBackfill",
   SlotCheckHistoryMismatch = "SlotCheckHistoryMismatch",
+  GetTransactionHistoryFailure = "GetTransactionHistoryFailure",
   TransactionParseFailure = "TransactionParseFailure",
   TransactionUpsertFailure = "TransactionUpsertFailure",
   WatcherUpdateFailure = "WatcherUpdateFailure",
@@ -42,8 +44,6 @@ type TransactionWatcherRecord =
 type TransactionRecord = typeof schema.transactions._.model.insert;
 
 const watchers: Record<string, TransactionWatcher> = {};
-
-const disabledWatchers = (process.env.DISABLED_WATCHERS ?? "").split(",");
 
 class TransactionWatcher {
   private account: PublicKey;
@@ -105,7 +105,9 @@ class TransactionWatcher {
       case false:
         {
           logger.error(
-            `error running backfill from latest: ${backfillRes.error.type}`
+            `error running backfill from latest: ${
+              backfillRes.error.type
+            }. For acct: ${this.account.toBase58()}`
           );
         }
         break;
@@ -129,13 +131,23 @@ class TransactionWatcher {
         "tried to call backfillFromLatest on an already backfilling watcher"
       );
     this.backfilling = true;
+    const acct = this.account.toBase58();
     const latestFinalizedSlot = BigInt(await connection.getSlot("finalized"));
-    const history =
+    const historyRes =
       await this.getTransactionHistoryFromFinalizedSlotWithRetry();
+    if (!historyRes.success) {
+      // update tx watcher status to failed and exit, but other tx watchers continue
+      const markFailedResult = await this.markTransactionWatcherAsFailed();
+      if (!markFailedResult?.success) {
+        return markFailedResult;
+      }
+      return historyRes;
+    }
+    // history fetch was successful
+    const history = historyRes.ok;
     logger.info(
       `history after ${this.latestTxSig} is length ${history.length}`
     );
-    const acct = this.account.toBase58();
     let priorSlot = this.checkedUpToSlot;
     let numIndexed = 0;
     for (const signatureInfo of history) {
@@ -292,7 +304,16 @@ class TransactionWatcher {
     return Ok(`${acct} watcher is up to date`);
   }
 
-  private async getTransactionHistoryFromFinalizedSlotWithRetry() {
+  private async getTransactionHistoryFromFinalizedSlotWithRetry(): Promise<
+    | {
+        success: false;
+        error: TaggedUnion;
+      }
+    | {
+        success: true;
+        ok: ConfirmedSignatureInfo[];
+      }
+  > {
     const maxRetries = 3;
     const retryDelay = 1000;
     let maxSignatures = 0;
@@ -319,13 +340,11 @@ class TransactionWatcher {
             maxSignatures
           );
         }
-
-        // If all is well, return the response with the max signatures
-        if (txSignatures.length === maxSignatures) {
-          return txSignatures;
-        }
       } catch (error) {
-        console.error("Error fetching transaction history:", error);
+        if (i === maxRetries - 1)
+          return Err({
+            type: WatcherBackfillError.GetTransactionHistoryFailure,
+          });
       }
 
       // Wait before retrying
@@ -333,7 +352,26 @@ class TransactionWatcher {
     }
 
     // Return the response with the max signatures after all retries
-    return responseWithMaxSignatures;
+    return Ok(responseWithMaxSignatures);
+  }
+
+  private async markTransactionWatcherAsFailed() {
+    const acct = this.account.toBase58();
+    const updateResult = await usingDb((db) =>
+      db
+        .update(schema.transactionWatchers)
+        .set({
+          acct,
+          status: TransactionWatchStatus.Failed,
+        })
+        .where(eq(schema.transactionWatchers.acct, acct))
+        .returning({ acct: schema.transactionWatchers.acct })
+    );
+    if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
+      logger.error(`Failed to mark tx watcher for acct ${acct} as failed`);
+      return Err({ type: WatcherBackfillError.WatcherUpdateFailure });
+    }
+    return Ok("successfully marked transaction watcher as failed");
   }
 
   public stop() {
@@ -361,11 +399,8 @@ export async function startTransactionWatchers() {
     const curWatchersByAccount: Record<string, TransactionWatcherRecord> = {};
     const watchersToStart: Set<string> = new Set();
     const watchersToStop: Set<string> = new Set();
-    const enabledWatchers = curWatchers.filter(
-      (w) => !disabledWatchers.includes(w.acct)
-    );
     // TODO: we need a way to reset running watchers if they're slot or tx was rolled back
-    for (const watcherInDb of enabledWatchers) {
+    for (const watcherInDb of curWatchers) {
       curWatchersByAccount[watcherInDb.acct] = watcherInDb;
       const alreadyWatching = watcherInDb.acct in watchers;
       if (!alreadyWatching) {
