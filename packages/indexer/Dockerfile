@@ -10,7 +10,7 @@ RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/s
 RUN wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk
 RUN apk add --no-cache --force-overwrite glibc-2.28-r0.apk
 
-RUN corepack prepare pnpm@9.1.0 --activate
+RUN corepack prepare pnpm@8.15.5 --activate
 RUN corepack enable
 ENV REPO_DIR /home/indexer/futarchy-indexer
 RUN mkdir -p $REPO_DIR

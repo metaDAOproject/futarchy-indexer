@@ -74,8 +74,8 @@ importers:
         specifier: ^15.1.4
         version: 15.1.4
       '@metadaoproject/futarchy-sdk':
-        specifier: file:../../../futarchy-sdk
-        version: file:../futarchy-sdk(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
+        specifier: 1.1.0-alpha.18
+        version: 1.1.0-alpha.18(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
       '@metadaoproject/futarchy-ts':
         specifier: ^1.5.0
         version: 1.5.0(fastestsmallesttextencoderdecoder@1.0.22)
@@ -1407,6 +1407,33 @@ packages:
     dependencies:
       '@opentelemetry/api': 1.8.0
       tdigest: 0.1.2
+    dev: false
+
+  /@metadaoproject/futarchy-sdk@1.1.0-alpha.18(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1):
+    resolution: {integrity: sha512-rfj9u0NrkeLX7qNJzXEc9ykXqRlmnbulFUbTXIhUAUIYsgSVFx549sgWCfjjtkZGPktWThpb5Tpuh3z/H2bOSw==}
+    dependencies:
+      '@coral-xyz/anchor': 0.28.1-beta.2
+      '@metadaoproject/futarchy-ts': 1.5.0(fastestsmallesttextencoderdecoder@1.0.22)
+      '@metaplex-foundation/js': 0.20.1(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@metaplex-foundation/mpl-token-metadata': 3.2.1(@metaplex-foundation/umi@0.9.1)
+      '@metaplex-foundation/umi': 0.9.1
+      '@openbook-dex/openbook-v2': 0.2.6(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/wallet-adapter-base': 0.9.23(@solana/web3.js@1.91.8)
+      '@solana/web3.js': 1.91.8
+      '@types/bun': 1.1.1
+      '@types/numeral': 2.0.5
+      graphql-ws: 5.16.0(graphql@16.8.1)
+      numeral: 2.0.6
+      rxjs: 7.8.1
+    transitivePeerDependencies:
+      - arweave
+      - bufferutil
+      - encoding
+      - fastestsmallesttextencoderdecoder
+      - graphql
+      - supports-color
+      - utf-8-validate
     dev: false
 
   /@metadaoproject/futarchy-ts@1.5.0(fastestsmallesttextencoderdecoder@1.0.22):
@@ -5817,35 +5844,6 @@ packages:
 
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-
-  file:../futarchy-sdk(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1):
-    resolution: {directory: ../futarchy-sdk, type: directory}
-    id: file:../futarchy-sdk
-    name: '@metadaoproject/futarchy-sdk'
-    dependencies:
-      '@coral-xyz/anchor': 0.28.1-beta.2
-      '@metadaoproject/futarchy-ts': 1.5.0(fastestsmallesttextencoderdecoder@1.0.22)
-      '@metaplex-foundation/js': 0.20.1(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)
-      '@metaplex-foundation/mpl-token-metadata': 3.2.1(@metaplex-foundation/umi@0.9.1)
-      '@metaplex-foundation/umi': 0.9.1
-      '@openbook-dex/openbook-v2': 0.2.6(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/wallet-adapter-base': 0.9.23(@solana/web3.js@1.91.8)
-      '@solana/web3.js': 1.91.8
-      '@types/bun': 1.1.1
-      '@types/numeral': 2.0.5
-      graphql-ws: 5.16.0(graphql@16.8.1)
-      numeral: 2.0.6
-      rxjs: 7.8.1
-    transitivePeerDependencies:
-      - arweave
-      - bufferutil
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - graphql
-      - supports-color
-      - utf-8-validate
-    dev: false
 
   github.com/Irys-xyz/avsc/a730cc8018b79e114b6a3381bbb57760a24c6cef:
     resolution: {tarball: https://codeload.github.com/Irys-xyz/avsc/tar.gz/a730cc8018b79e114b6a3381bbb57760a24c6cef}
