@@ -3,12 +3,7 @@ import * as schemaDefs from "./schema";
 import { Pool } from "pg";
 import "dotenv/config";
 
-let connectionString = process.env.PRODUCTION_FUTARCHY_PG_URL;
-
-if (process.env.DEPLOY_ENVIRONMENT === "STAGING") {
-  console.log("Staging detected using staging URL");
-  connectionString = process.env.STAGING_FUTARCHY_PG_URL;
-}
+let connectionString = process.env.FUTARCHY_PG_URL;
 
 const pool = new Pool({
   connectionString: connectionString,
@@ -39,4 +34,16 @@ export type DBTransaction = Parameters<
 >[0];
 
 export const schema = schemaDefs;
-export { eq, sql, desc, count, lte, notInArray, not, and } from "drizzle-orm";
+export {
+  eq,
+  sql,
+  desc,
+  count,
+  lte,
+  notInArray,
+  not,
+  and,
+  notIlike,
+  like,
+  ilike,
+} from "drizzle-orm";
