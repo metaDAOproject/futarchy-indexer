@@ -8,7 +8,7 @@ import {
 import { getTransactionHistory } from "./history";
 import { connection } from "../connection";
 import { logger } from "../logger";
-import { Err, Ok, TaggedUnion } from "../match";
+import { Err, Ok, Result, TaggedUnion } from "../match";
 import { TransactionWatchStatus } from "@metadaoproject/indexer-db/lib/schema";
 
 /*
@@ -39,9 +39,8 @@ export enum WatcherBackfillError {
   StartedWithPollingIntervalSet = "StartedWithPollingIntervalSet",
 }
 
-type TransactionWatcherRecord =
-  typeof schema.transactionWatchers._.model.select;
-type TransactionRecord = typeof schema.transactions._.model.insert;
+type TransactionWatcherRecord = typeof schema.transactionWatchers._.inferSelect;
+type TransactionRecord = typeof schema.transactions._.inferInsert;
 
 const watchers: Record<string, TransactionWatcher> = {};
 
@@ -305,14 +304,7 @@ class TransactionWatcher {
   }
 
   private async getTransactionHistoryFromFinalizedSlotWithRetry(): Promise<
-    | {
-        success: false;
-        error: TaggedUnion;
-      }
-    | {
-        success: true;
-        ok: ConfirmedSignatureInfo[];
-      }
+    Result<ConfirmedSignatureInfo[], TaggedUnion>
   > {
     const maxRetries = 3;
     const retryDelay = 1000;

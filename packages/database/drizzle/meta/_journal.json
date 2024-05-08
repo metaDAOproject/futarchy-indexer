@@ -141,6 +141,34 @@
       "when": 1714195484698,
       "tag": "0019_gray_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1715118824575,
+      "tag": "0020_good_talos",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1715119472193,
+      "tag": "0021_jittery_gamora",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1715124134372,
+      "tag": "0022_needy_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1715127483367,
+      "tag": "0023_tired_vulcan",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { getProposals } from "./proposal-indexer";
 import { getTransactionHistory } from "./transaction/history";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
-import { OpenbookTwapIndexer } from "./indexers/openbook-twap/openbook-twap-indexer";
+import { OpenbookTwapIndexer } from "./indexers/openbook-twap/openbook-twap-instruction-indexer";
 import { AutocratV0_1Indexer } from "./indexers/autocrat/autocrat-v0_1-indexer";
 import { AutocratV0Indexer } from "./indexers/autocrat/autocrat-v0-indexer";
 import { startTransactionWatchers } from "./transaction/watcher";
@@ -9,6 +9,7 @@ import { startIndexers } from "./indexers";
 import { getTransaction } from "./transaction/serializer";
 import { connection } from "./connection";
 import { startMetricsServer } from "./metrics";
+import { populateIndexers } from "./cli/txw/populate-indexers";
 
 //const proposals = await getProposals();
 //console.log(`got ${proposals.length} proposals`);
@@ -77,7 +78,7 @@ if (test.success) {
 console.log("parsed transaction");
 print(await connection.getParsedTransaction(sig, {maxSupportedTransactionVersion: 0}));
 //*/
-
+await populateIndexers();
 startMetricsServer();
-startTransactionWatchers();
-//startIndexers();
+// startTransactionWatchers();
+await startIndexers();
