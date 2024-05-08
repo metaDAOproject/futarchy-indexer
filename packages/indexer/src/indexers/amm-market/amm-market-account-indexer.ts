@@ -91,8 +91,8 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
           : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
         price: conditionalMarketSpotPrice.toString(),
         pricesType: PricesType.Conditional,
-        baseAmount: ammMarketAccount.baseAmount,
-        quoteAmount: ammMarketAccount.quoteAmount,
+        baseAmount: BigInt(ammMarketAccount.baseAmount.toNumber()),
+        quoteAmount: BigInt(ammMarketAccount.quoteAmount.toNumber()),
       };
 
       const pricesInsertResult = await usingDb((db) =>

@@ -55,6 +55,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
         });
       }
 
+      // update the latest slot here
       const newOpenbookConditionaPrice: PricesRecord = {
         marketAcct: account.toString(),
         updatedSlot: BigInt(context.slot),

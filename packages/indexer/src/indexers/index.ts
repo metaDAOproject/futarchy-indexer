@@ -28,7 +28,7 @@ export async function startAccountInfoIndexers() {
   );
 
   for (const indexerQueryRes of accountInfoIndexers) {
-    startAccountInfoIndexer(indexerQueryRes);
+    await startAccountInfoIndexer(indexerQueryRes);
   }
 }
 

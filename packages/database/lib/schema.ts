@@ -185,8 +185,8 @@ export const prices = pgTable(
     baseAmount: tokenAmount("base_amount"),
     quoteAmount: tokenAmount("quote_amount"),
     price: numeric("price", {
-      precision: 20,
-      scale: 0,
+      precision: 40,
+      scale: 20,
     }).notNull(),
     createdAt: timestamp("created_at")
       .notNull()
