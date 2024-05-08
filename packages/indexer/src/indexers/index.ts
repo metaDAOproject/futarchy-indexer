@@ -7,6 +7,7 @@ import { AccountInfoIndexer } from "./account-info-indexer";
 import { AmmMarketAccountUpdateIndexer } from "./amm-market/amm-market-account-indexer";
 import { connection } from "../connection";
 import { PublicKey } from "@solana/web3.js";
+import { OpenbookV2MarketAccountUpdateIndexer } from "./openbook-v2/openbook-v2-account-indexer";
 
 export async function startIndexers() {
   await startAccountInfoIndexers();
@@ -96,6 +97,8 @@ function getIndexerImplementation(
   switch (implementation) {
     case IndexerImplementation.AmmMarketIndexer:
       return AmmMarketAccountUpdateIndexer;
+    case IndexerImplementation.OpenbookV2MarketIndexer:
+      return OpenbookV2MarketAccountUpdateIndexer;
   }
   return null;
 }

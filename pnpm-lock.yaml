@@ -91,6 +91,9 @@ importers:
       '@openbook-dex/openbook-v2':
         specifier: ^0.1.9
         version: 0.1.10
+      '@orca-so/whirlpools-sdk':
+        specifier: ^0.12.5
+        version: 0.12.5(@coral-xyz/anchor@0.28.1-beta.2)(@orca-so/common-sdk@0.5.5)(@solana/spl-token@0.3.8)(@solana/web3.js@1.90.0)(decimal.js@10.4.3)
       '@solana/spl-token':
         specifier: ^0.3.8
         version: 0.3.8(@solana/web3.js@1.90.0)
@@ -2058,6 +2061,36 @@ packages:
   /@opentelemetry/api@1.8.0:
     resolution: {integrity: sha512-I/s6F7yKUDdtMsoBWXJe8Qz40Tui5vsuKCWJEWVL+5q9sSWRzzx6v2KeNsOBEwd94j0eWkpWCH4yB6rZg9Mf0w==}
     engines: {node: '>=8.0.0'}
+    dev: false
+
+  /@orca-so/common-sdk@0.5.5(@solana/spl-token@0.3.8)(@solana/web3.js@1.90.0)(decimal.js@10.4.3):
+    resolution: {integrity: sha512-jLtBYYOk4lMQJ6SV6hotoZc91UyV+pw07nL2shOgXg+pYWZAsokbXATgdxy6TC7X4uL00RDHPr68VFwAvzY0GQ==}
+    peerDependencies:
+      '@solana/spl-token': ^0.3.8
+      '@solana/web3.js': ^1.75.0
+      decimal.js: ^10.3.1
+    dependencies:
+      '@solana/spl-token': 0.3.8(@solana/web3.js@1.90.0)
+      '@solana/web3.js': 1.90.0
+      decimal.js: 10.4.3
+      tiny-invariant: 1.3.3
+    dev: false
+
+  /@orca-so/whirlpools-sdk@0.12.5(@coral-xyz/anchor@0.28.1-beta.2)(@orca-so/common-sdk@0.5.5)(@solana/spl-token@0.3.8)(@solana/web3.js@1.90.0)(decimal.js@10.4.3):
+    resolution: {integrity: sha512-hux9Bebeur+aB8mWQ7BMVE9WeC4BcwLlz6E/mokwScJQv067oRV/PIUdg/y6SXg4wx5/LEgyBTz+Anrv0UTsZw==}
+    peerDependencies:
+      '@coral-xyz/anchor': ~0.27.0
+      '@orca-so/common-sdk': ^0.5.2
+      '@solana/spl-token': ^0.3.8
+      '@solana/web3.js': ^1.75.0
+      decimal.js: ^10.3.1
+    dependencies:
+      '@coral-xyz/anchor': 0.28.1-beta.2
+      '@orca-so/common-sdk': 0.5.5(@solana/spl-token@0.3.8)(@solana/web3.js@1.90.0)(decimal.js@10.4.3)
+      '@solana/spl-token': 0.3.8(@solana/web3.js@1.90.0)
+      '@solana/web3.js': 1.90.0
+      decimal.js: 10.4.3
+      tiny-invariant: 1.3.3
     dev: false
 
   /@oven/bun-darwin-aarch64@1.0.26:
@@ -5548,6 +5581,10 @@ packages:
       es5-ext: 0.10.62
       next-tick: 1.1.0
     dev: true
+
+  /tiny-invariant@1.3.3:
+    resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
+    dev: false
 
   /tmp-promise@3.0.3:
     resolution: {integrity: sha512-RwM7MoPojPxsOBYnyd2hy0bxtIlVrihNs9pj5SUvY8Zz1sQcQG2tG1hSr8PDxfgEB8RNKDhqbIlroIarSNDNsQ==}

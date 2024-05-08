@@ -4,16 +4,29 @@ import {
   eq,
   notInArray,
   and,
+  notIlike,
 } from "@metadaoproject/indexer-db";
 import { MarketType } from "@metadaoproject/indexer-db/lib/schema";
+import { connection } from "../../connection";
+import {
+  ORCA_WHIRLPOOLS_CONFIG,
+  ORCA_WHIRLPOOL_PROGRAM_ID,
+  PDAUtil,
+  WhirlpoolAccountFetcher,
+} from "@orca-so/whirlpools-sdk";
+import { PublicKey } from "@solana/web3.js";
 
 type IndexerAccountDependency =
   typeof schema.indexerAccountDependencies._.inferInsert;
 
 export async function populateIndexers() {
   // populating market indexers
-  await populateAmmMarketIndexers();
-  await populateOpenbookMarketIndexers();
+  try {
+    await populateAmmMarketIndexers();
+    await populateOpenbookMarketIndexers();
+  } catch (e) {
+    console.error("error populating indexers", e);
+  }
 }
 async function populateAmmMarketIndexers() {
   const ammIndexerQuery = await usingDb((db) =>
@@ -115,4 +128,36 @@ async function populateOpenbookMarketIndexers() {
   }
 
   console.log(`Successfully populated AMM indexers`);
+}
+
+async function populateSpotPriceMarkets() {
+  const baseDaoTokens = await usingDb((db) =>
+    db
+      .select()
+      .from(schema.tokens)
+      .where(and(notIlike(schema.tokens.name, "%proposal%")))
+      .execute()
+  );
+
+  // Loop through each token to find its corresponding USDC market address
+  for (const token of baseDaoTokens) {
+    const marketPair = `USDC/${token.symbol}`; // Construct the market pair string, assuming USDC is the base currency
+
+    try {
+      // Fetch the market address using the Orca SDK
+      const usdcMint = new PublicKey("blahh");
+
+      const pda = PDAUtil.getWhirlpool(
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        ORCA_WHIRLPOOLS_CONFIG,
+        token.mintAcct,
+        usdcMint,
+        2
+      );
+    } catch (error) {
+      console.error(
+        `Error fetching market address for ${marketPair}: ${error}`
+      );
+    }
+  }
 }
