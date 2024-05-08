@@ -7,21 +7,20 @@ import { BN } from "@coral-xyz/anchor";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { PriceMath } from "@metadaoproject/futarchy-ts";
-
-type TwapRecord = typeof schema.twaps._.inferInsert;
-type PricesRecord = typeof schema.prices._.inferInsert;
+import {
+  TwapRecord,
+  PricesRecord,
+} from "@metadaoproject/indexer-db/lib/schema";
 
 export enum AmmAccountIndexerError {
   GeneralError = "GeneralError",
 }
 
-// Doing this rather than class implements pattern due to
-// https://github.com/microsoft/TypeScript/issues/41399
 export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
   index: async (
     accountInfo: AccountInfo<Buffer>,
     account: PublicKey,
-    context?: Context
+    context: Context
   ) => {
     try {
       const ammMarketAccount = await rpcReadClient.markets.amm.decodeMarket(
@@ -104,7 +103,7 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
             target: [schema.prices.updatedSlot, schema.prices.marketAcct],
             set: newAmmConditionaPrice,
           })
-          .returning({ marketAcct: schema.twaps.marketAcct })
+          .returning({ marketAcct: schema.prices.marketAcct })
       );
 
       return Ok({ acct: pricesInsertResult[0].marketAcct });

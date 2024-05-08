@@ -4,7 +4,7 @@ export type AccountInfoIndexer = {
   index(
     accountInfo: AccountInfo<Buffer>,
     account: PublicKey,
-    context?: Context
+    context: Context
   ): Promise<
     Result<
       {

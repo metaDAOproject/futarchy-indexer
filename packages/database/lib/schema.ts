@@ -647,3 +647,5 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
+export type TwapRecord = typeof twaps._.inferInsert;
+export type PricesRecord = typeof prices._.inferInsert;
