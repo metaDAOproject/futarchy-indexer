@@ -48,6 +48,7 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
           : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
       };
 
+      // TODO batch commits across inserts
       const twapUpsertResult = await usingDb((db) =>
         db
           .insert(schema.twaps)
@@ -58,6 +59,8 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
           })
           .returning({ marketAcct: schema.twaps.marketAcct })
       );
+
+      // TODO do an insert for prices based on base and quote from AMM (quote/base)
 
       return Ok({ acct: twapUpsertResult[0].marketAcct });
     } catch (e) {

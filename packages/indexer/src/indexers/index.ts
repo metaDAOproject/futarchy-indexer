@@ -18,7 +18,7 @@ export async function startAccountInfoIndexers() {
     db
       .select()
       .from(schema.indexers)
-      .where(eq(schema.indexers.type, IndexerType.AccountInfo))
+      .where(eq(schema.indexers.indexerType, IndexerType.AccountInfo))
       .fullJoin(
         schema.indexerAccountDependencies,
         eq(schema.indexerAccountDependencies.name, schema.indexers.name)
@@ -36,7 +36,7 @@ type IndexerWithAccountDeps = {
     name: string;
     implementation: IndexerImplementation;
     latestSlotProcessed: bigint;
-    type: IndexerType;
+    indexerType: IndexerType;
   } | null;
   indexer_account_dependencies: {
     name: string;
@@ -55,11 +55,17 @@ async function startAccountInfoIndexer(
   if (implementation && dependentAccount && dependentAccount.acct) {
     const accountPubKey = new PublicKey(dependentAccount.acct);
 
-    const accountInfo = await connection.getAccountInfo(accountPubKey);
+    const accountInfo = await connection.getAccountInfoAndContext(
+      accountPubKey
+    );
 
     //index refresh on startup
-    if (accountInfo) {
-      const res = await implementation.index(accountInfo, accountPubKey);
+    if (accountInfo.value) {
+      const res = await implementation.index(
+        accountInfo.value,
+        accountPubKey,
+        accountInfo.context
+      );
       if (!res.success) {
         console.error(
           "error indexing account update",

@@ -170,6 +170,28 @@ export const markets = pgTable("markets", {
   inactiveSlot: slot("inactive_slot"),
 });
 
+export const prices = pgTable(
+  "prices",
+  {
+    marketAcct: pubkey("market_acct")
+      .references(() => markets.marketAcct)
+      .notNull(),
+    updatedSlot: slot("updated_slot").notNull(),
+    baseAmount: tokenAmount("base_amount"),
+    quoteAmount: tokenAmount("quote_amount"),
+    price: numeric("price", {
+      precision: 20,
+      scale: 0,
+    }).notNull(),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.updatedSlot, table.marketAcct] }),
+  })
+);
+
 export const twaps = pgTable(
   "twaps",
   {
@@ -186,6 +208,14 @@ export const twaps = pgTable(
       precision: 40,
       scale: 0,
     }).notNull(),
+    lastObservation: numeric("last_observation", {
+      precision: 40,
+      scale: 0,
+    }),
+    lastPrice: numeric("last_price", {
+      precision: 40,
+      scale: 0,
+    }),
     curTwap: tokenAmount("token_amount").notNull(),
     createdAt: timestamp("created_at")
       .notNull()
