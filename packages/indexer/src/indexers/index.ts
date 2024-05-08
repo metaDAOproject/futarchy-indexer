@@ -69,7 +69,7 @@ async function startAccountInfoIndexer(
       );
       if (!res.success) {
         console.error(
-          "error indexing account update",
+          "error indexing account initial fetch",
           accountPubKey.toString()
         );
       }
