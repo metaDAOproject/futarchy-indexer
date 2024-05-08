@@ -12,7 +12,7 @@ if (AUTOCRAT_V0_2.label !== "V0.2") {
 }
 
 export const AutocratV0_1Indexer: InstructionIndexer<AutocratV0> = {
-  PROGRAM_NAME: "AutocratV0.1",
+  PROGRAM_NAME: "AutocratV0.2",
   PROGRAM_ID: AUTOCRAT_V0_2.programId.toBase58(),
   PROGRAM_IDL: IDL,
   indexInstruction: async (dbTx, txIdx, txRes, ixIdx, ix) => {

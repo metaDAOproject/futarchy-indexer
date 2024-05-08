@@ -5,7 +5,8 @@ import { logger } from "../../logger";
 import { AccountInfoIndexer } from "../account-info-indexer";
 import { rpcReadClient } from "../../connection";
 import { usingDb, schema } from "@metadaoproject/indexer-db";
-import { Dao, DaoAccount, DaoAggregate, DaoDetails__GQL } from "@metadaoproject/futarchy-sdk/lib/types";
+import { FutarchyIndexerDaoClient } from "@metadaoproject/futarchy-sdk/lib/client/indexer/dao";
+import { FutarchyRPCDaoClient } from "@metadaoproject/futarchy-sdk/lib/client/rpc";
 
 const AUTOCRAT_V1_0 = AUTOCRAT_VERSIONS[AUTOCRAT_VERSIONS.length];
 
@@ -35,6 +36,13 @@ export const AutocratV0_1AccountIndexer: AccountInfoIndexer = {
       const onChainDaos: Dao[] = await rpcReadClient.daos.all()
       // Fetch the daos we have in the DB
       // TODO: We likely can just use the SDK for this...
+      new FutarchyRPCDaoClient(Provider)
+      const client = new FutarchyIndexerDaoClient(
+        FutarchyRPCDaoClient,
+        Client,
+        protocolMap: ,
+      )
+      //const databaseDaos = await client.fetchAllDaos()
       const databaseDaos: DaoAggregate[] = await usingDb((db) => {
         db
           .select()
