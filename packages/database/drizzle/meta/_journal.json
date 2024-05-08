@@ -169,6 +169,13 @@
       "when": 1715127483367,
       "tag": "0023_tired_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1715142240745,
+      "tag": "0024_complete_prodigy",
+      "breakpoints": true
     }
   ]
 }
