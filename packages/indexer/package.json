@@ -13,7 +13,7 @@
     "@openbook-dex/openbook-v2": "^0.1.9",
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.90.0",
-    "@metadaoproject/futarchy-sdk": "1.1.0.alpha.18",
+    "@metadaoproject/futarchy-sdk": "1.1.0-alpha.18",
     "@metadaoproject/futarchy-ts": "^1.5.0",
     "@metadaoproject/indexer-db": "workspace:*",
     "@metaplex-foundation/umi-bundle-defaults": "^0.9.1",
