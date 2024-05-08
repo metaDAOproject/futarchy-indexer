@@ -16,8 +16,6 @@
     "@metadaoproject/futarchy-sdk": "1.1.0-alpha.18",
     "@metadaoproject/futarchy-ts": "^1.5.0",
     "@metadaoproject/indexer-db": "workspace:*",
-    "@metaplex-foundation/umi-bundle-defaults": "^0.9.1",
-    "@metaplex-foundation/umi-uploader-bundlr": "^0.9.1",
     "ansicolor": "^2.0.1",
     "bs58": "^4.0.1",
     "commander": "^12.0.0",
