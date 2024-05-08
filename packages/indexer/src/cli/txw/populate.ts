@@ -7,12 +7,10 @@ import {
   notIlike,
 } from "@metadaoproject/indexer-db";
 import { MarketType } from "@metadaoproject/indexer-db/lib/schema";
-import { connection } from "../../connection";
 import {
   ORCA_WHIRLPOOLS_CONFIG,
   ORCA_WHIRLPOOL_PROGRAM_ID,
   PDAUtil,
-  WhirlpoolAccountFetcher,
 } from "@orca-so/whirlpools-sdk";
 import { PublicKey } from "@solana/web3.js";
 
@@ -150,7 +148,7 @@ async function populateSpotPriceMarkets() {
       const pda = PDAUtil.getWhirlpool(
         ORCA_WHIRLPOOL_PROGRAM_ID,
         ORCA_WHIRLPOOLS_CONFIG,
-        token.mintAcct,
+        new PublicKey(token.mintAcct),
         usdcMint,
         2
       );
