@@ -1,13 +1,13 @@
-import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schemaDefs from './schema';
-import { Pool } from 'pg';
-import 'dotenv/config'
+import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schemaDefs from "./schema";
+import { Pool } from "pg";
+import "dotenv/config";
 
-let connectionString = process.env.PRODUCTION_FUTARCHY_PG_URL
+let connectionString = process.env.PRODUCTION_FUTARCHY_PG_URL;
 
-if(process.env.DEPLOY_ENVIRONMENT === "STAGING") {
-  console.log("Staging detected using staging URL")
-  connectionString = process.env.STAGING_FUTARCHY_PG_URL
+if (process.env.DEPLOY_ENVIRONMENT === "STAGING") {
+  console.log("Staging detected using staging URL");
+  connectionString = process.env.STAGING_FUTARCHY_PG_URL;
 }
 
 const pool = new Pool({
@@ -16,14 +16,16 @@ const pool = new Pool({
   // I noticed that there was always a connection timeout error after 9 loops of the startWatchers interval;
   // it repeats every 5 seconds and immediately after service start.
   // That's a consistent error after 40 seconds. So I'm seeing if idle timeout of 20 seconds works. I suspect it won't though
-  // since the connection is never idle for more than 5 seconds and yet we still get a connection error. 
+  // since the connection is never idle for more than 5 seconds and yet we still get a connection error.
   min: 0,
-  idleTimeoutMillis: 20 * 1000
+  idleTimeoutMillis: 20 * 1000,
 });
 
-export async function usingDb<T>(fn: (connection: NodePgDatabase<typeof schemaDefs>) => Promise<T>): Promise<T> {
+export async function usingDb<T>(
+  fn: (connection: NodePgDatabase<typeof schemaDefs>) => Promise<T>
+): Promise<T> {
   const client = await pool.connect();
-  const connection = drizzle(pool, {schema: schemaDefs});
+  const connection = drizzle(pool, { schema: schemaDefs });
   try {
     const result = await fn(connection);
     return result;
@@ -32,7 +34,9 @@ export async function usingDb<T>(fn: (connection: NodePgDatabase<typeof schemaDe
   }
 }
 
-export type DBTransaction = Parameters<Parameters<NodePgDatabase<typeof schemaDefs>['transaction']>[0]>[0];
+export type DBTransaction = Parameters<
+  Parameters<NodePgDatabase<typeof schemaDefs>["transaction"]>[0]
+>[0];
 
 export const schema = schemaDefs;
-export {eq, sql, desc, count, lte} from 'drizzle-orm';
+export { eq, sql, desc, count, lte, notInArray, not, and } from "drizzle-orm";

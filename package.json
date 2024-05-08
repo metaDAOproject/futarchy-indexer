@@ -10,7 +10,8 @@
     "create-tx-watcher": "pnpm --filter @metadaoproject/indexer-service cli txw create",
     "validate-tx-watcher": "pnpm --filter @metadaoproject/indexer-service cli txw validate",
     "test": "pnpm --filter @metadaoproject/indexer-service test",
-    "publish-client": "echo 'hello world'"
+    "publish-client": "echo 'hello world'",
+    "build-sdk": "pnpm --filter @metadaoproject/futarchy-sdk build"
   },
   "devDependencies": {
     "bun": "1.0.26"
