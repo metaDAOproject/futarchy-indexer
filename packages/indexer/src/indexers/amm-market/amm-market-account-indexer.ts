@@ -46,7 +46,6 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
         updatedSlot: context
           ? BigInt(context.slot)
           : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
-        createdAt: new Date(),
       };
 
       const twapUpsertResult = await usingDb((db) =>

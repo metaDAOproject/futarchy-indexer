@@ -271,7 +271,7 @@ export const indexers = pgTable("indexers", {
   name: varchar("name", { length: 100 }).primaryKey(),
   implementation: pgEnum("implementation", IndexerImplementation).notNull(),
   latestSlotProcessed: slot("latest_slot_processed").notNull(),
-  type: pgEnum("indexer_type", IndexerType).notNull(),
+  indexerType: pgEnum("indexer_type", IndexerType).notNull(),
 });
 
 export const indexerAccountDependencies = pgTable(
