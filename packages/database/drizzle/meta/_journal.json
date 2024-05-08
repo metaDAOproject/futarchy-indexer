@@ -176,6 +176,13 @@
       "when": 1715142240745,
       "tag": "0024_complete_prodigy",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1715143493116,
+      "tag": "0025_flippant_juggernaut",
+      "breakpoints": true
     }
   ]
 }

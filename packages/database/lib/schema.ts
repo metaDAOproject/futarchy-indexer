@@ -268,7 +268,7 @@ export const transactionWatchers = pgTable("transaction_watchers", {
   checkedUpToSlot: slot("checked_up_to_slot").notNull(),
   serializerLogicVersion: smallint("serializer_logic_version").notNull(),
   description: text("description").notNull(),
-  status: pgEnum("status", TransactionWatchStatus).notNull(),
+  status: pgEnum("status", TransactionWatchStatus).default(TransactionWatchStatus.Disabled).notNull(),
 });
 
 export const transactionWatcherTransactions = pgTable(
