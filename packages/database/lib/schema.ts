@@ -170,6 +170,11 @@ export const markets = pgTable("markets", {
   inactiveSlot: slot("inactive_slot"),
 });
 
+export enum PricesType {
+  Spot = "spot",
+  Conditional = "conditional",
+}
+
 export const prices = pgTable(
   "prices",
   {
@@ -180,12 +185,13 @@ export const prices = pgTable(
     baseAmount: tokenAmount("base_amount"),
     quoteAmount: tokenAmount("quote_amount"),
     price: numeric("price", {
-      precision: 20,
-      scale: 0,
+      precision: 40,
+      scale: 20,
     }).notNull(),
     createdAt: timestamp("created_at")
       .notNull()
       .default(sql`now()`),
+    pricesType: pgEnum("prices_type", PricesType).notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.updatedSlot, table.marketAcct] }),
@@ -268,7 +274,9 @@ export const transactionWatchers = pgTable("transaction_watchers", {
   checkedUpToSlot: slot("checked_up_to_slot").notNull(),
   serializerLogicVersion: smallint("serializer_logic_version").notNull(),
   description: text("description").notNull(),
-  status: pgEnum("status", TransactionWatchStatus).default(TransactionWatchStatus.Disabled).notNull(),
+  status: pgEnum("status", TransactionWatchStatus)
+    .default(TransactionWatchStatus.Disabled)
+    .notNull(),
 });
 
 export const transactionWatcherTransactions = pgTable(
@@ -291,6 +299,7 @@ export const transactionWatcherTransactions = pgTable(
 export enum IndexerImplementation {
   AutocratV0OpenbookV2 = "AutocratV0OpenbookV2",
   AmmMarketIndexer = "AmmMarketIndexer",
+  OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
@@ -564,18 +573,18 @@ export const daoDetails = pgTable(
     description: text("description"),
     imageUrl: varchar("image_url"),
     // Added this in anticipation for web3 auth.
-    creator_acct: pubkey('creator_acct'),
+    creator_acct: pubkey("creator_acct"),
     // A way for other people to have permissions to make changes.
-    admin_accts: jsonb('admin_accts'),
+    admin_accts: jsonb("admin_accts"),
     // By initalizing these in the dao details we can reference them on ANY token
     // which is created through proposals and cascading down through. So the data
     // will be duplicated, but referencing through this will reduce the burden
     // of rpc and afford us flexibility with unkown tokens in the UI.
     // This is a happy medium before we get to onchain data.
-    token_image_url: varchar('token_image_url'),
-    pass_token_image_url: varchar('pass_token_image_url'),
-    fail_token_image_url: varchar('fail_token_image_url'),
-    lp_token_image_url: varchar('lp_token_image_url'),
+    token_image_url: varchar("token_image_url"),
+    pass_token_image_url: varchar("pass_token_image_url"),
+    fail_token_image_url: varchar("fail_token_image_url"),
+    lp_token_image_url: varchar("lp_token_image_url"),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),
@@ -597,16 +606,16 @@ export const poposalDetails = pgTable("proposal_details", {
   categories: jsonb("categories"),
   content: text("content"),
   // Added in anticipation for web3 auth.
-  proposer_acct: pubkey('proposer_acct'),
+  proposer_acct: pubkey("proposer_acct"),
   // This data is duplicated, given the fact that a proposal initialize can fail,
   // the capacity in the UI (to store accounts) needs to be set such that you can
   // unwind what HAS been done (and reclaim). By doing this we're not mapping on anything
   // that can or should be indexed, this is just a state manager which affords the
   // above.
-  base_cond_vault_acct: pubkey('base_cond_vault_acct'),
-  quote_cond_vault_acct: pubkey('quote_cond_vault_acct'),
-  pass_market_acct: pubkey('pass_market_acct'),
-  fail_market_acct: pubkey('fail_market_acct'),
+  base_cond_vault_acct: pubkey("base_cond_vault_acct"),
+  quote_cond_vault_acct: pubkey("quote_cond_vault_acct"),
+  pass_market_acct: pubkey("pass_market_acct"),
+  fail_market_acct: pubkey("fail_market_acct"),
 });
 
 export const programSystem = pgTable("program_system", {
@@ -639,3 +648,5 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
+export type TwapRecord = typeof twaps._.inferInsert;
+export type PricesRecord = typeof prices._.inferInsert;

@@ -1,34 +1,45 @@
 import { AccountInfoIndexer } from "../account-info-indexer";
-import { rpcReadClient } from "../../connection";
+import { provider, rpcReadClient } from "../../connection";
 import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
 import { schema, usingDb } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
 import { BN } from "@coral-xyz/anchor";
-
-type TwapRecord = typeof schema.twaps._.inferInsert;
+import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
+import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
+import { PriceMath } from "@metadaoproject/futarchy-ts";
+import {
+  TwapRecord,
+  PricesRecord,
+} from "@metadaoproject/indexer-db/lib/schema";
 
 export enum AmmAccountIndexerError {
   GeneralError = "GeneralError",
 }
 
-// Doing this rather than class implements pattern due to
-// https://github.com/microsoft/TypeScript/issues/41399
 export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
   index: async (
     accountInfo: AccountInfo<Buffer>,
     account: PublicKey,
-    context?: Context
+    context: Context
   ) => {
     try {
       const ammMarketAccount = await rpcReadClient.markets.amm.decodeMarket(
         accountInfo
       );
-      //index twap
+      const baseToken = await enrichTokenMetadata(
+        ammMarketAccount.baseMint,
+        provider
+      );
+      const quoteToken = await enrichTokenMetadata(
+        ammMarketAccount.baseMint,
+        provider
+      );
 
       // agg is 0 so skipping
       if (ammMarketAccount.oracle.aggregator.toNumber() === 0)
         return Ok({ acct: account.toString() });
 
+      // indexing the twap
       const twapCalculation: BN = ammMarketAccount.oracle.aggregator.div(
         ammMarketAccount.oracle.lastUpdatedSlot.sub(
           ammMarketAccount.createdAtSlot
@@ -48,7 +59,7 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
           : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
       };
 
-      // TODO batch commits across inserts
+      // TODO batch commits across inserts - maybe with event queue
       const twapUpsertResult = await usingDb((db) =>
         db
           .insert(schema.twaps)
@@ -60,9 +71,42 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
           .returning({ marketAcct: schema.twaps.marketAcct })
       );
 
-      // TODO do an insert for prices based on base and quote from AMM (quote/base)
+      if (twapUpsertResult.length === 0) {
+        console.error("failed to upsert twap");
+      }
 
-      return Ok({ acct: twapUpsertResult[0].marketAcct });
+      // indexing the conditional market price
+      const conditionalMarketSpotPrice = PriceMath.getHumanPrice(
+        PriceMath.getAmmPriceFromReserves(
+          ammMarketAccount?.baseAmount,
+          ammMarketAccount?.quoteAmount
+        ),
+        baseToken.decimals!!,
+        quoteToken.decimals!!
+      );
+      const newAmmConditionaPrice: PricesRecord = {
+        marketAcct: account.toString(),
+        updatedSlot: context
+          ? BigInt(context.slot)
+          : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
+        price: conditionalMarketSpotPrice.toString(),
+        pricesType: PricesType.Conditional,
+        baseAmount: BigInt(ammMarketAccount.baseAmount.toNumber()),
+        quoteAmount: BigInt(ammMarketAccount.quoteAmount.toNumber()),
+      };
+
+      const pricesInsertResult = await usingDb((db) =>
+        db
+          .insert(schema.prices)
+          .values(newAmmConditionaPrice)
+          .onConflictDoUpdate({
+            target: [schema.prices.updatedSlot, schema.prices.marketAcct],
+            set: newAmmConditionaPrice,
+          })
+          .returning({ marketAcct: schema.prices.marketAcct })
+      );
+
+      return Ok({ acct: pricesInsertResult[0].marketAcct });
     } catch (e) {
       console.error(e);
       return Err({ type: AmmAccountIndexerError.GeneralError });
