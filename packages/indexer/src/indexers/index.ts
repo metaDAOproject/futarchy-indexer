@@ -10,6 +10,7 @@ import { PublicKey } from "@solana/web3.js";
 import { OpenbookV2MarketAccountUpdateIndexer } from "./openbook-v2/openbook-v2-account-indexer";
 import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
 import { IntervalFetchIndexer } from "./interval-fetch-indexer";
+import { BirdeyePricesIndexer } from "./birdeye/birdeye-prices-indexer";
 
 export async function startIndexers() {
   await startMainIndexers();
@@ -143,6 +144,8 @@ function getIntervalFetchIndexerImplementation(
   switch (implementation) {
     case IndexerImplementation.JupiterQuotesIndexer:
       return JupiterQuotesIndexer;
+    case IndexerImplementation.BirdeyePricesIndexer:
+      return BirdeyePricesIndexer;
   }
   return null;
 }

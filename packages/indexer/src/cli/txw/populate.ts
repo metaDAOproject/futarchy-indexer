@@ -19,6 +19,8 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { connection, readonlyWallet } from "../../connection";
+import { Err, Ok } from "../../match";
+import { JupiterQuotesIndexer } from "../../indexers/jupiter/jupiter-quotes-indexer";
 
 type IndexerAccountDependency =
   typeof schema.indexerAccountDependencies._.inferInsert;
@@ -151,7 +153,11 @@ async function populateSpotPriceMarkets() {
 
   // Loop through each token to find its corresponding USDC market address
   for (const token of baseDaoTokens) {
-    await populateJupQuoteIndexerAndMarket(token);
+    const result = await populateJupQuoteIndexerAndMarket(token);
+    // for ones that don't work on jup, do birdeye
+    if (!result.success) {
+      await populateBirdEyePricesIndexerAndMarket(token);
+    }
     // Not enough coverage on orca for now so disabling
     // await populateOrcaWhirlpoolMarket(token);
   }
@@ -168,6 +174,13 @@ async function populateJupQuoteIndexerAndMarket(token: {
 }) {
   const { mintAcct } = token;
   try {
+    //check to see if jupiter can support this token
+    const res = await JupiterQuotesIndexer.index(mintAcct);
+    if (!res.success) {
+      return Err({ type: "NotSupportedByJup" });
+    }
+
+    // it is supported, so let's continue on
     const [usdcToken] = await usingDb((db) =>
       db
         .select()
@@ -228,13 +241,93 @@ async function populateJupQuoteIndexerAndMarket(token: {
         marketInserRes[0].acct
       );
     }
+    return Ok(null);
   } catch (error) {
     console.error(
       `Error populating jupiter quote indexer and market for USDC/${token.symbol}: ${error}`
     );
+    return Err({ type: "GeneralError" });
+  }
+}
+
+async function populateBirdEyePricesIndexerAndMarket(token: {
+  symbol: string;
+  name: string;
+  imageUrl: string | null;
+  mintAcct: string;
+  supply: bigint;
+  decimals: number;
+  updatedAt: Date;
+}) {
+  const { mintAcct } = token;
+  try {
+    const [usdcToken] = await usingDb((db) =>
+      db
+        .select()
+        .from(schema.tokens)
+        .where(eq(schema.tokens.symbol, "USDC"))
+        .execute()
+    );
+
+    const baseTokenDependency: IndexerAccountDependency = {
+      acct: mintAcct,
+      name: "birdeye-prices",
+    };
+
+    const insertRes = await usingDb((db) =>
+      db
+        .insert(schema.indexerAccountDependencies)
+        .values(baseTokenDependency)
+        .onConflictDoNothing()
+        .returning({ acct: schema.indexerAccountDependencies.acct })
+    );
+
+    if (insertRes.length > 0) {
+      console.log(
+        "successfully inserted birdeye prices acct dep for tracking",
+        insertRes[0].acct
+      );
+    }
+
+    const birdeyeMarket: MarketRecord = {
+      marketAcct: mintAcct,
+      baseLotSize: BigInt(0),
+      baseMakerFee: 0,
+      baseMintAcct: mintAcct,
+      baseTakerFee: 0,
+      marketType: MarketType.BIRDEYE_PRICES,
+      quoteMintAcct: usdcToken.mintAcct,
+      quoteLotSize: BigInt(0),
+      quoteTickSize: BigInt(0),
+      quoteMakerFee: 0,
+      quoteTakerFee: 0,
+      createTxSig: "",
+      activeSlot: null,
+      inactiveSlot: null,
+      createdAt: new Date(),
+    };
+
+    const marketInserRes = await usingDb((db) =>
+      db
+        .insert(schema.markets)
+        .values(birdeyeMarket)
+        .onConflictDoNothing()
+        .returning({ acct: schema.markets.marketAcct })
+    );
+
+    if (marketInserRes.length > 0) {
+      console.log(
+        "successfully inserted birdeye market, markets record for tracking",
+        marketInserRes[0].acct
+      );
+    }
+  } catch (error) {
+    console.error(
+      `Error populating birdeye quote indexer and market for USDC/${token.symbol}: ${error}`
+    );
   }
 
-  console.log("successfully populate jup spot indexers");
+  console.log("successfully populate birdeye spot indexer for", token.symbol);
 }
 
 async function populateOrcaWhirlpoolMarket(token: {

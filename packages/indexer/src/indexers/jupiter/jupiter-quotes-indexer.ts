@@ -58,8 +58,9 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
           .execute()
       );
       if ((insertPriceRes?.rowCount ?? 0) > 0) {
-        return Ok({ acct });
+        console.log("inserted new jup quote price", acct);
       }
+      return Ok({ acct });
     } catch (e) {
       console.error(e);
       return Err({

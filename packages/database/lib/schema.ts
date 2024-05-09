@@ -41,6 +41,7 @@ export enum MarketType {
   METEORA = "meteora",
   FUTARCHY_AMM = "amm", // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
   JUPITER_QUOTE = "jupiter_quote",
+  BIRDEYE_PRICES = "birdeye_prices",
 }
 
 export enum ProposalStatus {
@@ -305,6 +306,7 @@ export enum IndexerImplementation {
   AmmMarketIndexer = "AmmMarketIndexer",
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
+  BirdeyePricesIndexer = "BirdeyePricesIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
