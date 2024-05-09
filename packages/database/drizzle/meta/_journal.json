@@ -197,6 +197,20 @@
       "when": 1715193451680,
       "tag": "0027_amazing_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1715267634353,
+      "tag": "0028_abnormal_grim_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1715271075039,
+      "tag": "0029_wise_felicia_hardy",
+      "breakpoints": true
     }
   ]
 }

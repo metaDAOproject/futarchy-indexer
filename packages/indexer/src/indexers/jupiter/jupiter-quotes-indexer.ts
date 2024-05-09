@@ -6,6 +6,11 @@ import {
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
 
+enum JupiterQuoteIndexingError {
+  JupiterFetchError = "JupiterFetchError",
+  GeneralJupiterQuoteIndexError = "GeneralJupiterQuoteIndexError",
+}
+
 export const JupiterQuotesIndexer: IntervalFetchIndexer = {
   intervalMs: 60_000,
   index: async (acct: string) => {
@@ -31,34 +36,44 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
       const tokenPriceRes = await fetch(url);
       const tokenPriceJson = (await tokenPriceRes.json()) as JupTokenQuoteRes;
 
+      if (tokenPriceJson.error) {
+        return Err({ type: JupiterQuoteIndexingError.JupiterFetchError });
+      }
+
       const newPrice: PricesRecord = {
-        marketAcct: "",
+        marketAcct: acct,
         price: convertJupTokenPrice(
           tokenPriceJson,
           token[0].decimals
         ).toString(),
         pricesType: PricesType.Spot,
-        updatedSlot: BigInt(tokenPriceJson.contextSlot),
+        updatedSlot: BigInt(tokenPriceJson.contextSlot ?? 0),
       };
 
       const insertPriceRes = await usingDb((db) =>
-        db.insert(schema.prices).values(newPrice).execute()
+        db
+          .insert(schema.prices)
+          .values(newPrice)
+          .onConflictDoNothing()
+          .execute()
       );
       if ((insertPriceRes?.rowCount ?? 0) > 0) {
         return Ok({ acct });
       }
-      throw "insert failed";
     } catch (e) {
       console.error(e);
-      return Err({ type: "TODO" });
+      return Err({
+        type: JupiterQuoteIndexingError.GeneralJupiterQuoteIndexError,
+      });
     }
   },
 };
 
 type JupTokenQuoteRes = {
-  outAmount: string;
-  inAmount: string;
-  contextSlot: number;
+  outAmount?: string;
+  inAmount?: string;
+  contextSlot?: number;
+  error?: string;
 };
 
 const convertJupTokenPrice = (
@@ -67,7 +82,9 @@ const convertJupTokenPrice = (
 ): number => {
   const price =
     Math.round(
-      (Number(data.outAmount) / Number(data.inAmount)) * 1_000 * 10 ** decimals
+      (Number(data.outAmount ?? "0") / Number(data.inAmount ?? "0")) *
+        1_000 *
+        10 ** decimals
     ) /
     10 ** decimals;
   return price;

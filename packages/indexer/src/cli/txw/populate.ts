@@ -132,7 +132,7 @@ async function populateOpenbookMarketIndexers() {
     }
   }
 
-  console.log(`Successfully populated AMM indexers`);
+  console.log("Successfully populated openbook market indexers");
 }
 
 async function populateSpotPriceMarkets() {
@@ -151,13 +151,13 @@ async function populateSpotPriceMarkets() {
 
   // Loop through each token to find its corresponding USDC market address
   for (const token of baseDaoTokens) {
-    await populateJupQuoteIndexer(token);
+    await populateJupQuoteIndexerAndMarket(token);
     // Not enough coverage on orca for now so disabling
     // await populateOrcaWhirlpoolMarket(token);
   }
 }
 
-async function populateJupQuoteIndexer(token: {
+async function populateJupQuoteIndexerAndMarket(token: {
   symbol: string;
   name: string;
   imageUrl: string | null;
@@ -168,9 +168,17 @@ async function populateJupQuoteIndexer(token: {
 }) {
   const { mintAcct } = token;
   try {
+    const [usdcToken] = await usingDb((db) =>
+      db
+        .select()
+        .from(schema.tokens)
+        .where(eq(schema.tokens.symbol, "USDC"))
+        .execute()
+    );
+
     const baseTokenDependency: IndexerAccountDependency = {
       acct: mintAcct,
-      name: "jupiter-quote-fetch",
+      name: "jupiter-quotes",
     };
 
     const insertRes = await usingDb((db) =>
@@ -183,15 +191,50 @@ async function populateJupQuoteIndexer(token: {
 
     if (insertRes.length > 0) {
       console.log(
-        "successfully inserted whirlpool market for tracking",
+        "successfully inserted jupiter quote acct dep for tracking",
         insertRes[0].acct
+      );
+    }
+
+    const jupMarket: MarketRecord = {
+      marketAcct: mintAcct,
+      baseLotSize: BigInt(0),
+      baseMakerFee: 0,
+      baseMintAcct: mintAcct,
+      baseTakerFee: 0,
+      marketType: MarketType.JUPITER_QUOTE,
+      quoteMintAcct: usdcToken.mintAcct,
+      quoteLotSize: BigInt(0),
+      quoteTickSize: BigInt(0),
+      quoteMakerFee: 0,
+      quoteTakerFee: 0,
+      createTxSig: "",
+      activeSlot: null,
+      inactiveSlot: null,
+      createdAt: new Date(),
+    };
+
+    const marketInserRes = await usingDb((db) =>
+      db
+        .insert(schema.markets)
+        .values(jupMarket)
+        .onConflictDoNothing()
+        .returning({ acct: schema.markets.marketAcct })
+    );
+
+    if (marketInserRes.length > 0) {
+      console.log(
+        "successfully inserted jupiter market, markets record for tracking",
+        marketInserRes[0].acct
       );
     }
   } catch (error) {
     console.error(
-      `Error fetching market address for USDC/${token.symbol}: ${error}`
+      `Error populating jupiter quote indexer and market for USDC/${token.symbol}: ${error}`
     );
   }
+
+  console.log("successfully populate jup spot indexers");
 }
 
 async function populateOrcaWhirlpoolMarket(token: {

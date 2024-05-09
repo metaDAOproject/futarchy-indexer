@@ -12,11 +12,11 @@ import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
 import { IntervalFetchIndexer } from "./interval-fetch-indexer";
 
 export async function startIndexers() {
-  await startAccountInfoIndexers();
+  await startMainIndexers();
   console.log("indexers successfully started");
 }
 
-export async function startAccountInfoIndexers() {
+export async function startMainIndexers() {
   const allIndexers = await usingDb((db) =>
     db
       .select()
@@ -40,7 +40,7 @@ export async function startAccountInfoIndexers() {
   );
 
   for (const indexerQueryRes of intervalFetchIndexers) {
-    await startIntervalFetchIndexers(indexerQueryRes);
+    startIntervalFetchIndexer(indexerQueryRes);
   }
 }
 
@@ -105,9 +105,7 @@ async function startAccountInfoIndexer(
   }
 }
 
-async function startIntervalFetchIndexers(
-  indexerQueryRes: IndexerWithAccountDeps
-) {
+function startIntervalFetchIndexer(indexerQueryRes: IndexerWithAccountDeps) {
   const { indexers: indexer, indexer_account_dependencies: dependentAccount } =
     indexerQueryRes;
   if (!indexer) return;
@@ -115,10 +113,14 @@ async function startIntervalFetchIndexers(
     indexer.implementation
   );
   if (implementation && dependentAccount && dependentAccount.acct) {
+    console.log("setting interval fetch for:", dependentAccount.acct);
     setInterval(async () => {
       const res = await implementation.index(dependentAccount.acct);
       if (!res.success) {
-        console.log("error with interval fetch indexer:", res.error);
+        console.log(
+          `error with interval fetch indexer ${dependentAccount.acct}:`,
+          res.error
+        );
       }
     }, implementation.intervalMs);
   }

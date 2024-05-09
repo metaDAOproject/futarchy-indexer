@@ -40,6 +40,7 @@ export enum MarketType {
   ORCA_WHIRLPOOL = "orca_whirlpool",
   METEORA = "meteora",
   FUTARCHY_AMM = "amm", // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
+  JUPITER_QUOTE = "jupiter_quote",
 }
 
 export enum ProposalStatus {
@@ -152,12 +153,12 @@ export const markets = pgTable("markets", {
   // NOTE: These can be the conditional vault references given the market, in this
   // case the bids is where deposits for bids exist (eg the quote token) and for asks
   // it's where deposits for asks exist (eg the base token)
-  bidsTokenAcct: pubkey("bids_token_acct")
-    .references(() => tokenAccts.tokenAcct)
-    .notNull(),
-  asksTokenAcct: pubkey("asks_token_acct")
-    .references(() => tokenAccts.tokenAcct)
-    .notNull(),
+  bidsTokenAcct: pubkey("bids_token_acct").references(
+    () => tokenAccts.tokenAcct
+  ),
+  asksTokenAcct: pubkey("asks_token_acct").references(
+    () => tokenAccts.tokenAcct
+  ),
 
   // Fees are in bips
   baseMakerFee: smallint("base_maker_fee").notNull(),
