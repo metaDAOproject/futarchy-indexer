@@ -168,6 +168,9 @@ export const markets = pgTable("markets", {
   // When market becomes active or inactive
   activeSlot: slot("active_slot"),
   inactiveSlot: slot("inactive_slot"),
+  createdAt: timestamp("created_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
 export enum PricesType {
@@ -650,3 +653,4 @@ export const conditionalVaults = pgTable("conditional_vaults", {
 });
 export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;
+export type MarketRecord = typeof markets._.inferInsert;
