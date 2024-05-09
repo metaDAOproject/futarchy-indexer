@@ -8,6 +8,8 @@ import { AmmMarketAccountUpdateIndexer } from "./amm-market/amm-market-account-i
 import { connection } from "../connection";
 import { PublicKey } from "@solana/web3.js";
 import { OpenbookV2MarketAccountUpdateIndexer } from "./openbook-v2/openbook-v2-account-indexer";
+import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
+import { IntervalFetchIndexer } from "./interval-fetch-indexer";
 
 export async function startIndexers() {
   await startAccountInfoIndexers();
@@ -15,11 +17,10 @@ export async function startIndexers() {
 }
 
 export async function startAccountInfoIndexers() {
-  const accountInfoIndexers = await usingDb((db) =>
+  const allIndexers = await usingDb((db) =>
     db
       .select()
       .from(schema.indexers)
-      .where(eq(schema.indexers.indexerType, IndexerType.AccountInfo))
       .fullJoin(
         schema.indexerAccountDependencies,
         eq(schema.indexerAccountDependencies.name, schema.indexers.name)
@@ -27,8 +28,19 @@ export async function startAccountInfoIndexers() {
       .execute()
   );
 
+  const accountInfoIndexers = allIndexers.filter(
+    (i) => i.indexers?.indexerType === IndexerType.AccountInfo
+  );
+
   for (const indexerQueryRes of accountInfoIndexers) {
     await startAccountInfoIndexer(indexerQueryRes);
+  }
+  const intervalFetchIndexers = allIndexers.filter(
+    (i) => i.indexers?.indexerType === IndexerType.IntervalFetch
+  );
+
+  for (const indexerQueryRes of intervalFetchIndexers) {
+    await startIntervalFetchIndexers(indexerQueryRes);
   }
 }
 
@@ -52,7 +64,9 @@ async function startAccountInfoIndexer(
   const { indexers: indexer, indexer_account_dependencies: dependentAccount } =
     indexerQueryRes;
   if (!indexer) return;
-  const implementation = getIndexerImplementation(indexer.implementation);
+  const implementation = getAccountInfoIndexerImplementation(
+    indexer.implementation
+  );
   if (implementation && dependentAccount && dependentAccount.acct) {
     const accountPubKey = new PublicKey(dependentAccount.acct);
 
@@ -91,7 +105,26 @@ async function startAccountInfoIndexer(
   }
 }
 
-function getIndexerImplementation(
+async function startIntervalFetchIndexers(
+  indexerQueryRes: IndexerWithAccountDeps
+) {
+  const { indexers: indexer, indexer_account_dependencies: dependentAccount } =
+    indexerQueryRes;
+  if (!indexer) return;
+  const implementation = getIntervalFetchIndexerImplementation(
+    indexer.implementation
+  );
+  if (implementation && dependentAccount && dependentAccount.acct) {
+    setInterval(async () => {
+      const res = await implementation.index(dependentAccount.acct);
+      if (!res.success) {
+        console.log("error with interval fetch indexer:", res.error);
+      }
+    }, implementation.intervalMs);
+  }
+}
+
+function getAccountInfoIndexerImplementation(
   implementation: IndexerImplementation
 ): AccountInfoIndexer | null {
   switch (implementation) {
@@ -99,6 +132,15 @@ function getIndexerImplementation(
       return AmmMarketAccountUpdateIndexer;
     case IndexerImplementation.OpenbookV2MarketIndexer:
       return OpenbookV2MarketAccountUpdateIndexer;
+  }
+  return null;
+}
+function getIntervalFetchIndexerImplementation(
+  implementation: IndexerImplementation
+): IntervalFetchIndexer | null {
+  switch (implementation) {
+    case IndexerImplementation.JupiterQuotesIndexer:
+      return JupiterQuotesIndexer;
   }
   return null;
 }

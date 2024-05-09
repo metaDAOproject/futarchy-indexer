@@ -303,10 +303,12 @@ export enum IndexerImplementation {
   AutocratV0OpenbookV2 = "AutocratV0OpenbookV2",
   AmmMarketIndexer = "AmmMarketIndexer",
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
+  JupiterQuotesIndexer = "JupiterQuotesIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
   AccountInfo = "AccountInfo",
+  IntervalFetch = "IntervalFetch",
 }
 
 export const indexers = pgTable("indexers", {
