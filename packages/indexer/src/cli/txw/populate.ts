@@ -20,7 +20,10 @@ import {
 import { PublicKey } from "@solana/web3.js";
 import { connection, readonlyWallet } from "../../connection";
 import { Err, Ok } from "../../match";
-import { JupiterQuotesIndexer } from "../../indexers/jupiter/jupiter-quotes-indexer";
+import {
+  JupiterQuoteIndexingError,
+  JupiterQuotesIndexer,
+} from "../../indexers/jupiter/jupiter-quotes-indexer";
 
 type IndexerAccountDependency =
   typeof schema.indexerAccountDependencies._.inferInsert;
@@ -137,6 +140,11 @@ async function populateOpenbookMarketIndexers() {
   console.log("Successfully populated openbook market indexers");
 }
 
+enum PopulateSpotPriceMarketErrors {
+  NotSupportedByJup = "NotSupportedByJup",
+  GeneralJupError = "GeneralJupError",
+}
+
 async function populateSpotPriceMarkets() {
   const baseDaoTokens = await usingDb((db) =>
     db
@@ -176,8 +184,11 @@ async function populateJupQuoteIndexerAndMarket(token: {
   try {
     //check to see if jupiter can support this token
     const res = await JupiterQuotesIndexer.index(mintAcct);
-    if (!res.success) {
-      return Err({ type: "NotSupportedByJup" });
+    if (
+      !res.success &&
+      res.error.type === JupiterQuoteIndexingError.JupiterFetchError
+    ) {
+      return Err({ type: PopulateSpotPriceMarketErrors.NotSupportedByJup });
     }
 
     // it is supported, so let's continue on
@@ -246,7 +257,7 @@ async function populateJupQuoteIndexerAndMarket(token: {
     console.error(
       `Error populating jupiter quote indexer and market for USDC/${token.symbol}: ${error}`
     );
-    return Err({ type: "GeneralError" });
+    return Err({ type: PopulateSpotPriceMarketErrors.GeneralJupError });
   }
 }
 

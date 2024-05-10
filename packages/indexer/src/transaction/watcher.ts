@@ -357,6 +357,8 @@ class TransactionWatcher {
   }
 
   private async markTransactionWatcherAsFailed() {
+    this.backfilling = false;
+    this.stopped = true;
     const acct = this.account.toBase58();
     const updateResult = await usingDb((db) =>
       db

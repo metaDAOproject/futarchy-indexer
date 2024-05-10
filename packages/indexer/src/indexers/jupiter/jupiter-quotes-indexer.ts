@@ -6,7 +6,7 @@ import {
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
 
-enum JupiterQuoteIndexingError {
+export enum JupiterQuoteIndexingError {
   JupiterFetchError = "JupiterFetchError",
   GeneralJupiterQuoteIndexError = "GeneralJupiterQuoteIndexError",
 }
@@ -62,7 +62,7 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
       }
       return Ok({ acct });
     } catch (e) {
-      console.error(e);
+      console.error("general error indexing jupiter quote: ", e);
       return Err({
         type: JupiterQuoteIndexingError.GeneralJupiterQuoteIndexError,
       });
