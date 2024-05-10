@@ -233,6 +233,7 @@ export const twaps = pgTable(
       .default(sql`now()`),
   },
   (table) => ({
+    // consider changing PK to be createdAt
     pk: primaryKey({ columns: [table.updatedSlot, table.marketAcct] }),
   })
 );
