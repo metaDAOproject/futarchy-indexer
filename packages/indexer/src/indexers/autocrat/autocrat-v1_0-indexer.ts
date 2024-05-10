@@ -146,7 +146,7 @@ export const AutocratV1_0ConditionalVaultIndexer: ConditionalVaultIndexer = {
         console.warn('No vaults in the database, using only chain data');
       }
 
-      const dbVaultKeys = dbVaults.map((dbVault) => dbVault.)
+      // const dbVaultKeys = dbVaults.map((dbVault) => dbVault.accounts)
       // Fetches all conditional vaults from the rpc
       const onChainVaults = await rpcReadClient.fetchAllConditionalVaults();
 
