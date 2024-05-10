@@ -31,7 +31,7 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
         provider
       );
       const quoteToken = await enrichTokenMetadata(
-        ammMarketAccount.baseMint,
+        ammMarketAccount.quoteMint,
         provider
       );
 
@@ -100,7 +100,7 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
           .insert(schema.prices)
           .values(newAmmConditionaPrice)
           .onConflictDoUpdate({
-            target: [schema.prices.updatedSlot, schema.prices.marketAcct],
+            target: [schema.prices.createdAt, schema.prices.marketAcct],
             set: newAmmConditionaPrice,
           })
           .returning({ marketAcct: schema.prices.marketAcct })
@@ -108,7 +108,7 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
 
       return Ok({ acct: pricesInsertResult[0].marketAcct });
     } catch (e) {
-      console.error(e);
+      console.error("general error with indexing amm market account info:", e);
       return Err({ type: AmmAccountIndexerError.GeneralError });
     }
   },

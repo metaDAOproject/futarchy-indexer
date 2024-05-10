@@ -197,6 +197,34 @@
       "when": 1715193451680,
       "tag": "0027_amazing_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1715267634353,
+      "tag": "0028_abnormal_grim_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1715271075039,
+      "tag": "0029_wise_felicia_hardy",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1715302337034,
+      "tag": "0030_late_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1715312365906,
+      "tag": "0031_faulty_purple_man",
+      "breakpoints": true
     }
   ]
 }

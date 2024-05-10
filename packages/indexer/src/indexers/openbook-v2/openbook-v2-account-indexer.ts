@@ -74,7 +74,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
           .insert(schema.prices)
           .values(newOpenbookConditionaPrice)
           .onConflictDoUpdate({
-            target: [schema.prices.updatedSlot, schema.prices.marketAcct],
+            target: [schema.prices.createdAt, schema.prices.marketAcct],
             set: newOpenbookConditionaPrice,
           })
           .returning({ marketAcct: schema.prices.marketAcct })
@@ -82,7 +82,10 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
 
       return Ok({ acct: pricesInsertResult[0].marketAcct });
     } catch (error) {
-      console.error("Unexpected error in index function:", error);
+      console.error(
+        "Unexpected error in openbook v2 market info index function:",
+        error
+      );
       return Err({
         type: OpenbookV2MarketAccountIndexerError.GeneralError,
         error,

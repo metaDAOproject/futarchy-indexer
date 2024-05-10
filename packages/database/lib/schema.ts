@@ -40,6 +40,8 @@ export enum MarketType {
   ORCA_WHIRLPOOL = "orca_whirlpool",
   METEORA = "meteora",
   FUTARCHY_AMM = "amm", // MetaDAO's custom hybrid Clob/AMM impl (see proposal 4)
+  JUPITER_QUOTE = "jupiter_quote",
+  BIRDEYE_PRICES = "birdeye_prices",
 }
 
 export enum ProposalStatus {
@@ -152,12 +154,12 @@ export const markets = pgTable("markets", {
   // NOTE: These can be the conditional vault references given the market, in this
   // case the bids is where deposits for bids exist (eg the quote token) and for asks
   // it's where deposits for asks exist (eg the base token)
-  bidsTokenAcct: pubkey("bids_token_acct")
-    .references(() => tokenAccts.tokenAcct)
-    .notNull(),
-  asksTokenAcct: pubkey("asks_token_acct")
-    .references(() => tokenAccts.tokenAcct)
-    .notNull(),
+  bidsTokenAcct: pubkey("bids_token_acct").references(
+    () => tokenAccts.tokenAcct
+  ),
+  asksTokenAcct: pubkey("asks_token_acct").references(
+    () => tokenAccts.tokenAcct
+  ),
 
   // Fees are in bips
   baseMakerFee: smallint("base_maker_fee").notNull(),
@@ -168,6 +170,9 @@ export const markets = pgTable("markets", {
   // When market becomes active or inactive
   activeSlot: slot("active_slot"),
   inactiveSlot: slot("inactive_slot"),
+  createdAt: timestamp("created_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
 export enum PricesType {
@@ -194,7 +199,7 @@ export const prices = pgTable(
     pricesType: pgEnum("prices_type", PricesType).notNull(),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.updatedSlot, table.marketAcct] }),
+    pk: primaryKey({ columns: [table.createdAt, table.marketAcct] }),
   })
 );
 
@@ -228,6 +233,7 @@ export const twaps = pgTable(
       .default(sql`now()`),
   },
   (table) => ({
+    // consider changing PK to be createdAt
     pk: primaryKey({ columns: [table.updatedSlot, table.marketAcct] }),
   })
 );
@@ -299,11 +305,15 @@ export const transactionWatcherTransactions = pgTable(
 export enum IndexerImplementation {
   AutocratV0OpenbookV2 = "AutocratV0OpenbookV2",
   AmmMarketIndexer = "AmmMarketIndexer",
+  AmmMarketInstructionsIndexer = "AmmMarketInstructionsIndexer",
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
+  JupiterQuotesIndexer = "JupiterQuotesIndexer",
+  BirdeyePricesIndexer = "BirdeyePricesIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
   AccountInfo = "AccountInfo",
+  IntervalFetch = "IntervalFetch",
 }
 
 export const indexers = pgTable("indexers", {
@@ -424,7 +434,9 @@ export const takes = pgTable(
     baseAmount: tokenAmount("base_amount").notNull(),
     quotePrice: tokenAmount("quote_price").notNull(),
     takerBaseFee: tokenAmount("taker_base_fee").notNull(),
-    takerQuoteFee: tokenAmount("maker_quote_fee").notNull(),
+    takerQuoteFee: tokenAmount("taker_quote_fee")
+      .notNull()
+      .default(0 as unknown as bigint),
 
     // Maker fields will be NULL on pure AMMs
     makerOrderTxSig: transaction("maker_order_tx_sig").references(
@@ -648,5 +660,12 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
+export type IndexerRecord = typeof indexers._.inferInsert;
 export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;
+export type MarketRecord = typeof markets._.inferInsert;
+export type TakesRecord = typeof takes._.inferInsert;
+export type OrdersRecord = typeof orders._.inferInsert;
+export type TransactionRecord = typeof transactions._.inferInsert;
+export type TransactionWatcherTransactionRecord =
+  typeof transactionWatcherTransactions._.inferInsert;
