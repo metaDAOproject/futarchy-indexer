@@ -420,7 +420,7 @@ async function handleNewTransaction(
 
   // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
   //       be a no-op in the happy path
-  await usingDb((db) =>
+  const insertRes = await usingDb((db) =>
     db
       .insert(schema.transactionWatcherTransactions)
       .values({
@@ -429,7 +429,11 @@ async function handleNewTransaction(
         watcherAcct: acct,
       })
       .onConflictDoNothing()
+      .returning({ acct: schema.transactionWatcherTransactions.watcherAcct })
   );
+  if (insertRes.length > 0) {
+    console.log("successfully inserted new t watch tx", insertRes[0].acct);
+  }
 }
 
 export async function startTransactionWatchers() {
