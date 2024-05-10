@@ -4,9 +4,10 @@ import { InstructionIndexer } from "../instruction-indexer";
 import { logger } from "../../logger";
 import { ConditionalVaultIndexer, DaoIndexer, MarketIndexer, ProposalIndexer } from "../program-idl-data-indexer";
 import { rpcReadClient, indexerReadClient } from "../../connection";
-import { usingDb, schema } from "@metadaoproject/indexer-db";
+import { usingDb, schema, sql } from "@metadaoproject/indexer-db";
 import { Dao, DaoAggregate } from "@metadaoproject/futarchy-sdk/lib/types";
 import { Err, Ok } from "../../match";
+import { ConditionalVault } from "@metadaoproject/futarchy-ts";
 
 const AUTOCRAT_V1_0 = AUTOCRAT_VERSIONS[AUTOCRAT_VERSIONS.length];
 
@@ -29,6 +30,19 @@ export const AutocratV0_1Indexer: InstructionIndexer<AutocratV1> = {
   },
 };
 
+// Order for indexing is as follows
+// 1. Need to fetch tokens from daos and
+// insert them into the database
+// 2. After we have the tokens in the database
+// we can insert the dao (which we fetched)
+// 3. After we have the dao, we fetch conditional vaults
+// to generate the p/f tokens (base, quote) and insert them
+// 4. After the tokens are inserted we can then insert the vault
+// 5. And from the vaults insert we can insert token accounts
+// from conditional vaults
+// 6. We then fetch the proposals and insert the markets
+// 7. Once markets are inserted then we can insert the proposal
+
 export const AutocratV1_0DaoIndexer: DaoIndexer = {
   index: async() => {
     try {
@@ -43,13 +57,14 @@ export const AutocratV1_0DaoIndexer: DaoIndexer = {
       const daoKeys: string[] = daos.flatMap((dao) => dao.daos.flatMap((daoKey) => daoKey.publicKey.toString()))
 
       // Only working for this version (v1.0)
+      // TODO: Review this so we match on the correct key or it has the f=ing key so we're good
       const onChainDaos = await rpcReadClient.fetchAllDaos();
 
       // Check to see if the on chain data returns
       if(onChainDaos == undefined || !onChainDaos.length){
         console.error(`No on chain data discovered for program, discontinuing.`);
         // TODO: Throw but we want to keep cycling
-        return;
+        return Err({ type: AutocratV1_0DaoIndexerError.GeneralError });
       }
       // Map the on chain dao keys
       const onChainDaoKeys: string[] = onChainDaos.daos.map((dao) => dao.publicKey.toString());
@@ -69,50 +84,54 @@ export const AutocratV1_0DaoIndexer: DaoIndexer = {
 
       if(!onChainDaosToInsert.length){
         console.log(`Nothing to insert`);
-        return;
+        return Err({ type: AutocratV1_0DaoIndexerError.GeneralError });
       };
 
       // Insert into database
       const insertedDaos = onChainDaosToInsert.map(async (dao) => {
-        if(!dao.baseToken.publicKey || !dao.quoteToken.publicKey){
-          console.error("Unable to determine public key for dao tokens")
-          return;
+        if(dao.baseToken.publicKey == null || dao.quoteToken.publicKey == null){
+          console.error("Unable to determine public key for dao tokens");
+          return Err({ type: AutocratV1_0DaoIndexerError.GeneralError });
         }
-        return await usingDb((db) => 
+        // Puts the base tokens into the DB before we try to insert the dao
+        await usingDb((db) => 
+          db
+            .insert(schema.tokens)
+            .values({
+              mintAcct: dao.baseToken.publicKey?.toString(),
+              name: dao.baseToken.name,
+              symbol: dao.baseToken.name?.toUpperCase(),
+              supply: 1,
+              decimals: 9, // Need to fetch the token decimals from the sdkkkkkk
+              updatedAt: sql("NOW()"),
+              imageUrl: "", // TODO: Solve how to map the token image from cloudflare
+            })
+            .onConflictDoNothing()
+            .execute()
+        );
+        // After we have the token in the DB, we can now insert the dao
+        await usingDb((db) => 
           db
             .insert(schema.daos)
             .values({
-              //daoId: 20 , // TODO: We need to Serial this or somethings...
               daoAcct: dao.daoAccount.toString(),
-              programAcct: AUTOCRAT_V1_0.programId.toString(),
+              programAcct: dao.protocol.autocrat.programId.toString(),
               // No idea with the above seems like it shoudn't be caring about lint (2x lines)
               baseAcct: dao.baseToken.publicKey.toString(),
               quoteAcct: dao.quoteToken.publicKey.toString(),
               treasuryAcct: dao.daoAccount.treasury,
             })
             .onConflictDoNothing()
-            .returning({ daoId: schema.daos.daoId })
+            .execute()
         );
       });
       
       // TODO: Should we actually check if the data is consistent
       // TODO: Don't know about this or what we should return.
-      return Ok({ acct: insertedDaos });
+      return Ok({ acct: 'string' });
     } catch (err) {
       console.error(err);
       return Err({ type: AutocratV1_0DaoIndexerError.GeneralError });
-    }
-  }
-};
-
-export const AutocratV1_0ProposalIndexer: ProposalIndexer = {
-  index: async() => {
-    try {
-      // Fetches all proposals from the database
-      const proposals = await indexerReadClient.fetchAllProposals();
-      return proposals;
-    } catch (err) {
-      console.error(err);
     }
   }
 };
@@ -121,8 +140,17 @@ export const AutocratV1_0ConditionalVaultIndexer: ConditionalVaultIndexer = {
   index: async() => {
     try {
       // Fetches all conditional vaults from the database
-      const vaults = await indexerReadClient.fetchAllConditionalVaults();
-      return vaults;
+      const dbVaults: ConditionalVault[] = await indexerReadClient.fetchAllConditionalVaults();
+
+      if (dbVaults == undefined || !dbVaults.length){
+        console.warn('No vaults in the database, using only chain data');
+      }
+
+      const dbVaultKeys = dbVaults.map((dbVault) => dbVault.)
+      // Fetches all conditional vaults from the rpc
+      const onChainVaults = await rpcReadClient.fetchAllConditionalVaults();
+
+      return dbVaults;
     } catch (err) {
       console.error(err);
     }
@@ -135,6 +163,21 @@ export const AutocratV1_0MarketIndexer: MarketIndexer = {
       // Fetches all markets from the database
       const markets = await indexerReadClient.fetchAllMarkets();
       return markets;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+};
+
+export const AutocratV1_0ProposalIndexer: ProposalIndexer = {
+  index: async() => {
+    try {
+      // Fetches all proposals from the database
+      const dbProposals = await indexerReadClient.fetchAllProposals();
+      // Fetches all proposals from the rpc
+      const onChainProposals = await rpcReadClient.fetchAllProposals();
+      
+      return dbProposals;
     } catch (err) {
       console.error(err);
     }
