@@ -16,6 +16,10 @@ const pool = new Pool({
   idleTimeoutMillis: 20 * 1000,
 });
 
+export async function getClient() {
+  return pool.connect();
+}
+
 export async function usingDb<T>(
   fn: (connection: NodePgDatabase<typeof schemaDefs>) => Promise<T>
 ): Promise<T> {
@@ -40,6 +44,7 @@ export {
   desc,
   count,
   lte,
+  gte,
   notInArray,
   not,
   and,

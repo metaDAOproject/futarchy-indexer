@@ -199,7 +199,7 @@ export const prices = pgTable(
     pricesType: pgEnum("prices_type", PricesType).notNull(),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.updatedSlot, table.marketAcct] }),
+    pk: primaryKey({ columns: [table.createdAt, table.marketAcct] }),
   })
 );
 
@@ -659,9 +659,12 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
+export type IndexerRecord = typeof indexers._.inferInsert;
 export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;
 export type MarketRecord = typeof markets._.inferInsert;
 export type TakesRecord = typeof takes._.inferInsert;
 export type OrdersRecord = typeof orders._.inferInsert;
 export type TransactionRecord = typeof transactions._.inferInsert;
+export type TransactionWatcherTransactionRecord =
+  typeof transactionWatcherTransactions._.inferInsert;
