@@ -24,12 +24,7 @@ export enum AmmInstructionIndexerError {
 }
 
 const ammClient = new AmmClient(provider, AMM_PROGRAM_ID, []);
-
 type IDL = typeof ammClient.program.idl;
-
-// create handle new instruction function, which makes a call to store the transaction in the DB and
-// then gets the instruction indexer implementation for the account...
-
 const ammParser = new SolanaParser([
   {
     idl: ammClient.program.idl,
