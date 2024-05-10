@@ -33,11 +33,10 @@ export async function getTransactionHistory(
   let page = 1;
   while (true) {
     // The Solana RPC tx API has us do a backwards walk
-    console.log(account.toBase58());
     const transactions = await connection.getSignaturesForAddress(
       account,
       { before: earliestSig },
-      "finalized"
+      "confirmed"
     );
     if (transactions.length === 0) {
       break;
@@ -72,14 +71,17 @@ export async function getTransactionHistory(
         reachedAfter = true;
         break;
       }
-      if (cur.slot < largerThanSlot) {
-        throwInvariantViolation(
-          account,
-          after,
-          before,
-          `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`
-        );
-      }
+      // this causes unnecessary loss of txs being indexed,
+      // and if we have an indexer who STRICTLY needs everything in order, then we should create a config field
+      // on the indexers table that specifies this as being needed or not needed
+      // if (cur.slot < largerThanSlot) {
+      //   throwInvariantViolation(
+      //     account,
+      //     after,
+      //     before,
+      //     `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`
+      //   );
+      // }
       history.push(cur);
       earliestSig = cur.signature;
     }
