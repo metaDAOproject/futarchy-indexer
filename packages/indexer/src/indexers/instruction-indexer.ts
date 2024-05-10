@@ -18,7 +18,7 @@ export type InstructionIndexer<IDL extends Idl> = {
   ): Promise<
     Result<
       {
-        acct: string;
+        txSig: string;
       },
       TaggedUnion
     >
@@ -33,7 +33,7 @@ export type InstructionIndexer<IDL extends Idl> = {
   }): Promise<
     Result<
       {
-        acct: string;
+        txSig: string;
       },
       TaggedUnion
     >

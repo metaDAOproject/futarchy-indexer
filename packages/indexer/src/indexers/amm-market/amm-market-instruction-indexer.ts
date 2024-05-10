@@ -4,6 +4,8 @@ import { schema, usingDb } from "@metadaoproject/indexer-db";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { BN } from "@coral-xyz/anchor";
 import {
+  OrderSide,
+  OrdersRecord,
   TakesRecord,
   TransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
@@ -16,8 +18,9 @@ import { InstructionIndexer } from "../instruction-indexer";
 import { IDL } from "@openbook-dex/openbook-v2";
 import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
 
-export enum AmmAccountIndexerError {
+export enum AmmInstructionIndexerError {
   GeneralError = "GeneralError",
+  MissingMarket = "MissingMarket",
 }
 
 const ammClient = new AmmClient(provider, AMM_PROGRAM_ID, []);
@@ -45,84 +48,124 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
     decodedInstruction: IDL["instructions"][number]
   ) => {
     try {
-      return Ok({ acct: "" });
+      return Ok({ txSig: "" });
     } catch (e) {
       console.error(e);
-      return Err({ type: AmmAccountIndexerError.GeneralError });
+      return Err({ type: AmmInstructionIndexerError.GeneralError });
     }
   },
   async indexTransactionSig(transaction: TransactionRecord): Promise<
     Result<
       {
-        acct: string;
+        txSig: string;
       },
       TaggedUnion
     >
   > {
-    const ixs = await ammParser.parseTransaction(connection, transaction.txSig);
-    const ixTypes = ixs?.reduce(
-      (prev, currIx) => {
-        // Check for 'swap' instruction
-        if (currIx.name === "swap") {
-          prev.swap = true;
-        }
-        // Check for 'addLiquidity' instruction
-        else if (currIx.name === "addLiquidity") {
-          prev.addLiquidity = true;
-        }
-        // Check for 'removeLiquidity' instruction
-        else if (currIx.name === "removeLiquidity") {
-          prev.removeLiquidity = true;
-        }
-
-        return prev;
-      },
-      { swap: false, addLiquidity: false, removeLiquidity: false }
-    );
-    if (ixTypes?.swap) {
-      const relatedIx = ixs?.find((i) => i.name === "swap");
-      const marketAcct = relatedIx?.accounts.find((a) => a.name === "amm");
-      if (!marketAcct) return Err({ type: "missing data" });
-      if (!relatedIx?.args) return Err({ type: "missing data" });
-      const args = relatedIx.args as {
-        swapType: SwapType;
-        inputAmont: BN;
-        outputAmountMin: BN;
-      };
-      // index a swap here
-      const swapTake: TakesRecord = {
-        marketAcct: marketAcct.pubkey.toBase58(),
-        baseAmount: BigInt(args.outputAmountMin.toNumber()),
-        orderBlock: BigInt(transaction.slot),
-        orderTime: transaction.blockTime,
-        orderTxSig: transaction.txSig,
-        quotePrice: BigInt(args.inputAmont.toNumber()),
-        takerBaseFee: BigInt(0),
-        takerQuoteFee: BigInt(0),
-      };
-
-      const takeInsertRes = await usingDb((db) =>
-        db
-          .insert(schema.takes)
-          .values(swapTake)
-          .onConflictDoNothing()
-          .returning({ txSig: schema.takes.orderTxSig })
+    try {
+      const ixs = await ammParser.parseTransaction(
+        connection,
+        transaction.txSig
       );
-      if (takeInsertRes.length > 0) {
-        console.log(
-          "successfully inserted swap take record",
-          takeInsertRes[0].txSig
+      const ixTypes = ixs?.reduce(
+        (prev, currIx) => {
+          // Check for 'swap' instruction
+          if (currIx.name === "swap") {
+            prev.swap = true;
+          }
+          // Check for 'addLiquidity' instruction
+          else if (currIx.name === "addLiquidity") {
+            prev.addLiquidity = true;
+          }
+          // Check for 'removeLiquidity' instruction
+          else if (currIx.name === "removeLiquidity") {
+            prev.removeLiquidity = true;
+          }
+
+          return prev;
+        },
+        { swap: false, addLiquidity: false, removeLiquidity: false }
+      );
+      if (ixTypes?.swap) {
+        const relatedIx = ixs?.find((i) => i.name === "swap");
+        const marketAcct = relatedIx?.accounts.find((a) => a.name === "amm");
+        if (!marketAcct) return Err({ type: "missing data" });
+        const userAcct = relatedIx?.accounts.find((a) => a.name === "user");
+        if (!userAcct) return Err({ type: "missing data" });
+        if (!relatedIx?.args) return Err({ type: "missing data" });
+        const args = relatedIx.args as {
+          args: {
+            swapType: SwapType;
+            inputAmount: BN;
+            outputAmountMin: BN;
+          };
+        };
+        // index a swap here
+        const swapOrder: OrdersRecord = {
+          marketAcct: marketAcct.pubkey.toBase58(),
+          orderBlock: BigInt(transaction.slot),
+          orderTime: transaction.blockTime,
+          orderTxSig: transaction.txSig,
+          quotePrice: BigInt(args.args.inputAmount.toNumber()),
+          actorAcct: userAcct.pubkey.toBase58(),
+          filledBaseAmount: BigInt(args.args.outputAmountMin.toNumber()),
+          isActive: false,
+          side: OrderSide.BID,
+          unfilledBaseAmount: BigInt(0),
+          updatedAt: new Date(),
+        };
+
+        const orderInsertRes = await usingDb((db) =>
+          db
+            .insert(schema.orders)
+            .values(swapOrder)
+            .onConflictDoNothing()
+            .returning({ txSig: schema.takes.orderTxSig })
         );
+        if (orderInsertRes.length > 0) {
+          console.log(
+            "successfully inserted swap order record",
+            orderInsertRes[0].txSig
+          );
+        }
+
+        const swapTake: TakesRecord = {
+          marketAcct: marketAcct.pubkey.toBase58(),
+          baseAmount: BigInt(args.args.outputAmountMin.toNumber()),
+          orderBlock: BigInt(transaction.slot),
+          orderTime: transaction.blockTime,
+          orderTxSig: transaction.txSig,
+          quotePrice: BigInt(args.args.inputAmount.toNumber()),
+          takerBaseFee: BigInt(0),
+          takerQuoteFee: BigInt(0),
+        };
+
+        const takeInsertRes = await usingDb((db) =>
+          db
+            .insert(schema.takes)
+            .values(swapTake)
+            .onConflictDoNothing()
+            .returning({ txSig: schema.takes.orderTxSig })
+        );
+        if (takeInsertRes.length > 0) {
+          console.log(
+            "successfully inserted swap take record",
+            takeInsertRes[0].txSig
+          );
+        }
       }
+      if (ixTypes?.addLiquidity) {
+        // index a add liquid here
+        console.log("add liquidity holy crap");
+      }
+      if (ixTypes?.removeLiquidity) {
+        // index a remove liquid here
+        console.log("remove liquidity holy crap");
+      }
+      return Ok({ txSig: transaction.txSig });
+    } catch (e) {
+      console.error(e);
+      return Err({ type: AmmInstructionIndexerError.GeneralError });
     }
-    if (ixTypes?.addLiquidity) {
-      // index a add liquid here
-      console.log("holy crap");
-    }
-    if (ixTypes?.removeLiquidity) {
-      // index a remove liquid here
-      console.log("holy crap");
-    }
-    return Ok({ acct: "" });
   },
 };

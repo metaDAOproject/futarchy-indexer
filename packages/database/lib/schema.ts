@@ -663,4 +663,5 @@ export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;
 export type MarketRecord = typeof markets._.inferInsert;
 export type TakesRecord = typeof takes._.inferInsert;
+export type OrdersRecord = typeof orders._.inferInsert;
 export type TransactionRecord = typeof transactions._.inferInsert;
