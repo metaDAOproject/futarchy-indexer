@@ -341,6 +341,10 @@ async function populateBirdEyePricesIndexerAndMarket(token: {
   console.log("successfully populate birdeye spot indexer for", token.symbol);
 }
 
+/**
+ * NOT BEING USED FOR NOW. DOESN'T SUPPORT MANY PRICES WE NEED.
+ * @param token
+ */
 async function populateOrcaWhirlpoolMarket(token: {
   symbol: string;
   name: string;
