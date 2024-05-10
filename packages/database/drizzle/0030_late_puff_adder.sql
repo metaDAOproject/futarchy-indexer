@@ -1,0 +1,1 @@
+ALTER TABLE "takes" ADD COLUMN "taker_quote_fee" bigint DEFAULT 0 NOT NULL;

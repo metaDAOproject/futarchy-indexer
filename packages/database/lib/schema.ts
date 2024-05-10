@@ -433,7 +433,9 @@ export const takes = pgTable(
     baseAmount: tokenAmount("base_amount").notNull(),
     quotePrice: tokenAmount("quote_price").notNull(),
     takerBaseFee: tokenAmount("taker_base_fee").notNull(),
-    takerQuoteFee: tokenAmount("maker_quote_fee").notNull(),
+    takerQuoteFee: tokenAmount("taker_quote_fee")
+      .notNull()
+      .default(0 as unknown as bigint),
 
     // Maker fields will be NULL on pure AMMs
     makerOrderTxSig: transaction("maker_order_tx_sig").references(
