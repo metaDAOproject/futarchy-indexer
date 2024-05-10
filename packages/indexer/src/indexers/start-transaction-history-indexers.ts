@@ -41,7 +41,26 @@ export async function startTransactionHistoryIndexer(
 
     for (const tx of transactions) {
       if (tx.transactions?.txSig) {
-        implementation.indexTransactionSig(tx.transactions?.txSig);
+        const res = await implementation.indexTransactionSig(tx.transactions);
+        if (res.success) {
+          // update latest slot for indexer
+          const updateResult = await usingDb((db) =>
+            db
+              .update(schema.indexers)
+              .set({
+                latestSlotProcessed: tx.transactions?.slot,
+              })
+              .where(eq(schema.indexers.name, indexer.name))
+              .returning({
+                latestSlotProcessed: schema.indexers.latestSlotProcessed,
+              })
+          );
+          if (updateResult.length > 0) {
+            console.log(
+              `successfully updated indexer "${indexer.name}" to slot ${updateResult[0].latestSlotProcessed}`
+            );
+          }
+        }
       }
     }
   }

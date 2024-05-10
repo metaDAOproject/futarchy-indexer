@@ -23,7 +23,14 @@ export type InstructionIndexer<IDL extends Idl> = {
       TaggedUnion
     >
   >;
-  indexTransactionSig(transactionSignature: string): Promise<
+  indexTransactionSig(transaction: {
+    txSig: string;
+    slot: bigint;
+    blockTime: Date;
+    failed: boolean;
+    payload: string;
+    serializerLogicVersion: number;
+  }): Promise<
     Result<
       {
         acct: string;

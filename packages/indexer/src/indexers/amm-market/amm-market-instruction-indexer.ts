@@ -1,26 +1,17 @@
-import { AccountInfoIndexer } from "../account-info-indexer";
-import { connection, provider, rpcReadClient } from "../../connection";
-import {
-  AccountInfo,
-  Context,
-  PublicKey,
-  VersionedTransactionResponse,
-} from "@solana/web3.js";
+import { connection, provider } from "../../connection";
+import { VersionedTransactionResponse } from "@solana/web3.js";
 import { schema, usingDb } from "@metadaoproject/indexer-db";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { BN } from "@coral-xyz/anchor";
-import { PricesType, TakesRecord } from "@metadaoproject/indexer-db/lib/schema";
-import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
+import {
+  TakesRecord,
+  TransactionRecord,
+} from "@metadaoproject/indexer-db/lib/schema";
 import {
   AMM_PROGRAM_ID,
   AmmClient,
-  PriceMath,
   SwapType,
 } from "@metadaoproject/futarchy-ts";
-import {
-  TwapRecord,
-  PricesRecord,
-} from "@metadaoproject/indexer-db/lib/schema";
 import { InstructionIndexer } from "../instruction-indexer";
 import { IDL } from "@openbook-dex/openbook-v2";
 import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
@@ -60,7 +51,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
       return Err({ type: AmmAccountIndexerError.GeneralError });
     }
   },
-  async indexTransactionSig(transactionSignature: string): Promise<
+  async indexTransactionSig(transaction: TransactionRecord): Promise<
     Result<
       {
         acct: string;
@@ -68,10 +59,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
       TaggedUnion
     >
   > {
-    const ixs = await ammParser.parseTransaction(
-      connection,
-      transactionSignature
-    );
+    const ixs = await ammParser.parseTransaction(connection, transaction.txSig);
     const ixTypes = ixs?.reduce(
       (prev, currIx) => {
         // Check for 'swap' instruction
@@ -105,9 +93,9 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
       const swapTake: TakesRecord = {
         marketAcct: marketAcct.pubkey.toBase58(),
         baseAmount: BigInt(args.outputAmountMin.toNumber()),
-        orderBlock: BigInt(0), // TODO add this from tx record
-        orderTime: new Date(), // TODO use tx record for this as well
-        orderTxSig: transactionSignature,
+        orderBlock: BigInt(transaction.slot),
+        orderTime: transaction.blockTime,
+        orderTxSig: transaction.txSig,
         quotePrice: BigInt(args.inputAmont.toNumber()),
         takerBaseFee: BigInt(0),
         takerQuoteFee: BigInt(0),
