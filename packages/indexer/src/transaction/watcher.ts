@@ -10,7 +10,11 @@ import { getTransactionHistory } from "./history";
 import { connection } from "../connection";
 import { logger } from "../logger";
 import { Err, Ok, Result, TaggedUnion } from "../match";
-import { TransactionWatchStatus } from "@metadaoproject/indexer-db/lib/schema";
+import {
+  TransactionWatchStatus,
+  TransactionWatcherTransactionRecord,
+} from "@metadaoproject/indexer-db/lib/schema";
+import { newTxQueue } from "../indexers/start-transaction-history-indexers";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
@@ -420,20 +424,27 @@ async function handleNewTransaction(
 
   // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
   //       be a no-op in the happy path
+  const watcherTxRecord: TransactionWatcherTransactionRecord = {
+    txSig: signature,
+    slot,
+    watcherAcct: acct,
+  };
   const insertRes = await usingDb((db) =>
     db
       .insert(schema.transactionWatcherTransactions)
-      .values({
-        txSig: signature,
-        slot,
-        watcherAcct: acct,
-      })
+      .values(watcherTxRecord)
       .onConflictDoNothing()
       .returning({ acct: schema.transactionWatcherTransactions.watcherAcct })
   );
   if (insertRes.length > 0) {
     console.log("successfully inserted new t watch tx", insertRes[0].acct);
   }
+
+  // now insert into queue
+  await newTxQueue.push({
+    transactions: transactionRecord,
+    transaction_watcher_transactions: watcherTxRecord,
+  });
 }
 
 export async function startTransactionWatchers() {

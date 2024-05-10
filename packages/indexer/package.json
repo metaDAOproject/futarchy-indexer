@@ -24,6 +24,7 @@
     "bs58": "^4.0.1",
     "commander": "^12.0.0",
     "express": "^4.19.2",
+    "fastq": "^1.17.1",
     "inquirer": "^9.2.14",
     "match-discriminated-union": "^1.0.0",
     "zod": "^3.22.4"

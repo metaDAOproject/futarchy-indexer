@@ -9,14 +9,9 @@ import { IndexerWithAccountDeps } from "../types";
 import { AmmMarketInstructionsIndexer } from "./amm-market/amm-market-instruction-indexer";
 import { InstructionIndexer } from "./instruction-indexer";
 import { Idl } from "@coral-xyz/anchor";
-import {
-  schema,
-  usingDb,
-  eq,
-  and,
-  gte,
-  getClient,
-} from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, and, gte } from "@metadaoproject/indexer-db";
+import * as fastq from "fastq";
+import type { queueAsPromised } from "fastq";
 
 // it is stored as base58 but the
 
@@ -55,8 +50,6 @@ export async function startTransactionHistoryIndexer(
     });
 
     await indexExistingTxs(transactions, implementation, indexer);
-
-    await listenToNewTxs(implementation, indexer);
   }
 }
 
@@ -94,37 +87,56 @@ async function indexExistingTxs(
   }
 }
 
-async function listenToNewTxs(
-  implementation: InstructionIndexer<Idl>,
-  indexer: IndexerRecord
-) {
-  const client = await getClient();
+export const newTxQueue: queueAsPromised<{
+  transactions: TransactionRecord | null;
+  transaction_watcher_transactions: TransactionWatcherTransactionRecord | null;
+}> = fastq.promise(handleNewTxs, 1);
 
-  // Setting up the listener
-  client.on("notification", async (msg) => {
-    if (
-      msg.payload === "notification" &&
-      msg.channel === "new_transaction_channel"
-    ) {
-      const newTransaction = JSON.parse(msg.payload);
-      console.log("New transaction received:", newTransaction);
-      await indexExistingTxs([newTransaction], implementation, indexer);
-    }
+async function handleNewTxs(msg: {
+  transactions: TransactionRecord | null;
+  transaction_watcher_transactions: TransactionWatcherTransactionRecord | null;
+}) {
+  const { transactions: tx, transaction_watcher_transactions: watcherTx } = msg;
+  // query for the any indexer account dependencies based on the watcher acct, and then query for the indexer implementation based on that, then you are up and running
+  const indexerQueryRes = await usingDb((db) => {
+    return db
+      .select()
+      .from(schema.indexerAccountDependencies)
+      .fullJoin(
+        schema.indexers,
+        eq(schema.indexers.name, schema.indexerAccountDependencies.name)
+      )
+      .where(
+        eq(schema.indexerAccountDependencies.acct, watcherTx?.watcherAcct ?? "")
+      )
+      .execute();
   });
-
-  // Subscribe to the specific NOTIFY channel
-  await client.query("LISTEN new_transaction_channel");
-
-  // Here you might want to define what happens when the connection is closed or needs to be reestablished
-  client.on("end", () => {
-    console.log("Database connection ended");
-    // Reconnect or handle disconnection appropriately
-  });
-
-  client.on("error", (err) => {
-    console.error("Error in PostgreSQL listener", err);
-    // Handle errors or reconnection here
-  });
+  if (indexerQueryRes.length === 0) {
+    console.log(
+      "skipping processing new tx, no indexer query result. Tx Sig:",
+      tx?.txSig
+    );
+    return;
+  }
+  const { indexers: indexer } = indexerQueryRes[0];
+  if (!indexer) {
+    console.log(
+      "skipping processing new tx, no indexer tied to query result. Tx Sig:",
+      tx?.txSig
+    );
+    return;
+  }
+  const implementation = getTransactionHistoryImplementation(
+    indexer.implementation
+  );
+  if (!implementation) {
+    console.log(
+      "skipping processing new tx, no implementation found. Tx Sig:",
+      tx?.txSig
+    );
+    return;
+  }
+  indexExistingTxs([msg], implementation, indexer);
 }
 
 export function getTransactionHistoryImplementation(
