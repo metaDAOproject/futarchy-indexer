@@ -1,0 +1,2 @@
+ALTER TABLE "prices" DROP CONSTRAINT "prices_updated_slot_market_acct_pk";--> statement-breakpoint
+ALTER TABLE "prices" ADD CONSTRAINT "prices_created_at_market_acct_pk" PRIMARY KEY("created_at","market_acct");
