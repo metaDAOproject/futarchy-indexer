@@ -1,8 +1,14 @@
-import { CompiledInstruction, ConfirmedTransactionMeta, Message, MessageAccountKeys, VersionedTransactionResponse } from "@solana/web3.js";
-import { Ok, Err, Result } from '../match';
-import { z } from 'zod';
+import {
+  CompiledInstruction,
+  ConfirmedTransactionMeta,
+  Message,
+  MessageAccountKeys,
+  VersionedTransactionResponse,
+} from "@solana/web3.js";
+import { Ok, Err, Result } from "../match";
+import { z } from "zod";
 import { resolveAccounts, ResolveAccountsError } from "./account-resolver";
-import * as base58 from 'bs58';
+import * as base58 from "bs58";
 import { connection } from "../connection";
 
 /**
@@ -17,31 +23,34 @@ export const SERIALIZED_TRANSACTION_LOGIC_VERSION = 0;
 export function serialize(transaction: Transaction, pretty = false): string {
   return JSON.stringify(
     transaction,
-    (_, value) => typeof value === "bigint" ? `BIGINT:${value.toString()}` : value,
+    (_, value) =>
+      typeof value === "bigint" ? `BIGINT:${value.toString()}` : value,
     pretty ? 2 : 0
   );
 }
 
 const bigintEncodingPattern = /^BIGINT:[0-9]+$/;
-export function deserialize(json: string): Result<Transaction, {type: 'ZodError', error: z.ZodError}> {
-  const deserialized = JSON.parse(
-    json,
-    (_, value) => typeof value === 'string' && bigintEncodingPattern.test(value) ? BigInt(value.split(':')[1]) : value
+export function deserialize(
+  json: string
+): Result<Transaction, { type: "ZodError"; error: z.ZodError }> {
+  const deserialized = JSON.parse(json, (_, value) =>
+    typeof value === "string" && bigintEncodingPattern.test(value)
+      ? BigInt(value.split(":")[1])
+      : value
   );
   const parsed = SerializableTransaction.safeParse(deserialized);
   if (parsed.success) {
     return Ok(parsed.data);
   } else {
-    return Err({type: 'ZodError', error: parsed.error});
+    return Err({ type: "ZodError", error: parsed.error });
   }
 }
-
 
 export const SerializableTokenMeta = z.strictObject({
   mint: z.string(),
   owner: z.string(),
   amount: z.bigint(),
-  decimals: z.number()
+  decimals: z.number(),
 });
 
 export const SerializableAccountMeta = z.strictObject({
@@ -53,25 +62,31 @@ export const SerializableAccountMeta = z.strictObject({
   postBalance: z.bigint(),
   // if the account was an ATA
   preTokenBalance: SerializableTokenMeta.optional(),
-  postTokenBalance: SerializableTokenMeta.optional()
+  postTokenBalance: SerializableTokenMeta.optional(),
 });
 
 export const SerializableInstruction = z.strictObject({
   stackHeight: z.number(),
   programIdIndex: z.number(),
   data: z.string(),
-  accounts: z.array(z.number())
+  accounts: z.array(z.number()),
 });
 
-export const SerializableTransactionError = z.strictObject({
-  InstructionError: z.tuple([
-    z.number(),
-    z.union([z.string(), z.strictObject({Custom: z.number()})])
-  ]).optional(),
-  InsufficientFundsForRent: z.strictObject({
-    account_index: z.number()
-  }).optional()
-}).optional();
+export const SerializableTransactionError = z
+  .strictObject({
+    InstructionError: z
+      .tuple([
+        z.number(),
+        z.union([z.string(), z.strictObject({ Custom: z.number() })]),
+      ])
+      .optional(),
+    InsufficientFundsForRent: z
+      .strictObject({
+        account_index: z.number(),
+      })
+      .optional(),
+  })
+  .optional();
 
 export const SerializableTransaction = z.strictObject({
   blockTime: z.number(),
@@ -81,10 +96,10 @@ export const SerializableTransaction = z.strictObject({
   err: SerializableTransactionError,
   fee: z.bigint(),
   signatures: z.array(z.string()),
-  version: z.union([z.literal('legacy'), z.literal(0)]),
+  version: z.union([z.literal("legacy"), z.literal(0)]),
   logMessages: z.array(z.string()),
   accounts: z.array(SerializableAccountMeta),
-  instructions: z.array(SerializableInstruction)
+  instructions: z.array(SerializableInstruction),
 });
 
 export type Transaction = z.infer<typeof SerializableTransaction>;
@@ -93,56 +108,69 @@ export type TokenBalance = z.infer<typeof SerializableTokenMeta>;
 export type Instruction = z.infer<typeof SerializableInstruction>;
 
 export enum GetTransactionErrorType {
-  NullGetTransactionResponse = 'NullGetTransactionResponse',
-  ZodError = 'ZodError',
-  ResolveAccountError = 'ResolveAccountError', // problem getting account list from transaction
-  DuplicateTokenAccounts = 'DuplicateTokenAccounts', // if multiple items in pre or post token balances reference the same account
-  OuterIxStackHeightNonNull = 'OuterIxStackHeightNonNull', // it's expected that all outer instructions have a null stackHeight (even though it's really 1)
-  RepeatOuterIndicesForInnerIx = 'RepeatOuterIndicesForInnerIx', // if multiple items in innerInstructions reference same outer instruction
-  InvalidStackHeightTransition = 'InvalidStackHeightTransition', // if next instruction item in an inner instruction list increases by more than 1, or if it goes to less than 2 (only outers can have stack height 1)
+  NullGetTransactionResponse = "NullGetTransactionResponse",
+  ZodError = "ZodError",
+  ResolveAccountError = "ResolveAccountError", // problem getting account list from transaction
+  DuplicateTokenAccounts = "DuplicateTokenAccounts", // if multiple items in pre or post token balances reference the same account
+  OuterIxStackHeightNonNull = "OuterIxStackHeightNonNull", // it's expected that all outer instructions have a null stackHeight (even though it's really 1)
+  RepeatOuterIndicesForInnerIx = "RepeatOuterIndicesForInnerIx", // if multiple items in innerInstructions reference same outer instruction
+  InvalidStackHeightTransition = "InvalidStackHeightTransition", // if next instruction item in an inner instruction list increases by more than 1, or if it goes to less than 2 (only outers can have stack height 1)
 }
 
-export type GetTransactionError = 
-  {
-    type: GetTransactionErrorType.NullGetTransactionResponse;
-  } |
-  {
-    type: GetTransactionErrorType.ZodError;
-    error: z.ZodError;
-  } |
-  {
-    type: GetTransactionErrorType.ResolveAccountError;
-    error: ResolveAccountsError;
-  } |
-  {
-    type: GetTransactionErrorType.DuplicateTokenAccounts;
-    balanceType: 'pre' | 'post';
-    duplicates: Record<string, TokenBalanceResponse[]>;
-  } |
-  {
-    type: GetTransactionErrorType.OuterIxStackHeightNonNull;
-    outerInstruction: Message['compiledInstructions'][number];
-  } |
-  {
-    type: GetTransactionErrorType.RepeatOuterIndicesForInnerIx;
-    repeatedIndex: number;
-  } |
-  {
-    type: GetTransactionErrorType.InvalidStackHeightTransition;
-    outerInstructionIndex: number;
-    innerInstructionIndex: number;
-    priorStackHeight: number;
-    innerStackHeight: number;
-  }
+export type GetTransactionError =
+  | {
+      type: GetTransactionErrorType.NullGetTransactionResponse;
+    }
+  | {
+      type: GetTransactionErrorType.ZodError;
+      error: z.ZodError;
+    }
+  | {
+      type: GetTransactionErrorType.ResolveAccountError;
+      error: ResolveAccountsError;
+    }
+  | {
+      type: GetTransactionErrorType.DuplicateTokenAccounts;
+      balanceType: "pre" | "post";
+      duplicates: Record<string, TokenBalanceResponse[]>;
+    }
+  | {
+      type: GetTransactionErrorType.OuterIxStackHeightNonNull;
+      outerInstruction: Message["compiledInstructions"][number];
+    }
+  | {
+      type: GetTransactionErrorType.RepeatOuterIndicesForInnerIx;
+      repeatedIndex: number;
+    }
+  | {
+      type: GetTransactionErrorType.InvalidStackHeightTransition;
+      outerInstructionIndex: number;
+      innerInstructionIndex: number;
+      priorStackHeight: number;
+      innerStackHeight: number;
+    };
 
-type TokenBalanceResponse = NonNullable<NonNullable<VersionedTransactionResponse['meta']>['postTokenBalances']>[number];
+type TokenBalanceResponse = NonNullable<
+  NonNullable<VersionedTransactionResponse["meta"]>["postTokenBalances"]
+>[number];
 
-function parseTokenBalances(tokenBalanceResponses: TokenBalanceResponse[], accountsRaw: MessageAccountKeys): Result<Record<string, TokenBalance>, {type: 'duplicates'; duplicates: Record<string, TokenBalanceResponse[]>}> {
+function parseTokenBalances(
+  tokenBalanceResponses: TokenBalanceResponse[],
+  accountsRaw: MessageAccountKeys
+): Result<
+  Record<string, TokenBalance>,
+  { type: "duplicates"; duplicates: Record<string, TokenBalanceResponse[]> }
+> {
   const duplicates: Record<string, TokenBalanceResponse[]> = {};
   const parsed: Record<string, [TokenBalanceResponse, TokenBalance]> = {};
   for (let i = 0; i < tokenBalanceResponses.length; ++i) {
     const cur = tokenBalanceResponses[i];
-    const {accountIndex, mint, owner, uiTokenAmount: {amount, decimals}} = cur;
+    const {
+      accountIndex,
+      mint,
+      owner,
+      uiTokenAmount: { amount, decimals },
+    } = cur;
     const accountPubkey = accountsRaw.get(accountIndex)!.toBase58();
     if (parsed[accountPubkey] !== undefined) {
       if (duplicates[accountPubkey] === undefined) {
@@ -151,29 +179,39 @@ function parseTokenBalances(tokenBalanceResponses: TokenBalanceResponse[], accou
       duplicates[accountPubkey].push(cur);
     }
     parsed[accountPubkey] = [
-      cur, 
+      cur,
       {
         mint,
         owner: owner!,
         amount: BigInt(amount),
-        decimals
-      }
+        decimals,
+      },
     ];
   }
   if (Object.keys(duplicates).length > 0) {
-    return Err({type: 'duplicates', duplicates});
+    return Err({ type: "duplicates", duplicates });
   }
-  return Ok(Object.fromEntries(Object.entries(parsed).map(([account, [_response, balance]]) => [account, balance])));
+  return Ok(
+    Object.fromEntries(
+      Object.entries(parsed).map(([account, [_response, balance]]) => [
+        account,
+        balance,
+      ])
+    )
+  );
 }
 
-function parseInstructions(outer: Message['compiledInstructions'], inner: NonNullable<ConfirmedTransactionMeta['innerInstructions']>): Result<Instruction[], GetTransactionError> {
+function parseInstructions(
+  outer: Message["compiledInstructions"],
+  inner: NonNullable<ConfirmedTransactionMeta["innerInstructions"]>
+): Result<Instruction[], GetTransactionError> {
   const innerInstructionMap: Record<number, CompiledInstruction[]> = {};
   for (let i = 0; i < inner.length; ++i) {
     const { index, instructions } = inner[i];
     if (index in innerInstructionMap) {
       return Err({
         type: GetTransactionErrorType.RepeatOuterIndicesForInnerIx,
-        repeatedIndex: index
+        repeatedIndex: index,
       });
     }
     innerInstructionMap[index] = instructions;
@@ -183,41 +221,42 @@ function parseInstructions(outer: Message['compiledInstructions'], inner: NonNul
     const curOuter = outer[outerI];
     // TODO: figure out why the outer and inner instruction types don't have a stackHeight member even though the rpc always returns this.
     //       perhaps we need to patch web3 libs or there's some edge case we aren't aware of.
-    if ('stackHeight' in curOuter) {
+    if ("stackHeight" in curOuter) {
       return Err({
         type: GetTransactionErrorType.OuterIxStackHeightNonNull,
-        outerInstruction: curOuter
+        outerInstruction: curOuter,
       });
     }
     instructions.push({
       stackHeight: 1,
       programIdIndex: curOuter.programIdIndex,
       data: base58.encode(curOuter.data),
-      accounts: curOuter.accountKeyIndexes
+      accounts: curOuter.accountKeyIndexes,
     });
     let curStackHeight = 1;
-    const curInnerInstructions = (innerInstructionMap[outerI] ?? []);
+    const curInnerInstructions = innerInstructionMap[outerI] ?? [];
     for (let innerI = 0; innerI < curInnerInstructions.length; ++innerI) {
       const curInner = curInnerInstructions[innerI];
       const innerStackHeight: number = (curInner as any).stackHeight;
-      const isInvalidStackHeight = 
-        (typeof innerStackHeight !== 'number') ||
-        (innerStackHeight > curStackHeight && curStackHeight + 1 !== innerStackHeight) ||
-        (innerStackHeight < 2);
+      const isInvalidStackHeight =
+        typeof innerStackHeight !== "number" ||
+        (innerStackHeight > curStackHeight &&
+          curStackHeight + 1 !== innerStackHeight) ||
+        innerStackHeight < 2;
       if (isInvalidStackHeight) {
         return Err({
           type: GetTransactionErrorType.InvalidStackHeightTransition,
           outerInstructionIndex: outerI,
           innerInstructionIndex: innerI,
           priorStackHeight: curStackHeight,
-          innerStackHeight
+          innerStackHeight,
         });
       }
       instructions.push({
         stackHeight: innerStackHeight,
         programIdIndex: curInner.programIdIndex,
         data: curInner.data,
-        accounts: curInner.accounts
+        accounts: curInner.accounts,
       });
       curStackHeight = innerStackHeight;
     }
@@ -225,36 +264,47 @@ function parseInstructions(outer: Message['compiledInstructions'], inner: NonNul
   return Ok(instructions);
 }
 
-export async function getTransaction(signature: string): Promise<Result<Transaction, GetTransactionError>> {
+export async function getTransaction(
+  signature: string
+): Promise<Result<Transaction, GetTransactionError>> {
   const txResponse = await connection.getTransaction(signature, {
-    maxSupportedTransactionVersion: 0
+    maxSupportedTransactionVersion: 0,
   });
   if (!txResponse) {
     return Err({
-      type: GetTransactionErrorType.NullGetTransactionResponse
+      type: GetTransactionErrorType.NullGetTransactionResponse,
     });
   }
   const accountsResponse = await resolveAccounts(txResponse);
   if (!accountsResponse.success) {
-    return Err({type: GetTransactionErrorType.ResolveAccountError, error: accountsResponse.error});
+    return Err({
+      type: GetTransactionErrorType.ResolveAccountError,
+      error: accountsResponse.error,
+    });
   }
-  const {ok: accountsRaw} = accountsResponse;
+  const { ok: accountsRaw } = accountsResponse;
   const accounts: Account[] = [];
   // Index to token balance
-  const preTokenBalances = parseTokenBalances(txResponse.meta?.preTokenBalances ?? [], accountsRaw);
+  const preTokenBalances = parseTokenBalances(
+    txResponse.meta?.preTokenBalances ?? [],
+    accountsRaw
+  );
   if (!preTokenBalances.success) {
     return Err({
       type: GetTransactionErrorType.DuplicateTokenAccounts,
       duplicates: preTokenBalances.error.duplicates,
-      balanceType: 'pre',
+      balanceType: "pre",
     });
   }
-  const postTokenBalances = parseTokenBalances(txResponse.meta?.postTokenBalances ?? [], accountsRaw);
+  const postTokenBalances = parseTokenBalances(
+    txResponse.meta?.postTokenBalances ?? [],
+    accountsRaw
+  );
   if (!postTokenBalances.success) {
     return Err({
       type: GetTransactionErrorType.DuplicateTokenAccounts,
       duplicates: postTokenBalances.error.duplicates,
-      balanceType: 'post',
+      balanceType: "post",
     });
   }
 
@@ -268,7 +318,7 @@ export async function getTransaction(signature: string): Promise<Result<Transact
       preBalance: BigInt(txResponse.meta?.preBalances[i]!),
       postBalance: BigInt(txResponse.meta?.postBalances[i]!),
       preTokenBalance: preTokenBalances.ok[pubkey],
-      postTokenBalance: postTokenBalances.ok[pubkey]
+      postTokenBalance: postTokenBalances.ok[pubkey],
     });
   }
 
@@ -297,7 +347,10 @@ export async function getTransaction(signature: string): Promise<Result<Transact
   if (parseResult.success) {
     return Ok(parseResult.data);
   } else {
-    return Err({type: GetTransactionErrorType.ZodError, error: parseResult.error});
+    return Err({
+      type: GetTransactionErrorType.ZodError,
+      error: parseResult.error,
+    });
   }
 }
 

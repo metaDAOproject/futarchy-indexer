@@ -70,12 +70,15 @@ importers:
       '@coral-xyz/anchor':
         specifier: ^0.28.1-beta.2
         version: 0.28.1-beta.2
+      '@debridge-finance/solana-transaction-parser':
+        specifier: ^2.0.1
+        version: 2.0.1(@solana/buffer-layout-utils@0.2.0)(@solana/buffer-layout@4.0.1)(fastestsmallesttextencoderdecoder@1.0.22)
       '@lukasdeco/prom-client':
         specifier: ^15.1.4
         version: 15.1.4
       '@metadaoproject/futarchy-sdk':
-        specifier: 1.1.0-alpha.18
-        version: 1.1.0-alpha.18(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
+        specifier: 1.1.0-alpha.20
+        version: 1.1.0-alpha.20(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
       '@metadaoproject/futarchy-ts':
         specifier: ^1.5.0
         version: 1.5.0(fastestsmallesttextencoderdecoder@1.0.22)
@@ -267,6 +270,37 @@ packages:
       '@solana/web3.js': 1.91.8
       bn.js: 5.2.1
       buffer-layout: 1.2.2
+    dev: false
+
+  /@coral-xyz/spl-token@0.29.0:
+    resolution: {integrity: sha512-NgkbBGI87pUPmf0FNuPoizwQImKLVt1hc28ylxTvszbRg19azqeLs1hBK7WGHV2RXDN+RqH8dASb+7Gj1aXJMw==}
+    dependencies:
+      '@coral-xyz/anchor': 0.29.0
+      '@native-to-anchor/buffer-layout': 0.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
+    dev: false
+
+  /@debridge-finance/solana-transaction-parser@2.0.1(@solana/buffer-layout-utils@0.2.0)(@solana/buffer-layout@4.0.1)(fastestsmallesttextencoderdecoder@1.0.22):
+    resolution: {integrity: sha512-jV0TOwQQSVvFqKfNgHmlzyO7054QkscYHkOhLIgdJdoWI6TQbZht/6So+sMCkvBvAEo9fC50JdZRfzmJZIF8JA==}
+    peerDependencies:
+      '@solana/buffer-layout': ^4.0.0
+      '@solana/buffer-layout-utils': ^0.2.0
+    dependencies:
+      '@coral-xyz/anchor': 0.29.0
+      '@coral-xyz/spl-token': 0.29.0
+      '@solana/buffer-layout': 4.0.1
+      '@solana/buffer-layout-utils': 0.2.0
+      '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/web3.js': 1.91.8
+      buffer: 6.0.3
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - fastestsmallesttextencoderdecoder
+      - utf-8-validate
     dev: false
 
   /@esbuild-kit/core-utils@3.3.2:
@@ -1412,8 +1446,8 @@ packages:
       tdigest: 0.1.2
     dev: false
 
-  /@metadaoproject/futarchy-sdk@1.1.0-alpha.18(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1):
-    resolution: {integrity: sha512-rfj9u0NrkeLX7qNJzXEc9ykXqRlmnbulFUbTXIhUAUIYsgSVFx549sgWCfjjtkZGPktWThpb5Tpuh3z/H2bOSw==}
+  /@metadaoproject/futarchy-sdk@1.1.0-alpha.20(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1):
+    resolution: {integrity: sha512-YrZlVtQDsfB7mQHb9QNKtvRUKxkLhg0yMWSs8J56NSczyglc3/GeKcIsrMDTwyGfvxWfjHHJ0LO784gAe7ql+Q==}
     dependencies:
       '@coral-xyz/anchor': 0.28.1-beta.2
       '@metadaoproject/futarchy-ts': 1.5.0(fastestsmallesttextencoderdecoder@1.0.22)
@@ -1856,6 +1890,17 @@ packages:
       '@metaplex-foundation/umi-serializers': 0.9.0
     dev: false
 
+  /@native-to-anchor/buffer-layout@0.1.0:
+    resolution: {integrity: sha512-7Ykz9KRAm53XqHj5blDUKPX+OXAPO4GZBW4zJhfHGIAbzmqsUFh9kMqR66Bak3mp6wyv1OVTwSr8ZGHKswPxDg==}
+    dependencies:
+      '@solana/buffer-layout': 4.0.0
+      '@solana/buffer-layout-utils': 0.2.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
+    dev: false
+
   /@near-js/crypto@0.0.3:
     resolution: {integrity: sha512-3WC2A1a1cH8Cqrx+0iDjp1ASEEhxN/KHEMENYb0KZH6Hp5bXIY7Akt4quC7JlgJS5ESvEiLa40tS5h0zAhBWGw==}
     dependencies:
@@ -2191,6 +2236,13 @@ packages:
       - bufferutil
       - encoding
       - utf-8-validate
+    dev: false
+
+  /@solana/buffer-layout@4.0.0:
+    resolution: {integrity: sha512-lR0EMP2HC3+Mxwd4YcnZb0smnaDw7Bl2IQWZiTevRH5ZZBZn6VRWn3/92E3qdU4SSImJkA6IDHawOHAnx/qUvQ==}
+    engines: {node: '>=5.10'}
+    dependencies:
+      buffer: 6.0.3
     dev: false
 
   /@solana/buffer-layout@4.0.1:

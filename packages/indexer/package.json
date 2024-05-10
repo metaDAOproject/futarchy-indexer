@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.1-beta.2",
+    "@debridge-finance/solana-transaction-parser": "^2.0.1",
     "@lukasdeco/prom-client": "^15.1.4",
     "@metadaoproject/futarchy-sdk": "1.1.0-alpha.20",
     "@metadaoproject/futarchy-ts": "^1.5.0",

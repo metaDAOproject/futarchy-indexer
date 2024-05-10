@@ -2,6 +2,7 @@ import { ConfirmedSignatureInfo, PublicKey } from "@solana/web3.js";
 import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
 import {
   SERIALIZED_TRANSACTION_LOGIC_VERSION,
+  Transaction,
   getTransaction,
   serialize,
 } from "./serializer";
@@ -147,125 +148,21 @@ class TransactionWatcher {
     logger.info(
       `history after ${this.latestTxSig} is length ${history.length}`
     );
-    let priorSlot = this.checkedUpToSlot;
     let numIndexed = 0;
     for (const signatureInfo of history) {
-      if (this.stopped) {
-        logger.error(`Stopped watcher for ${acct} mid backfill`);
-        return Err({ type: WatcherBackfillError.StoppedBackfill });
-      }
-      const { slot: slotAsNum, signature } = signatureInfo;
-      const slot = BigInt(slotAsNum);
-      // TODO: lock should be done here. It's probably fine for now since we only have 1 instance.
-      //       I can think of weird states though where you have this stopped watcher and another started one.
-      // Leaving as todo since optimistic locking might be preferred
-      const curWatcherRecord = (
-        await usingDb((db) =>
-          db
-            .select()
-            .from(schema.transactionWatchers)
-            .where(eq(schema.transactionWatchers.acct, acct))
-            .execute()
-        )
-      )[0];
-      const { checkedUpToSlot } = curWatcherRecord;
-      if (slot <= checkedUpToSlot) {
-        const errorMessage = `watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`;
-        logger.error(errorMessage);
-        this.stop();
-        return Err({ type: WatcherBackfillError.SlotCheckHistoryMismatch });
-      }
-      const maybeCurTxRecord = await usingDb((db) =>
-        db
-          .select()
-          .from(schema.transactions)
-          .where(eq(schema.transactions.txSig, signature))
-          .execute()
+      const res = await this.processTransactionInHistory(
+        acct,
+        signatureInfo,
+        numIndexed,
+        history
       );
-      if (
-        maybeCurTxRecord.length === 0 ||
-        maybeCurTxRecord[0].serializerLogicVersion <
-          SERIALIZED_TRANSACTION_LOGIC_VERSION
-      ) {
-        const parseTxResult = await getTransaction(signature);
-        if (!parseTxResult.success) {
-          logger.error(
-            `Failed to parse tx ${signature}\n` +
-              JSON.stringify(parseTxResult.error)
-          );
-          this.stop();
-          return Err({ type: WatcherBackfillError.TransactionParseFailure });
-        }
-        const { ok: serializableTx } = parseTxResult;
-        const transactionRecord: TransactionRecord = {
-          txSig: signature,
-          slot,
-          blockTime: new Date(serializableTx.blockTime * 1000), // TODO need to verify if this is correct
-          failed: serializableTx.err !== undefined,
-          payload: serialize(parseTxResult.ok),
-          serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-        };
-        const upsertResult = await usingDb((db) =>
-          db
-            .insert(schema.transactions)
-            .values(transactionRecord)
-            .onConflictDoUpdate({
-              target: schema.transactions.txSig,
-              set: transactionRecord,
-            })
-            .returning({ txSig: schema.transactions.txSig })
+      if (!res.success) {
+        console.error(
+          "error processing transaction",
+          res.error,
+          signatureInfo.signature,
+          acct
         );
-        if (upsertResult.length !== 1 || upsertResult[0].txSig !== signature) {
-          logger.error(
-            `Failed to upsert ${signature}. ${JSON.stringify(
-              transactionRecord
-            )}`
-          );
-          return Err({ type: WatcherBackfillError.TransactionUpsertFailure });
-        }
-      }
-      // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
-      //       be a no-op in the happy path
-      await usingDb((db) =>
-        db
-          .insert(schema.transactionWatcherTransactions)
-          .values({
-            txSig: signature,
-            slot,
-            watcherAcct: acct,
-          })
-          .onConflictDoNothing()
-      );
-      // We could opt to only update slot at end, but updating it now means indexers can progress while a backfill is in progress.
-      // That's preferrable since the backfill could be a lot of transactions and it could stall if there are any bugs in the tx backup logic
-      // We can't set the checked up to slot as the current tx's slot, since there might be a tx after this one on the same slot. So we instead
-      // need to set it to the prior tx's slot if that slot is less than the current slot.
-      const newCheckedUpToSlot =
-        slot > priorSlot ? priorSlot : this.checkedUpToSlot;
-      const updateResult = await usingDb((db) =>
-        db
-          .update(schema.transactionWatchers)
-          .set({
-            acct,
-            latestTxSig: signature,
-            firstTxSig: curWatcherRecord.firstTxSig ?? signature,
-            serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-            checkedUpToSlot: newCheckedUpToSlot,
-          })
-          .where(eq(schema.transactionWatchers.acct, acct))
-          .returning({ acct: schema.transactionWatchers.acct })
-      );
-      if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
-        logger.error(
-          `Failed to update tx watcher for acct ${acct} on tx ${signature}`
-        );
-        return Err({ type: WatcherBackfillError.WatcherUpdateFailure });
-      }
-      priorSlot = slot;
-      this.checkedUpToSlot = newCheckedUpToSlot;
-      numIndexed++;
-      if (numIndexed % 50 === 0) {
-        logger.info(`(${numIndexed} / ${history.length}) ${acct} watcher`);
       }
     }
     // Update checkedUpToSlot to latest confirmed slot. If we don't do this, then checkedUpToSlot would only be updated once there's a new
@@ -301,6 +198,114 @@ class TransactionWatcher {
     this.checkedUpToSlot = newCheckedUpToSlot;
     this.backfilling = false;
     return Ok(`${acct} watcher is up to date`);
+  }
+
+  private async processTransactionInHistory(
+    acct: string,
+    signatureInfo: ConfirmedSignatureInfo,
+    numIndexed: number,
+    history: ConfirmedSignatureInfo[]
+  ): Promise<
+    | {
+        success: true;
+        ok: { priorSlot: bigint; numIndexed: number };
+      }
+    | {
+        success: false;
+        error: TaggedUnion;
+      }
+  > {
+    const priorSlot = this.checkedUpToSlot;
+    if (this.stopped) {
+      logger.error(`Stopped watcher for ${acct} mid backfill`);
+      return Err({ type: WatcherBackfillError.StoppedBackfill });
+    }
+    const { slot: slotAsNum, signature } = signatureInfo;
+    const slot = BigInt(slotAsNum);
+    // TODO: lock should be done here. It's probably fine for now since we only have 1 instance.
+    //       I can think of weird states though where you have this stopped watcher and another started one.
+    // Leaving as todo since optimistic locking might be preferred
+    const curWatcherRecord = (
+      await usingDb((db) =>
+        db
+          .select()
+          .from(schema.transactionWatchers)
+          .where(eq(schema.transactionWatchers.acct, acct))
+          .execute()
+      )
+    )[0];
+    const { checkedUpToSlot } = curWatcherRecord;
+    if (slot <= checkedUpToSlot) {
+      const errorMessage = `watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`;
+      logger.error(errorMessage);
+      this.stop();
+      return Err({ type: WatcherBackfillError.SlotCheckHistoryMismatch });
+    }
+    const maybeCurTxRecord = await usingDb((db) =>
+      db
+        .select()
+        .from(schema.transactions)
+        .where(eq(schema.transactions.txSig, signature))
+        .execute()
+    );
+    if (
+      maybeCurTxRecord.length === 0 ||
+      maybeCurTxRecord[0].serializerLogicVersion <
+        SERIALIZED_TRANSACTION_LOGIC_VERSION
+    ) {
+      const parseTxResult = await getTransaction(signature);
+      if (!parseTxResult.success) {
+        logger.error(
+          `Failed to parse tx ${signature}\n` +
+            JSON.stringify(parseTxResult.error)
+        );
+        this.stop();
+        return Err({ type: WatcherBackfillError.TransactionParseFailure });
+      }
+      const { ok: serializableTx } = parseTxResult;
+      const res = await handleNewTransaction(
+        signature,
+        slot,
+        serializableTx,
+        acct
+      );
+      if (res && !res?.success) {
+        return Err({ type: res.error.type });
+      }
+    }
+
+    // We could opt to only update slot at end, but updating it now means indexers can progress while a backfill is in progress.
+    // That's preferrable since the backfill could be a lot of transactions and it could stall if there are any bugs in the tx backup logic
+    // We can't set the checked up to slot as the current tx's slot, since there might be a tx after this one on the same slot. So we instead
+    // need to set it to the prior tx's slot if that slot is less than the current slot.
+    const newCheckedUpToSlot =
+      slot > priorSlot ? priorSlot : this.checkedUpToSlot;
+    const updateResult = await usingDb((db) =>
+      db
+        .update(schema.transactionWatchers)
+        .set({
+          acct,
+          latestTxSig: signature,
+          firstTxSig: curWatcherRecord.firstTxSig ?? signature,
+          serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+          checkedUpToSlot: newCheckedUpToSlot,
+        })
+        .where(eq(schema.transactionWatchers.acct, acct))
+        .returning({ acct: schema.transactionWatchers.acct })
+    );
+    if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
+      logger.error(
+        `Failed to update tx watcher for acct ${acct} on tx ${signature}`
+      );
+      return Err({ type: WatcherBackfillError.WatcherUpdateFailure });
+    }
+    this.checkedUpToSlot = newCheckedUpToSlot;
+    numIndexed++;
+    if (numIndexed % 50 === 0) {
+      logger.info(`(${numIndexed} / ${history.length}) ${acct} watcher`);
+    }
+
+    return Ok({ priorSlot: slot, numIndexed });
   }
 
   private async getTransactionHistoryFromFinalizedSlotWithRetry(): Promise<
@@ -381,6 +386,51 @@ class TransactionWatcher {
 }
 
 let updatingWatchers = false;
+
+async function handleNewTransaction(
+  signature: string,
+  slot: bigint,
+  parsedTx: Transaction,
+  acct: string
+) {
+  const transactionRecord: TransactionRecord = {
+    txSig: signature,
+    slot,
+    blockTime: new Date(parsedTx.blockTime * 1000), // TODO need to verify if this is correct
+    failed: parsedTx.err !== undefined,
+    payload: serialize(parsedTx),
+    serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+  };
+  const upsertResult = await usingDb((db) =>
+    db
+      .insert(schema.transactions)
+      .values(transactionRecord)
+      .onConflictDoUpdate({
+        target: schema.transactions.txSig,
+        set: transactionRecord,
+      })
+      .returning({ txSig: schema.transactions.txSig })
+  );
+  if (upsertResult.length !== 1 || upsertResult[0].txSig !== signature) {
+    logger.error(
+      `Failed to upsert ${signature}. ${JSON.stringify(transactionRecord)}`
+    );
+    return Err({ type: WatcherBackfillError.TransactionUpsertFailure });
+  }
+
+  // TODO: maybe i need to validate below succeeded. I can't use returning because this isn't an upsert so it could
+  //       be a no-op in the happy path
+  await usingDb((db) =>
+    db
+      .insert(schema.transactionWatcherTransactions)
+      .values({
+        txSig: signature,
+        slot,
+        watcherAcct: acct,
+      })
+      .onConflictDoNothing()
+  );
+}
 
 export async function startTransactionWatchers() {
   async function getWatchers() {

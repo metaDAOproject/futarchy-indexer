@@ -12,7 +12,9 @@ function throwInvariantViolation(
   before: string | undefined,
   violation: string
 ) {
-  const error = new Error(`Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`);
+  const error = new Error(
+    `Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`
+  );
   logger.error(error.message);
   throw error;
 }
@@ -31,10 +33,11 @@ export async function getTransactionHistory(
   let page = 1;
   while (true) {
     // The Solana RPC tx API has us do a backwards walk
+    console.log(account.toBase58());
     const transactions = await connection.getSignaturesForAddress(
       account,
       { before: earliestSig },
-      "confirmed"
+      "finalized"
     );
     if (transactions.length === 0) {
       break;
@@ -70,7 +73,12 @@ export async function getTransactionHistory(
         break;
       }
       if (cur.slot < largerThanSlot) {
-        throwInvariantViolation(account, after, before, `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`);
+        throwInvariantViolation(
+          account,
+          after,
+          before,
+          `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`
+        );
       }
       history.push(cur);
       earliestSig = cur.signature;

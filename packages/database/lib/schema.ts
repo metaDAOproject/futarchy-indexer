@@ -304,6 +304,7 @@ export const transactionWatcherTransactions = pgTable(
 export enum IndexerImplementation {
   AutocratV0OpenbookV2 = "AutocratV0OpenbookV2",
   AmmMarketIndexer = "AmmMarketIndexer",
+  AmmMarketInstructionsIndexer = "AmmMarketInstructionsIndexer",
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
@@ -659,3 +660,4 @@ export const conditionalVaults = pgTable("conditional_vaults", {
 export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;
 export type MarketRecord = typeof markets._.inferInsert;
+export type TakesRecord = typeof takes._.inferInsert;
