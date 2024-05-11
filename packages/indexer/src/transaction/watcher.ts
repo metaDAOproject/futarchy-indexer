@@ -453,7 +453,13 @@ export async function startTransactionWatchers() {
   async function getWatchers() {
     updatingWatchers = true;
     const curWatchers = await usingDb((db) =>
-      db.select().from(schema.transactionWatchers).execute()
+      db
+        .select()
+        .from(schema.transactionWatchers)
+        .where(
+          eq(schema.transactionWatchers.status, TransactionWatchStatus.Active)
+        )
+        .execute()
     );
     const curWatchersByAccount: Record<string, TransactionWatcherRecord> = {};
     const watchersToStart: Set<string> = new Set();
