@@ -157,8 +157,7 @@ class TransactionWatcher {
       const res = await this.processTransactionInHistory(
         acct,
         signatureInfo,
-        numIndexed,
-        history
+        numIndexed
       );
       if (!res.success) {
         console.error(
@@ -207,8 +206,7 @@ class TransactionWatcher {
   private async processTransactionInHistory(
     acct: string,
     signatureInfo: ConfirmedSignatureInfo,
-    numIndexed: number,
-    history: ConfirmedSignatureInfo[]
+    numIndexed: number
   ): Promise<
     | {
         success: true;
@@ -238,13 +236,15 @@ class TransactionWatcher {
           .execute()
       )
     )[0];
-    const { checkedUpToSlot } = curWatcherRecord;
-    if (slot <= checkedUpToSlot) {
-      const errorMessage = `watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`;
-      logger.error(errorMessage);
-      this.stop();
-      return Err({ type: WatcherBackfillError.SlotCheckHistoryMismatch });
-    }
+    // TODO: we don't need to necessarily stop this watcher
+    // just because of one txn slot being less than the checked up to slo
+    // const { checkedUpToSlot } = curWatcherRecord;
+    // if (slot <= checkedUpToSlot) {
+    //   const errorMessage = `watcher for account ${acct} supposedly checked up to slot ${checkedUpToSlot} but history returned sig ${signature} with slot ${slot}`;
+    //   logger.error(errorMessage);
+    //   this.stop();
+    //   return Err({ type: WatcherBackfillError.SlotCheckHistoryMismatch });
+    // }
     const maybeCurTxRecord = await usingDb((db) =>
       db
         .select()
@@ -306,7 +306,7 @@ class TransactionWatcher {
     this.checkedUpToSlot = newCheckedUpToSlot;
     numIndexed++;
     if (numIndexed % 50 === 0) {
-      logger.info(`(${numIndexed} / ${history.length}) ${acct} watcher`);
+      logger.info(`(${numIndexed}) ${acct} watcher`);
     }
 
     return Ok({ priorSlot: slot, numIndexed });
