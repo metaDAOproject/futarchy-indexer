@@ -110,7 +110,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
         // determine price
         // NOTE: This is estimated given the output is a min expected value
         // default is input / output (buying a token with USDC or whatever)
-        const price = quoteAmount / baseAmount // TODO: Need to likely handle rounding.....
+        const price = (quoteAmount / baseAmount).toString() // TODO: Need to likely handle rounding.....
         // index a swap here
         const swapOrder: OrdersRecord = {
           marketAcct: marketAcct.pubkey.toBase58(),
