@@ -99,18 +99,18 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
         const side = args.args.swapType.buy ? OrderSide.BID : OrderSide.ASK;
 
         // get the base/quote amount (NOTE: this can be confusing given the directionality, but solved based on side)
-        let baseAmount = BigInt(args.args.outputAmountMin.toNumber()) // What you're trading INTO (output)
-        let quoteAmount = BigInt(args.args.inputAmount.toNumber()) // What you're trading FROM (input)
+        let baseAmount = args.args.outputAmountMin // What you're trading INTO (output)
+        let quoteAmount = args.args.inputAmount // What you're trading FROM (input)
         
         // if we're selling we need to take the inverse
         if (side === OrderSide.ASK){
-          baseAmount = BigInt(args.args.inputAmount.toNumber()) // Trading FROM
-          quoteAmount = BigInt(args.args.outputAmountMin.toNumber()) // Trading TO
+          baseAmount = args.args.inputAmount// Trading FROM
+          quoteAmount = args.args.outputAmountMin // Trading TO
         }
         // determine price
         // NOTE: This is estimated given the output is a min expected value
         // default is input / output (buying a token with USDC or whatever)
-        const price = (quoteAmount / baseAmount).toString() // TODO: Need to likely handle rounding.....
+        const price = (quoteAmount.toNumber() / baseAmount.toNumber()).toString() // TODO: Need to likely handle rounding.....
         // index a swap here
         const swapOrder: OrdersRecord = {
           marketAcct: marketAcct.pubkey.toBase58(),
@@ -120,7 +120,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
           quotePrice: price,
           actorAcct: userAcct.pubkey.toBase58(),
           // TODO: If and only if the transaction is SUCCESSFUL does this value equal this..
-          filledBaseAmount: BigInt(args.args.outputAmountMin.toNumber()),
+          filledBaseAmount: BigInt(baseAmount.toNumber()),
           isActive: false,
           side: side,
           // TODO: If transaction is failed then this is the output amount...
@@ -149,7 +149,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
           marketAcct: marketAcct.pubkey.toBase58(),
           // This will always be the DAO / proposal base token, so while it may be NICE to have a key
           // to use to reference on data aggregate, it's not directly necessary.
-          baseAmount: baseAmount, // NOTE: This is always the base token given we have a BASE / QUOTE relationship
+          baseAmount: BigInt(baseAmount.toNumber()), // NOTE: This is always the base token given we have a BASE / QUOTE relationship
           orderBlock: BigInt(transaction.slot),
           orderTime: transaction.blockTime,
           orderTxSig: transaction.txSig,
