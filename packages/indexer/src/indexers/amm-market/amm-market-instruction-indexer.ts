@@ -95,17 +95,35 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
             outputAmountMin: BN;
           };
         };
+        // determine side
+        const side = args.args.swapType.buy ? OrderSide.BID : OrderSide.ASK;
+
+        // get the base/quote amount (NOTE: this can be confusing given the directionality, but solved based on side)
+        let baseAmount = BigInt(args.args.outputAmountMin.toNumber()) // What you're trading INTO (output)
+        let quoteAmount = BigInt(args.args.inputAmount.toNumber()) // What you're trading FROM (input)
+        
+        // if we're selling we need to take the inverse
+        if (side === OrderSide.ASK){
+          baseAmount = BigInt(args.args.inputAmount.toNumber()) // Trading FROM
+          quoteAmount = BigInt(args.args.outputAmountMin.toNumber()) // Trading TO
+        }
+        // determine price
+        // NOTE: This is estimated given the output is a min expected value
+        // default is input / output (buying a token with USDC or whatever)
+        const price = quoteAmount / baseAmount // TODO: Need to likely handle rounding.....
         // index a swap here
         const swapOrder: OrdersRecord = {
           marketAcct: marketAcct.pubkey.toBase58(),
           orderBlock: BigInt(transaction.slot),
           orderTime: transaction.blockTime,
           orderTxSig: transaction.txSig,
-          quotePrice: BigInt(args.args.inputAmount.toNumber()),
+          quotePrice: price,
           actorAcct: userAcct.pubkey.toBase58(),
+          // TODO: If and only if the transaction is SUCCESSFUL does this value equal this..
           filledBaseAmount: BigInt(args.args.outputAmountMin.toNumber()),
           isActive: false,
-          side: OrderSide.BID,
+          side: side,
+          // TODO: If transaction is failed then this is the output amount...
           unfilledBaseAmount: BigInt(0),
           updatedAt: new Date(),
         };
@@ -124,13 +142,20 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
           );
         }
 
+        // use the above price and understandings from the order to correctly
+        // supply the values
+
         const swapTake: TakesRecord = {
           marketAcct: marketAcct.pubkey.toBase58(),
-          baseAmount: BigInt(args.args.outputAmountMin.toNumber()),
+          // This will always be the DAO / proposal base token, so while it may be NICE to have a key
+          // to use to reference on data aggregate, it's not directly necessary.
+          baseAmount: baseAmount, // NOTE: This is always the base token given we have a BASE / QUOTE relationship
           orderBlock: BigInt(transaction.slot),
           orderTime: transaction.blockTime,
           orderTxSig: transaction.txSig,
-          quotePrice: BigInt(args.args.inputAmount.toNumber()),
+          quotePrice: price,
+          // TODO: this is coded into the market, in the case of our AMM, it's 1%
+          // this fee is based on the INPUT value (so if we're buying its USDC, selling its TOKEN)
           takerBaseFee: BigInt(0),
           takerQuoteFee: BigInt(0),
         };

@@ -394,7 +394,10 @@ export const orders = pgTable(
 
     unfilledBaseAmount: tokenAmount("unfilled_base_amount").notNull(),
     filledBaseAmount: tokenAmount("filled_base_amount").notNull(),
-    quotePrice: tokenAmount("quote_price").notNull(),
+    quotePrice: numeric("quote_price", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
 
     orderBlock: block("order_block").notNull(),
     orderTime: timestamp("order_time").notNull(),
@@ -426,7 +429,10 @@ export const makes = pgTable(
     unfilledBaseAmount: tokenAmount("unfilled_base_amount").notNull(),
     // Starts at 0, increases as more is filled
     filledBaseAmount: tokenAmount("filled_base_amount").notNull(),
-    quotePrice: tokenAmount("quote_price").notNull(),
+    quotePrice: numeric("quote_price", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
     updatedAt: timestamp("updated_at").notNull(),
   },
   (table) => ({
@@ -443,7 +449,10 @@ export const takes = pgTable(
       .references(() => orders.orderTxSig)
       .primaryKey(),
     baseAmount: tokenAmount("base_amount").notNull(),
-    quotePrice: tokenAmount("quote_price").notNull(),
+    quotePrice: numeric("quote_price", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
     takerBaseFee: tokenAmount("taker_base_fee").notNull(),
     takerQuoteFee: tokenAmount("taker_quote_fee")
       .notNull()
