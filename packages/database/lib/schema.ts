@@ -88,6 +88,8 @@ export const daos = pgTable(
       .notNull(),
     quoteAcct: pubkey("quote_acct").references(() => tokens.mintAcct),
     treasuryAcct: pubkey("treasury_acct").unique(),
+    // This is keyed for proposals and initialized when dao is created.
+    slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }),
     createdAt: timestamp("created_at")
       .notNull()
       .default(sql`now()`),
@@ -110,6 +112,8 @@ export const proposals = pgTable("proposals", {
   autocratVersion: doublePrecision("autocrat_version").notNull(),
   proposerAcct: pubkey("proposer_acct").notNull(),
   initialSlot: slot("initial_slot").notNull(),
+  // NOTE: We can add the dao slots_per_proposal to the initial_slot to get this
+  endSlot: slot("end_slot"),
   status: pgEnum("status", ProposalStatus).notNull(),
   descriptionURL: varchar("description_url"),
   pricingModelPassAcct: pubkey("pricing_model_pass_acct"),
@@ -125,6 +129,13 @@ export const proposals = pgTable("proposals", {
   updatedAt: timestamp("updated_at")
     .default(sql`now()`)
     .notNull(),
+  createdAt: timestamp("created_at")
+    .default(sql`now()`)
+    .notNull(),
+  // NOTE: This too like the end slot can be approximated, however we can update it
+  endedAt: timestamp("ended_at"),
+  // NOTE: Once the proposal is finalized / reverted this can be set for ease of access
+  completedAt: timestamp("completed_at"),
 });
 
 export const markets = pgTable("markets", {
