@@ -383,7 +383,9 @@ export enum OrderSide {
 export const orders = pgTable(
   "orders",
   {
-    orderTxSig: transaction("order_tx_sig").primaryKey(),
+    orderTxSig: transaction("order_tx_sig")
+      .primaryKey()
+      .references(() => transactions.txSig),
     marketAcct: pubkey("market_acct")
       .references(() => markets.marketAcct)
       .notNull(),
