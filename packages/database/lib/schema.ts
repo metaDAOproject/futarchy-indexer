@@ -364,6 +364,25 @@ export const tokenAccts = pgTable("token_accts", {
   updatedAt: timestamp("updated_at").notNull(),
 });
 
+// By indexing specific ATAs, we can track things like market liquidity over time
+// or META circulating supply by taking total META supply minus the treasury's account
+export const tokenAcctBalances = pgTable(
+  "token_acct_balances",
+  {
+    // ATA PGA
+    tokenAcct: pubkey("token_acct").notNull().references(() => tokenAccts.tokenAcct),
+    mintAcct: pubkey("mint_acct")
+      .references(() => tokens.mintAcct)
+      .notNull(),
+    ownerAcct: pubkey("owner_acct").notNull(),
+    amount: tokenAmount("amount").notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+  }, (table) => ({
+    pk: primaryKey(table.tokenAcct, table.mintAcct, table.amount, table.created_at),
+    acctAmountCreated: index("acct_amount_created").on(table.tokenAcct, table.created_at, table.amount),
+  })
+);
+
 export const tokens = pgTable("tokens", {
   mintAcct: pubkey("mint_acct").primaryKey(),
   name: varchar("name", { length: 30 }).notNull(),
