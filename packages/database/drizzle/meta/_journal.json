@@ -239,6 +239,13 @@
       "when": 1715574985341,
       "tag": "0033_youthful_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1715760199117,
+      "tag": "0034_talented_gargoyle",
+      "breakpoints": true
     }
   ]
 }
