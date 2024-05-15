@@ -317,6 +317,7 @@ export enum IndexerImplementation {
   AutocratV0OpenbookV2 = "AutocratV0OpenbookV2",
   AmmMarketIndexer = "AmmMarketIndexer",
   AmmMarketInstructionsIndexer = "AmmMarketInstructionsIndexer",
+  AmmMarketsAccountFetch = "AmmMarketsAccountFetch",
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",

@@ -39,24 +39,11 @@ export async function populateIndexers() {
   }
 }
 async function populateAmmMarketIndexers() {
-  const ammIndexerQuery = await usingDb((db) =>
-    db
-      .select({ acct: schema.indexerAccountDependencies.acct })
-      .from(schema.indexerAccountDependencies)
-  );
   const ammMarkets = await usingDb((db) =>
     db
       .select()
       .from(schema.markets)
-      .where(
-        and(
-          eq(schema.markets.marketType, MarketType.FUTARCHY_AMM),
-          notInArray(
-            schema.markets.marketAcct,
-            ammIndexerQuery.map<string>((ai) => ai.acct)
-          )
-        )
-      )
+      .where(and(eq(schema.markets.marketType, MarketType.FUTARCHY_AMM)))
       .execute()
   );
 
@@ -66,22 +53,23 @@ async function populateAmmMarketIndexers() {
       name: "amm-market-accounts",
       latestTxSigProcessed: null,
     };
+    const newAmmIntervalIndexerDep: IndexerAccountDependency = {
+      acct: ammMarket.marketAcct.toString(),
+      name: "amm-market-accounts-fetch",
+      latestTxSigProcessed: null,
+    };
 
     const ammInsertResult = await usingDb((db) =>
       db
         .insert(schema.indexerAccountDependencies)
-        .values(newAmmIndexerDep)
+        .values([newAmmIndexerDep, newAmmIntervalIndexerDep])
+        .onConflictDoNothing()
         .returning({ acct: schema.indexerAccountDependencies.acct })
     );
     if (ammInsertResult.length > 0) {
       console.log(
         "successfully populated indexer dependency for amm market account:",
         ammInsertResult[0].acct
-      );
-    } else {
-      console.error(
-        "error with inserting indexer dependency for amm market:",
-        ammMarket.marketAcct
       );
     }
   }
