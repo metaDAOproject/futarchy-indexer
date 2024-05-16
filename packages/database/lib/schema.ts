@@ -691,9 +691,9 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   // These make up off of a proposal
   condVaultAcct: pubkey("cond_vault_acct").notNull().primaryKey(),
   status: varchar("status"),
+  // In newest program version this is the proposal account
   settlmentAuthority: pubkey("settlement_authority")
-    .notNull()
-    .references(() => daos.treasuryAcct),
+    .notNull(),
   underlyingMintAcct: pubkey("underlying_mint_acct")
     .notNull()
     .references(() => tokens.mintAcct),
