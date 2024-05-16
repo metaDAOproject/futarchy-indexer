@@ -246,6 +246,13 @@
       "when": 1715760199117,
       "tag": "0034_talented_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1715845658893,
+      "tag": "0035_closed_tombstone",
+      "breakpoints": true
     }
   ]
 }
