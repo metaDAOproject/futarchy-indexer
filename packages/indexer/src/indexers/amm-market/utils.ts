@@ -1,7 +1,7 @@
 import { BN } from "@coral-xyz/anchor";
 import { BN_0, enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
-import { PriceMath } from "@metadaoproject/futarchy-ts";
-import { schema, usingDb } from "@metadaoproject/indexer-db";
+import { PriceMath } from "@metadaoproject/futarchy";
+import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import {
   TwapRecord,
@@ -33,6 +33,14 @@ export async function indexAmmMarketAccountWithContext(
     return Ok(`skipping account: ${account.toBase58()}`);
 
   // indexing the twap
+  const market = await usingDb((db) =>
+    db
+      .select()
+      .from(schema.markets)
+      .where(eq(schema.markets.marketAcct, account.toBase58()))
+      .execute()
+  );
+
   const twapCalculation: BN = ammMarketAccount.oracle.aggregator.div(
     ammMarketAccount.oracle.lastUpdatedSlot.sub(ammMarketAccount.createdAtSlot)
   );
@@ -41,7 +49,7 @@ export async function indexAmmMarketAccountWithContext(
     curTwap: BigInt(twapNumber),
     marketAcct: account.toBase58(),
     observationAgg: ammMarketAccount.oracle.aggregator.toString(),
-    proposalAcct: ammMarketAccount.proposal.toString(),
+    proposalAcct: market[0].proposalAcct ?? "",
     // alternatively, we could pass in the context of the update here
     updatedSlot: context
       ? BigInt(context.slot)
