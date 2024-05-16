@@ -253,6 +253,13 @@
       "when": 1715845658893,
       "tag": "0035_closed_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1715845862897,
+      "tag": "0036_small_dazzler",
+      "breakpoints": true
     }
   ]
 }
