@@ -11,6 +11,11 @@ import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
 import { provider, rpcReadClient } from "../../connection";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 
+export enum AmmMarketAccountIndexingErrors {
+  AmmTwapIndexError = "AmmTwapIndexError",
+  MarketMissingError = "MarketMissingError",
+}
+
 export async function indexAmmMarketAccountWithContext(
   accountInfo: AccountInfo<Buffer>,
   account: PublicKey,
@@ -40,6 +45,9 @@ export async function indexAmmMarketAccountWithContext(
       .where(eq(schema.markets.marketAcct, account.toBase58()))
       .execute()
   );
+  if (market.length === 0) {
+    return Err({ type: AmmMarketAccountIndexingErrors.MarketMissingError });
+  }
 
   const twapCalculation: BN = ammMarketAccount.oracle.aggregator.div(
     ammMarketAccount.oracle.lastUpdatedSlot.sub(ammMarketAccount.createdAtSlot)
