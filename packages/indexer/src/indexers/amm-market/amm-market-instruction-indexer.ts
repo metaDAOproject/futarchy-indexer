@@ -9,11 +9,7 @@ import {
   TakesRecord,
   TransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
-import {
-  AMM_PROGRAM_ID,
-  AmmClient,
-  SwapType,
-} from "@metadaoproject/futarchy-ts";
+import { AMM_PROGRAM_ID, AmmClient, SwapType } from "@metadaoproject/futarchy";
 import { InstructionIndexer } from "../instruction-indexer";
 import { IDL } from "@openbook-dex/openbook-v2";
 import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
@@ -99,18 +95,20 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
         const side = args.args.swapType.buy ? OrderSide.BID : OrderSide.ASK;
 
         // get the base/quote amount (NOTE: this can be confusing given the directionality, but solved based on side)
-        let baseAmount = args.args.outputAmountMin // What you're trading INTO (output)
-        let quoteAmount = args.args.inputAmount // What you're trading FROM (input)
-        
+        let baseAmount = args.args.outputAmountMin; // What you're trading INTO (output)
+        let quoteAmount = args.args.inputAmount; // What you're trading FROM (input)
+
         // if we're selling we need to take the inverse
-        if (side === OrderSide.ASK){
-          baseAmount = args.args.inputAmount// Trading FROM
-          quoteAmount = args.args.outputAmountMin // Trading TO
+        if (side === OrderSide.ASK) {
+          baseAmount = args.args.inputAmount; // Trading FROM
+          quoteAmount = args.args.outputAmountMin; // Trading TO
         }
         // determine price
         // NOTE: This is estimated given the output is a min expected value
         // default is input / output (buying a token with USDC or whatever)
-        const price = (quoteAmount.toNumber() / baseAmount.toNumber()).toString() // TODO: Need to likely handle rounding.....
+        const price = (
+          quoteAmount.toNumber() / baseAmount.toNumber()
+        ).toString(); // TODO: Need to likely handle rounding.....
         // index a swap here
         const swapOrder: OrdersRecord = {
           marketAcct: marketAcct.pubkey.toBase58(),
