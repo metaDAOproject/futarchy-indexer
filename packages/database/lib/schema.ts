@@ -294,6 +294,8 @@ export const transactionWatchers = pgTable("transaction_watchers", {
   status: pgEnum("status", TransactionWatchStatus)
     .default(TransactionWatchStatus.Disabled)
     .notNull(),
+  failureLog: text("failure_log"),
+  updatedAt: timestamp("updated_at"),
 });
 
 export const transactionWatcherTransactions = pgTable(
@@ -370,16 +372,28 @@ export const tokenAcctBalances = pgTable(
   "token_acct_balances",
   {
     // ATA PGA
-    tokenAcct: pubkey("token_acct").notNull().references(() => tokenAccts.tokenAcct),
+    tokenAcct: pubkey("token_acct")
+      .notNull()
+      .references(() => tokenAccts.tokenAcct),
     mintAcct: pubkey("mint_acct")
       .references(() => tokens.mintAcct)
       .notNull(),
     ownerAcct: pubkey("owner_acct").notNull(),
     amount: tokenAmount("amount").notNull(),
     created_at: timestamp("created_at").notNull().defaultNow(),
-  }, (table) => ({
-    pk: primaryKey(table.tokenAcct, table.mintAcct, table.amount, table.created_at),
-    acctAmountCreated: index("acct_amount_created").on(table.tokenAcct, table.created_at, table.amount),
+  },
+  (table) => ({
+    pk: primaryKey(
+      table.tokenAcct,
+      table.mintAcct,
+      table.amount,
+      table.created_at
+    ),
+    acctAmountCreated: index("acct_amount_created").on(
+      table.tokenAcct,
+      table.created_at,
+      table.amount
+    ),
   })
 );
 
@@ -692,8 +706,7 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condVaultAcct: pubkey("cond_vault_acct").notNull().primaryKey(),
   status: varchar("status"),
   // In newest program version this is the proposal account
-  settlmentAuthority: pubkey("settlement_authority")
-    .notNull(),
+  settlmentAuthority: pubkey("settlement_authority").notNull(),
   underlyingMintAcct: pubkey("underlying_mint_acct")
     .notNull()
     .references(() => tokens.mintAcct),
