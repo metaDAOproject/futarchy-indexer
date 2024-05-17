@@ -77,7 +77,7 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
           programAcct: dao.protocol.autocrat.programId.toString(),
           baseAcct: dao.baseToken.publicKey,
           quoteAcct: dao.quoteToken.publicKey,
-          slotsPerProposal: null,
+          slotsPerProposal: BigInt(dao.daoAccount.slotsPerProposal.toString()),
           treasuryAcct: dao.daoAccount.treasury.toString(),
         };
         // After we have the token in the DB, we can now insert the dao
