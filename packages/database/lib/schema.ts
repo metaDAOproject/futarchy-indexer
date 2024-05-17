@@ -323,6 +323,7 @@ export enum IndexerImplementation {
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
+  AutocratDaoIndexer = "AutocratDaoIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
@@ -714,6 +715,12 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   nonce: varchar("nonce"),
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
+  createdAt: timestamp("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .default(sql`now()`),
 });
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type TwapRecord = typeof twaps._.inferInsert;
@@ -724,3 +731,5 @@ export type OrdersRecord = typeof orders._.inferInsert;
 export type TransactionRecord = typeof transactions._.inferInsert;
 export type TransactionWatcherTransactionRecord =
   typeof transactionWatcherTransactions._.inferInsert;
+export type TokenRecord = typeof tokens._.inferInsert;
+export type DaoRecord = typeof daos._.inferInsert;

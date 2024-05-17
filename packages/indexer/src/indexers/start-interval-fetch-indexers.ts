@@ -5,6 +5,7 @@ import { BirdeyePricesIndexer } from "./birdeye/birdeye-prices-indexer";
 import { IntervalFetchIndexer } from "./interval-fetch-indexer";
 import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
 import { AmmMarketAccountIntervalFetchIndexer } from "./amm-market/amm-market-account-interval-indexer";
+import { AutocratDaoIndexer } from "./autocrat/autocrat-dao-indexer";
 
 export function startIntervalFetchIndexer(
   indexerQueryRes: IndexerWithAccountDeps
@@ -38,6 +39,8 @@ export function getIntervalFetchIndexerImplementation(
       return BirdeyePricesIndexer;
     case IndexerImplementation.AmmMarketsAccountFetch:
       return AmmMarketAccountIntervalFetchIndexer;
+    case IndexerImplementation.AutocratDaoIndexer:
+      return AutocratDaoIndexer;
   }
   return null;
 }
