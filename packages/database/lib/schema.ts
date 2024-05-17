@@ -323,6 +323,7 @@ export enum IndexerImplementation {
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
+  AutocratV0_3DaoIndexer = "AutocratV0_3DaoIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
@@ -730,3 +731,5 @@ export type OrdersRecord = typeof orders._.inferInsert;
 export type TransactionRecord = typeof transactions._.inferInsert;
 export type TransactionWatcherTransactionRecord =
   typeof transactionWatcherTransactions._.inferInsert;
+export type TokenRecord = typeof tokens._.inferInsert;
+export type DaoRecord = typeof daos._.inferInsert;
