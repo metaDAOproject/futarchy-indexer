@@ -141,7 +141,9 @@ class TransactionWatcher {
       await this.getTransactionHistoryFromFinalizedSlotWithRetry();
     if (!historyRes.success) {
       // update tx watcher status to failed and exit, but other tx watchers continue
-      const markFailedResult = await this.markTransactionWatcherAsFailed();
+      const markFailedResult = await this.markTransactionWatcherAsFailed(
+        historyRes.error.type
+      );
       if (!markFailedResult?.success) {
         return markFailedResult;
       }
@@ -356,7 +358,7 @@ class TransactionWatcher {
     return Ok(responseWithMaxSignatures);
   }
 
-  private async markTransactionWatcherAsFailed() {
+  private async markTransactionWatcherAsFailed(failureLog: string) {
     this.backfilling = false;
     this.stopped = true;
     const acct = this.account.toBase58();
@@ -366,6 +368,7 @@ class TransactionWatcher {
         .set({
           acct,
           status: TransactionWatchStatus.Failed,
+          failureLog,
         })
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct })
