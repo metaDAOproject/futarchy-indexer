@@ -295,6 +295,7 @@ export const transactionWatchers = pgTable("transaction_watchers", {
     .default(TransactionWatchStatus.Disabled)
     .notNull(),
   failureLog: text("failure_log"),
+  updatedAt: timestamp("updated_at"),
 });
 
 export const transactionWatcherTransactions = pgTable(

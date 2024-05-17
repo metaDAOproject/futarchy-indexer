@@ -190,6 +190,7 @@ class TransactionWatcher {
         .update(schema.transactionWatchers)
         .set({
           checkedUpToSlot: newCheckedUpToSlot,
+          updatedAt: new Date(),
         })
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct })
@@ -295,6 +296,7 @@ class TransactionWatcher {
           firstTxSig: curWatcherRecord.firstTxSig ?? signature,
           serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
           checkedUpToSlot: newCheckedUpToSlot,
+          updatedAt: new Date(),
         })
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct })
@@ -369,6 +371,7 @@ class TransactionWatcher {
           acct,
           status: TransactionWatchStatus.Failed,
           failureLog,
+          updatedAt: new Date(),
         })
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct })
@@ -491,6 +494,7 @@ export async function startTransactionWatchers() {
                 serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
                 latestTxSig: null,
                 checkedUpToSlot: BigInt(0),
+                updatedAt: new Date(),
               })
               .where(eq(schema.transactionWatchers.acct, acct))
               .returning({ acct: schema.transactionWatchers.acct })
