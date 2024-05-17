@@ -323,7 +323,7 @@ export enum IndexerImplementation {
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
-  AutocratV0_3DaoIndexer = "AutocratV0_3DaoIndexer",
+  AutocratDaoIndexer = "AutocratDaoIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",

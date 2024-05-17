@@ -7,7 +7,7 @@ import { PublicKey } from "@solana/web3.js";
 import { DaoRecord, TokenRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { getMint } from "@solana/spl-token";
 
-export enum AutocratV0_3DaoIndexerError {
+export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
   DuplicateError = "DuplicateError",
   MissingParamError = "MissingParamError",
@@ -16,32 +16,31 @@ export enum AutocratV0_3DaoIndexerError {
   NothingToInsertError = "NothingToInsertError",
 }
 
-export const AutocratV0_3DaoIndexer: IntervalFetchIndexer = {
+export const AutocratDaoIndexer: IntervalFetchIndexer = {
   intervalMs: 30000,
   index: async () => {
     try {
       // Fetches all daos from the database
-      const dbDaos: DaoAggregate[] = await indexerReadClient.daos.fetchAllDaos();
+      const dbDaos: DaoRecord[] = await usingDb((db) =>
+        db.select().from(schema.daos).execute()
+      );
       const onChainDaos = await rpcReadClient.daos.fetchAllDaos();
-
-      const dbDaoPubkeys: PublicKey[] = [];
-      for (const daoAggregate of dbDaos) {
-        for (const dao of daoAggregate.daos) {
-          dbDaoPubkeys.push(dao.publicKey);
-        }
-      }
 
       const daosToInsert: Dao[] = [];
       for (const daoAggregate of onChainDaos) {
         for (const dao of daoAggregate.daos) {
-          if (!dbDaoPubkeys.find((dbDao) => dbDao.equals(dao.publicKey))) {
+          if (
+            !dbDaos.find((dbDao) =>
+              new PublicKey(dbDao.daoAcct).equals(dao.publicKey)
+            )
+          ) {
             daosToInsert.push(dao);
-          } 
+          }
         }
       }
 
       console.log("DAOS to insert");
-      console.log(daosToInsert.map(dao => dao.publicKey.toString()))
+      console.log(daosToInsert.map((dao) => dao.publicKey.toString()));
 
       daosToInsert.map(async (dao) => {
         if (
@@ -49,13 +48,16 @@ export const AutocratV0_3DaoIndexer: IntervalFetchIndexer = {
           dao.quoteToken.publicKey == null
         ) {
           console.error("Unable to determine public key for dao tokens");
-          return Err({ type: AutocratV0_3DaoIndexerError.MissingParamError });
+          return Err({ type: AutocratDaoIndexerError.MissingParamError });
         }
         // const baseTokenData = await enrichTokenMetadata(
         //   new PublicKey(dao.baseToken.publicKey),
         //   provider
         // );
-        const baseTokenMint = await getMint(connection, new PublicKey(dao.baseToken.publicKey));
+        const baseTokenMint = await getMint(
+          connection,
+          new PublicKey(dao.baseToken.publicKey)
+        );
         // Puts the base tokens into the DB before we try to insert the dao
         let token: TokenRecord = {
           symbol: dao.baseToken.symbol,
@@ -67,11 +69,7 @@ export const AutocratV0_3DaoIndexer: IntervalFetchIndexer = {
         };
 
         await usingDb((db) =>
-          db
-            .insert(schema.tokens)
-            .values(token)
-            .onConflictDoNothing()
-            .execute()
+          db.insert(schema.tokens).values(token).onConflictDoNothing().execute()
         );
 
         let daoToInsert: DaoRecord = {
@@ -80,6 +78,7 @@ export const AutocratV0_3DaoIndexer: IntervalFetchIndexer = {
           baseAcct: dao.baseToken.publicKey,
           quoteAcct: dao.quoteToken.publicKey,
           slotsPerProposal: null,
+          treasuryAcct: dao.daoAccount.treasury.toString(),
         };
         // After we have the token in the DB, we can now insert the dao
         await usingDb((db) =>
@@ -91,11 +90,10 @@ export const AutocratV0_3DaoIndexer: IntervalFetchIndexer = {
         );
       });
 
-
       return Ok({ acct: "urmom" });
     } catch (err) {
       console.error(err);
-      return Err({ type: AutocratV0_3DaoIndexerError.GeneralError });
+      return Err({ type: AutocratDaoIndexerError.GeneralError });
     }
   },
 };
