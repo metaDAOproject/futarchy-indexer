@@ -324,6 +324,7 @@ export enum IndexerImplementation {
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
   AutocratDaoIndexer = "AutocratDaoIndexer",
+  AutocratProposalIndexer = "AutocratProposalIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
@@ -707,7 +708,7 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condVaultAcct: pubkey("cond_vault_acct").notNull().primaryKey(),
   status: varchar("status"),
   // In newest program version this is the proposal account
-  settlmentAuthority: pubkey("settlement_authority").notNull(),
+  settlementAuthority: pubkey("settlement_authority").notNull(),
   underlyingMintAcct: pubkey("underlying_mint_acct")
     .notNull()
     .references(() => tokens.mintAcct),
@@ -715,12 +716,6 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   nonce: varchar("nonce"),
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
-  createdAt: timestamp("created_at")
-    .notNull()
-    .default(sql`now()`),
-  updatedAt: timestamp("updated_at")
-    .notNull()
-    .default(sql`now()`),
 });
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type TwapRecord = typeof twaps._.inferInsert;
@@ -733,3 +728,5 @@ export type TransactionWatcherTransactionRecord =
   typeof transactionWatcherTransactions._.inferInsert;
 export type TokenRecord = typeof tokens._.inferInsert;
 export type DaoRecord = typeof daos._.inferInsert;
+export type ProposalRecord = typeof proposals._.inferInsert;
+export type ConditionalVaultRecord = typeof conditionalVaults._.inferInsert;

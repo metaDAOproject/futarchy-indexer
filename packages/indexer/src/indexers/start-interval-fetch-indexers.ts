@@ -6,6 +6,7 @@ import { IntervalFetchIndexer } from "./interval-fetch-indexer";
 import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
 import { AmmMarketAccountIntervalFetchIndexer } from "./amm-market/amm-market-account-interval-indexer";
 import { AutocratDaoIndexer } from "./autocrat/autocrat-dao-indexer";
+import { AutocratProposalIndexer } from "./autocrat/autocrat-proposal-indexer";
 
 export function startIntervalFetchIndexer(
   indexerQueryRes: IndexerWithAccountDeps
@@ -41,6 +42,8 @@ export function getIntervalFetchIndexerImplementation(
       return AmmMarketAccountIntervalFetchIndexer;
     case IndexerImplementation.AutocratDaoIndexer:
       return AutocratDaoIndexer;
+    case IndexerImplementation.AutocratProposalIndexer:
+      return AutocratProposalIndexer;
   }
   return null;
 }
