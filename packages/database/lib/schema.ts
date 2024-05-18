@@ -730,3 +730,4 @@ export type TokenRecord = typeof tokens._.inferInsert;
 export type DaoRecord = typeof daos._.inferInsert;
 export type ProposalRecord = typeof proposals._.inferInsert;
 export type ConditionalVaultRecord = typeof conditionalVaults._.inferInsert;
+export type TokenAcctRecord = typeof tokenAccts._.inferInsert;

@@ -25,9 +25,10 @@ export async function startMainIndexers() {
     (i) => i.indexers?.indexerType === IndexerType.AccountInfo
   );
 
-  // for (const indexerQueryRes of accountInfoIndexers) {
-  //   await startAccountInfoIndexer(indexerQueryRes);
-  // }
+  for (const indexerQueryRes of accountInfoIndexers) {
+    await startAccountInfoIndexer(indexerQueryRes);
+  }
+
   const intervalFetchIndexers = allIndexers.filter(
     (i) => i.indexers?.indexerType === IndexerType.IntervalFetch
   );
@@ -43,7 +44,7 @@ export async function startMainIndexers() {
     (i) => i.indexers?.indexerType === IndexerType.TXHistory
   );
 
-  // for (const indexerQueryRes of transactionHistoryIndexers) {
-  //   startTransactionHistoryIndexer(indexerQueryRes);
-  // }
+  for (const indexerQueryRes of transactionHistoryIndexers) {
+    startTransactionHistoryIndexer(indexerQueryRes);
+  }
 }
