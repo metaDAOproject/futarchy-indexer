@@ -90,6 +90,7 @@ export const daos = pgTable(
     treasuryAcct: pubkey("treasury_acct").unique(),
     // This is keyed for proposals and initialized when dao is created.
     slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }),
+    passThresholdBps: bigint("pass_threshold_bps", {mode: "bigint"}),
     createdAt: timestamp("created_at")
       .notNull()
       .default(sql`now()`),
