@@ -34,10 +34,7 @@ export async function startMainIndexers() {
   );
 
   for (const indexerQueryRes of intervalFetchIndexers) {
-    if (indexerQueryRes.indexers?.implementation == "AutocratProposalIndexer") {
-      startIntervalFetchIndexer(indexerQueryRes);
-
-    }
+    startIntervalFetchIndexer(indexerQueryRes);
   }
 
   const transactionHistoryIndexers = allIndexers.filter(

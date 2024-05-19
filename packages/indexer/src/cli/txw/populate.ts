@@ -9,6 +9,7 @@ import {
 import {
   MarketRecord,
   MarketType,
+  TokenRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
 import {
   ORCA_WHIRLPOOLS_CONFIG,
@@ -31,12 +32,41 @@ type IndexerAccountDependency =
 export async function populateIndexers() {
   // populating market indexers
   try {
+    await populateTokenMintIndexers();
     await populateAmmMarketIndexers();
     await populateOpenbookMarketIndexers();
     await populateSpotPriceMarkets();
   } catch (e) {
     console.error("error populating indexers", e);
   }
+}
+async function populateTokenMintIndexers() {
+  const mints: TokenRecord[] = await usingDb((db) =>
+    db.select().from(schema.tokens).execute()
+  );
+
+  for (const mint of mints) {
+    const newTokenMintIndexerDep: IndexerAccountDependency = {
+      acct: mint.mintAcct,
+      name: "token-mint-accounts",
+      latestTxSigProcessed: null,
+    };
+    const insertRes = await usingDb((db) =>
+      db
+        .insert(schema.indexerAccountDependencies)
+        .values([newTokenMintIndexerDep])
+        .onConflictDoNothing()
+        .returning({ acct: schema.indexerAccountDependencies.acct })
+    );
+    if (insertRes.length > 0) {
+      console.log(
+        "successfully populated indexer dependency for token mint account:",
+        insertRes[0].acct
+      );
+    }
+  }
+
+  console.log("Successfully populated token mint indexers");
 }
 async function populateAmmMarketIndexers() {
   const ammMarkets = await usingDb((db) =>
