@@ -326,6 +326,7 @@ export enum IndexerImplementation {
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
   AutocratDaoIndexer = "AutocratDaoIndexer",
   AutocratProposalIndexer = "AutocratProposalIndexer",
+  TokenMintIndexer = "TokenMintIndexer",
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
