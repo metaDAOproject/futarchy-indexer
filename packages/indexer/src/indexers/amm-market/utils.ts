@@ -33,49 +33,50 @@ export async function indexAmmMarketAccountWithContext(
     provider
   );
 
-  // agg is 0 so skipping
-  if (ammMarketAccount.oracle.aggregator.toString() === BN_0.toString())
-    return Ok(`skipping account: ${account.toBase58()}`);
+  // if we don't have an oracle.aggregator of 0 let's run this mf
+  if (ammMarketAccount.oracle.aggregator.toString() !== BN_0.toString()) {
+    // indexing the twap
+    const market = await usingDb((db) =>
+      db
+        .select()
+        .from(schema.markets)
+        .where(eq(schema.markets.marketAcct, account.toBase58()))
+        .execute()
+    );
+    if (market.length === 0) {
+      return Err({ type: AmmMarketAccountIndexingErrors.MarketMissingError });
+    }
 
-  // indexing the twap
-  const market = await usingDb((db) =>
-    db
-      .select()
-      .from(schema.markets)
-      .where(eq(schema.markets.marketAcct, account.toBase58()))
-      .execute()
-  );
-  if (market.length === 0) {
-    return Err({ type: AmmMarketAccountIndexingErrors.MarketMissingError });
-  }
+    const twapCalculation: BN = ammMarketAccount.oracle.aggregator.div(
+      ammMarketAccount.oracle.lastUpdatedSlot.sub(
+        ammMarketAccount.createdAtSlot
+      )
+    );
+    const twapNumber: number = twapCalculation.toNumber();
+    const newTwap: TwapRecord = {
+      curTwap: BigInt(twapNumber),
+      marketAcct: account.toBase58(),
+      observationAgg: ammMarketAccount.oracle.aggregator.toString(),
+      proposalAcct: market[0].proposalAcct ?? "",
+      // alternatively, we could pass in the context of the update here
+      updatedSlot: context
+        ? BigInt(context.slot)
+        : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
+    };
 
-  const twapCalculation: BN = ammMarketAccount.oracle.aggregator.div(
-    ammMarketAccount.oracle.lastUpdatedSlot.sub(ammMarketAccount.createdAtSlot)
-  );
-  const twapNumber: number = twapCalculation.toNumber();
-  const newTwap: TwapRecord = {
-    curTwap: BigInt(twapNumber),
-    marketAcct: account.toBase58(),
-    observationAgg: ammMarketAccount.oracle.aggregator.toString(),
-    proposalAcct: market[0].proposalAcct ?? "",
-    // alternatively, we could pass in the context of the update here
-    updatedSlot: context
-      ? BigInt(context.slot)
-      : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
-  };
+    // TODO batch commits across inserts - maybe with event queue
+    const twapUpsertResult = await usingDb((db) =>
+      db
+        .insert(schema.twaps)
+        .values(newTwap)
+        .onConflictDoNothing()
+        .returning({ marketAcct: schema.twaps.marketAcct })
+    );
 
-  // TODO batch commits across inserts - maybe with event queue
-  const twapUpsertResult = await usingDb((db) =>
-    db
-      .insert(schema.twaps)
-      .values(newTwap)
-      .onConflictDoNothing()
-      .returning({ marketAcct: schema.twaps.marketAcct })
-  );
-
-  if (twapUpsertResult.length === 0) {
-    console.error("failed to upsert twap");
-    return Err({ type: "AmmTwapIndexError" });
+    if (twapUpsertResult.length === 0) {
+      console.error("failed to upsert twap");
+      return Err({ type: "AmmTwapIndexError" });
+    }
   }
 
   // indexing the conditional market price
