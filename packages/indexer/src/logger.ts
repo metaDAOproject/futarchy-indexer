@@ -1,10 +1,9 @@
 import { Counter } from "@lukasdeco/prom-client";
 export class Logger {
-  private readonly prefix;
-  private readonly errorCounter;
-  private readonly warnCounter;
+  private errorCounter;
+  private warnCounter;
 
-  public constructor(prefix?: string) {
+  constructor() {
     this.errorCounter = new Counter({
       name: "errors",
       help: "number of errors",
@@ -14,30 +13,24 @@ export class Logger {
       name: "warnings",
       help: "number of warnings",
     });
-
-    this.prefix = prefix ?? '';
   }
 
-  public log(message: string): void {
-    console.log(this.prefix + message);
+  log(message: string): void {
+    console.log(message);
   }
 
-  public info(message: string): void {
-    console.info(this.prefix + message);
+  info(message: string): void {
+    console.info(message);
   }
 
-  public error(message: string): void {
-    console.error(this.prefix + message);
+  error(message: string): void {
+    console.error(message);
     this.errorCounter.inc();
   }
 
-  public warn(message: string): void {
-    console.warn(this.prefix + message);
+  warn(message: string): void {
+    console.warn(message);
     this.warnCounter.inc();
-  }
-
-  public child(prefix: string): Logger {
-    return new Logger(`${this.prefix}${prefix}`);
   }
 }
 
