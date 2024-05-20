@@ -15,7 +15,7 @@ enum BirdeyePricesIndexingError {
 }
 
 export const BirdeyePricesIndexer: IntervalFetchIndexer = {
-  intervalMs: 60_000,
+  cronExpression: "* * * * *",
   index: async (acct: string) => {
     try {
       const url = `https://public-api.birdeye.so/defi/price?address=${acct}`;
@@ -40,6 +40,7 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
         marketAcct: acct,
         price: tokenPriceJson.data?.value.toString() ?? "",
         pricesType: PricesType.Spot,
+        createdBy: "birdeye-prices-indexer",
         // TODO: Fudge, birdeye doesn't have this so we might need to figure out something.. maybe just call the RPC
         updatedSlot: BigInt(0),
       };

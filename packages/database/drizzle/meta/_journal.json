@@ -281,6 +281,20 @@
       "when": 1716022477343,
       "tag": "0039_gigantic_riptide",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1716172323051,
+      "tag": "0040_good_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1716174914479,
+      "tag": "0041_shallow_killer_shrike",
+      "breakpoints": true
     }
   ]
 }

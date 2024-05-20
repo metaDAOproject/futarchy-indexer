@@ -11,7 +11,8 @@ export enum AmmAccountIntervalIndexerError {
 }
 
 export const AmmMarketAccountIntervalFetchIndexer: IntervalFetchIndexer = {
-  intervalMs: 60_000,
+  cronExpression: "* * * * *",
+  retries: 3,
   index: async (acct: string) => {
     if (acct === "") {
       return Err({

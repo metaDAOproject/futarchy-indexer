@@ -21,13 +21,13 @@ export async function startMainIndexers() {
       .execute()
   );
 
-  const accountInfoIndexers = allIndexers.filter(
-    (i) => i.indexers?.indexerType === IndexerType.AccountInfo
-  );
+  // const accountInfoIndexers = allIndexers.filter(
+  //   (i) => i.indexers?.indexerType === IndexerType.AccountInfo
+  // );
 
-  for (const indexerQueryRes of accountInfoIndexers) {
-    await startAccountInfoIndexer(indexerQueryRes);
-  }
+  // for (const indexerQueryRes of accountInfoIndexers) {
+  //   await startAccountInfoIndexer(indexerQueryRes);
+  // }
 
   const intervalFetchIndexers = allIndexers.filter(
     (i) => i.indexers?.indexerType === IndexerType.IntervalFetch
@@ -37,11 +37,11 @@ export async function startMainIndexers() {
     startIntervalFetchIndexer(indexerQueryRes);
   }
 
-  const transactionHistoryIndexers = allIndexers.filter(
-    (i) => i.indexers?.indexerType === IndexerType.TXHistory
-  );
+  // const transactionHistoryIndexers = allIndexers.filter(
+  //   (i) => i.indexers?.indexerType === IndexerType.TXHistory
+  // );
 
-  for (const indexerQueryRes of transactionHistoryIndexers) {
-    startTransactionHistoryIndexer(indexerQueryRes);
-  }
+  // for (const indexerQueryRes of transactionHistoryIndexers) {
+  //   startTransactionHistoryIndexer(indexerQueryRes);
+  // }
 }

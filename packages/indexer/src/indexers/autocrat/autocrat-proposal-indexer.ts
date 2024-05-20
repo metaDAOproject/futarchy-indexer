@@ -35,7 +35,7 @@ export enum AutocratDaoIndexerError {
 }
 
 export const AutocratProposalIndexer: IntervalFetchIndexer = {
-  intervalMs: 30000,
+  cronExpression: "30 * * * * *",
   index: async () => {
     try {
       console.log("Autocrat proposal indexer");
@@ -168,11 +168,17 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .onConflictDoNothing()
             .execute()
         );
-        console.log('inserted token accounts');
+        console.log("inserted token accounts");
 
-        let dbDao: DaoRecord = (await usingDb((db) =>
-          db.select().from(schema.daos).where(eq(schema.daos.daoAcct, proposal.account.dao.toString())).execute()
-        ))[0];
+        let dbDao: DaoRecord = (
+          await usingDb((db) =>
+            db
+              .select()
+              .from(schema.daos)
+              .where(eq(schema.daos.daoAcct, proposal.account.dao.toString()))
+              .execute()
+          )
+        )[0];
 
         let dbProposal: ProposalRecord = {
           proposalAcct: proposal.publicKey.toString(),
@@ -187,7 +193,11 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           failMarketAcct: proposal.account.failAmm.toString(),
           baseVault: proposal.account.baseVault.toString(),
           quoteVault: proposal.account.quoteVault.toString(),
-          endSlot: BigInt(proposal.account.slotEnqueued.add(new BN(dbDao.slotsPerProposal?.toString())).toString()),
+          endSlot: BigInt(
+            proposal.account.slotEnqueued
+              .add(new BN(dbDao.slotsPerProposal?.toString()))
+              .toString()
+          ),
         };
 
         await usingDb((db) =>

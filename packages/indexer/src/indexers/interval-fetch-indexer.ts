@@ -1,6 +1,7 @@
 import { Result, TaggedUnion } from "../match";
 export type IntervalFetchIndexer = {
-  intervalMs: number;
+  cronExpression: string;
+  retries?: number;
   index(acct: string): Promise<
     Result<
       {

@@ -17,7 +17,7 @@ export enum AutocratDaoIndexerError {
 }
 
 export const AutocratDaoIndexer: IntervalFetchIndexer = {
-  intervalMs: 30000,
+  cronExpression: "30 * * * * *",
   index: async () => {
     try {
       // Fetches all daos from the database
