@@ -357,7 +357,9 @@ export const indexerAccountDependencies = pgTable(
     latestTxSigProcessed: transaction("latest_tx_sig_processed").references(
       () => transactions.txSig
     ),
-    status: pgEnum("status", IndexerAccountDependencyStatus),
+    status: pgEnum("status", IndexerAccountDependencyStatus).default(
+      IndexerAccountDependencyStatus.Active
+    ),
     updatedAt: timestamp("updated_at"),
   },
   (table) => ({

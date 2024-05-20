@@ -69,10 +69,7 @@ export async function indexAmmMarketAccountWithContext(
     db
       .insert(schema.twaps)
       .values(newTwap)
-      .onConflictDoUpdate({
-        target: [schema.twaps.updatedSlot, schema.twaps.marketAcct],
-        set: newTwap,
-      })
+      .onConflictDoNothing()
       .returning({ marketAcct: schema.twaps.marketAcct })
   );
 

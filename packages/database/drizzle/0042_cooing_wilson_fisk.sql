@@ -1,1 +1,1 @@
-ALTER TABLE "prices" ALTER COLUMN "created_at" SET DEFAULT '2024-05-20 04:35:30.000';
+ALTER TABLE "prices" ALTER COLUMN "created_at" SET DEFAULT now();

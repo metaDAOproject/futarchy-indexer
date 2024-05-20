@@ -1,0 +1,1 @@
+ALTER TABLE "indexer_account_dependencies" ALTER COLUMN "status" SET DEFAULT 'active';
