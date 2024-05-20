@@ -66,7 +66,25 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         proposalsToInsert.map((proposal) => proposal.publicKey.toString())
       );
 
+      
+
       proposalsToInsert.map(async (proposal) => {
+        // TODO: Refactor this as we only need to fetch it once if it's the same in the proposal....
+        const dao = await usingDb((db) => 
+          db.select().from(schema.daos).where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58())).execute()
+        );
+
+        let daoDetails;
+        if(dao.length > 0) {
+          const daoId = dao[0].daoId;
+          if(daoId) {
+            daoDetails = await usingDb((db) =>
+              db.select().from(schema.daoDetails).where(eq(schema.daoDetails.daoId, daoId)).execute()
+            );
+          }
+        }
+
+        const baseTokenMetadata = await enrichTokenMetadata(new PublicKey(dao[0].baseAcct), provider);
         const storedBaseVault = await conditionalVaultClient.getVault(
           proposal.account.baseVault
         );
@@ -117,13 +135,33 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         for (const token of [basePass, baseFail, quotePass, quoteFail]) {
           const metadata = await enrichTokenMetadata(token, provider);
           const storedMint = await getMint(provider.connection, token);
+          // NOTE: THIS IS ONLY FOR PROPOSALS AND ONLY FOR BASE / QUOTE CONDITIONAL
+          // TODO: Need to update this for the symbol, name, and image_url base on pass / fail
+          const isQuote = [quoteFail, quotePass].includes(token);
+          const isFail = [quoteFail, baseFail].includes(token);
+          // TODO: Need to get metadata for the base token
+          // TODO: This needs to be refactored
+          let noMetadataName = isFail ? `Proposal ${proposal.account.number}: f${baseTokenMetadata.symbol}` : `Proposal ${proposal.account.number}: p${baseTokenMetadata.symbol}`;
+          let noMetadataSymbol = isFail ? `f${baseTokenMetadata.symbol}` : `p${baseTokenMetadata.symbol}`;
+          let imageUrl;
+          if(isQuote){
+            noMetadataName = isFail ? `Proposal ${proposal.account.number}: fUSDC` : `Proposal ${proposal.account.number}: pUSDC`;
+            noMetadataSymbol = isFail ? `fUSDC` : `pUSDC`;
+          }
 
+          if(dao && daoDetails) {
+            imageUrl = isFail ? daoDetails[0].fail_token_image_url : daoDetails[0].pass_token_image_url;
+            if(isQuote){
+              imageUrl = isFail ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/6b1ce817-861f-4980-40ca-b55f28f21400/public" : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f236a0ca-5d7c-4f4a-ca8a-52eb9d72ef00/public";
+            }
+          }
           let tokenToInsert: TokenRecord = {
-            symbol: metadata.symbol,
-            name: metadata.name ? metadata.name : metadata.symbol,
+            symbol: metadata.name ? metadata.symbol : noMetadataSymbol,
+            name: metadata.name ? metadata.name : noMetadataName,
             decimals: metadata.decimals,
             mintAcct: token.toString(),
             supply: storedMint.supply,
+            imageUrl: imageUrl ? imageUrl : "",
             updatedAt: new Date(),
           };
           tokensToInsert.push(tokenToInsert);
