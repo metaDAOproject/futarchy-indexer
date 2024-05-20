@@ -67,6 +67,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
         quoteAmount: BigInt(
           market.marketInstance.account.quoteDepositTotal.toNumber()
         ),
+        createdBy: "openbook-v2-account-indexer",
       };
 
       const pricesInsertResult = await usingDb((db) =>

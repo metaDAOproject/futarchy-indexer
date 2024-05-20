@@ -97,6 +97,7 @@ export async function indexAmmMarketAccountWithContext(
       : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
     price: conditionalMarketSpotPrice.toString(),
     pricesType: PricesType.Conditional,
+    createdBy: "amm-market-indexer",
     baseAmount: BigInt(ammMarketAccount.baseAmount.toNumber()),
     quoteAmount: BigInt(ammMarketAccount.quoteAmount.toNumber()),
   };

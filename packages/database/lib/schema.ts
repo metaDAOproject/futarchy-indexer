@@ -90,7 +90,7 @@ export const daos = pgTable(
     treasuryAcct: pubkey("treasury_acct").unique(),
     // This is keyed for proposals and initialized when dao is created.
     slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }),
-    passThresholdBps: bigint("pass_threshold_bps", {mode: "bigint"}),
+    passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
     createdAt: timestamp("created_at")
       .notNull()
       .default(sql`now()`),
@@ -208,6 +208,7 @@ export const prices = pgTable(
     createdAt: timestamp("created_at")
       .notNull()
       .default(sql`now()`),
+    createdBy: text("created_by"),
     pricesType: pgEnum("prices_type", PricesType).notNull(),
   },
   (table) => ({
@@ -341,6 +342,11 @@ export const indexers = pgTable("indexers", {
   indexerType: pgEnum("indexer_type", IndexerType).notNull(),
 });
 
+export enum IndexerAccountDependencyStatus {
+  Active = "active",
+  Disabled = "disabled",
+}
+
 export const indexerAccountDependencies = pgTable(
   "indexer_account_dependencies",
   {
@@ -351,6 +357,8 @@ export const indexerAccountDependencies = pgTable(
     latestTxSigProcessed: transaction("latest_tx_sig_processed").references(
       () => transactions.txSig
     ),
+    status: pgEnum("status", IndexerAccountDependencyStatus),
+    updatedAt: timestamp("updated_at"),
   },
   (table) => ({
     pk: primaryKey(table.name, table.acct),
@@ -367,7 +375,7 @@ export const tokenAccts = pgTable("token_accts", {
     .notNull(),
   ownerAcct: pubkey("owner_acct").notNull(),
   amount: tokenAmount("amount").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
+  updatedAt: timestamp("updated_at"),
 });
 
 // By indexing specific ATAs, we can track things like market liquidity over time

@@ -281,6 +281,41 @@
       "when": 1716022477343,
       "tag": "0039_gigantic_riptide",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1716172323051,
+      "tag": "0040_good_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1716174914479,
+      "tag": "0041_shallow_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1716179727219,
+      "tag": "0042_cooing_wilson_fisk",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1716179952057,
+      "tag": "0043_bored_frog_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1716180269862,
+      "tag": "0044_nervous_machine_man",
+      "breakpoints": true
     }
   ]
 }

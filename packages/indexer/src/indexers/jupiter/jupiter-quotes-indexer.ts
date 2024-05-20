@@ -12,7 +12,7 @@ export enum JupiterQuoteIndexingError {
 }
 
 export const JupiterQuotesIndexer: IntervalFetchIndexer = {
-  intervalMs: 60_000,
+  cronExpression: "* * * * *",
   index: async (acct: string) => {
     // get decimals from our DB
     try {
@@ -47,6 +47,7 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
           token[0].decimals
         ).toString(),
         pricesType: PricesType.Spot,
+        createdBy: "jupiter-quotes-indexer",
         updatedSlot: BigInt(tokenPriceJson.contextSlot ?? 0),
       };
 

@@ -1,5 +1,8 @@
 import { eq, schema, usingDb } from "@metadaoproject/indexer-db";
-import { IndexerType } from "@metadaoproject/indexer-db/lib/schema";
+import {
+  IndexerAccountDependencyStatus,
+  IndexerType,
+} from "@metadaoproject/indexer-db/lib/schema";
 import { startIntervalFetchIndexer } from "./start-interval-fetch-indexers";
 import { startAccountInfoIndexer } from "./start-account-info-indexers";
 import { startTransactionHistoryIndexer } from "./start-transaction-history-indexers";
@@ -17,6 +20,12 @@ export async function startMainIndexers() {
       .fullJoin(
         schema.indexerAccountDependencies,
         eq(schema.indexerAccountDependencies.name, schema.indexers.name)
+      )
+      .where(
+        eq(
+          schema.indexerAccountDependencies.status,
+          IndexerAccountDependencyStatus.Active
+        )
       )
       .execute()
   );
