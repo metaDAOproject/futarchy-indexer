@@ -1,0 +1,1 @@
+ALTER TABLE "twaps" ADD COLUMN "created_at" timestamp DEFAULT now() NOT NULL;

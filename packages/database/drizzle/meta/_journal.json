@@ -113,6 +113,216 @@
       "when": 1714020041150,
       "tag": "0015_pink_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1714105731015,
+      "tag": "0016_clever_celestials",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1714153190050,
+      "tag": "0017_same_princess_powerful",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1714153200033,
+      "tag": "0018_youthful_nomad",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1714195484698,
+      "tag": "0019_gray_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1715118824575,
+      "tag": "0020_good_talos",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1715119472193,
+      "tag": "0021_jittery_gamora",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1715124134372,
+      "tag": "0022_needy_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1715127483367,
+      "tag": "0023_tired_vulcan",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1715142240745,
+      "tag": "0024_complete_prodigy",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1715143493116,
+      "tag": "0025_flippant_juggernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1715190409284,
+      "tag": "0026_groovy_mikhail_rasputin",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1715193451680,
+      "tag": "0027_amazing_adam_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1715267634353,
+      "tag": "0028_abnormal_grim_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1715271075039,
+      "tag": "0029_wise_felicia_hardy",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1715302337034,
+      "tag": "0030_late_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1715312365906,
+      "tag": "0031_faulty_purple_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1715566031113,
+      "tag": "0032_sour_nico_minoru",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1715574985341,
+      "tag": "0033_youthful_thena",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1715760199117,
+      "tag": "0034_talented_gargoyle",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1715845658893,
+      "tag": "0035_closed_tombstone",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1715845862897,
+      "tag": "0036_small_dazzler",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1715915387490,
+      "tag": "0037_daffy_doctor_faustus",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1715915710176,
+      "tag": "0038_deep_luminals",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1716022477343,
+      "tag": "0039_gigantic_riptide",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1716172323051,
+      "tag": "0040_good_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1716174914479,
+      "tag": "0041_shallow_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1716179727219,
+      "tag": "0042_cooing_wilson_fisk",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1716179952057,
+      "tag": "0043_bored_frog_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1716180269862,
+      "tag": "0044_nervous_machine_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1716184009818,
+      "tag": "0045_last_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

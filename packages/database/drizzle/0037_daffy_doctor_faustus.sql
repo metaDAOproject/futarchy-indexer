@@ -1,0 +1,1 @@
+ALTER TABLE "transaction_watchers" ADD COLUMN "failure_log" text;

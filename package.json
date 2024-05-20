@@ -1,6 +1,7 @@
 {
   "scripts": {
     "migrate": "pnpm --filter @metadaoproject/indexer-db migrate",
+    "sync": "pnpm --filter @metadaoproject/indexer-db sync",
     "sql": "pnpm --filter @metadaoproject/indexer-db sql",
     "update-hasura": "echo 'hello world'",
     "update-hasura-client": "pnpm --filter @metadaoproject/indexer-hasura gen-client",
@@ -9,7 +10,8 @@
     "create-tx-watcher": "pnpm --filter @metadaoproject/indexer-service cli txw create",
     "validate-tx-watcher": "pnpm --filter @metadaoproject/indexer-service cli txw validate",
     "test": "pnpm --filter @metadaoproject/indexer-service test",
-    "publish-client": "echo 'hello world'"
+    "publish-client": "echo 'hello world'",
+    "build-sdk": "pnpm --filter @metadaoproject/futarchy-sdk build"
   },
   "devDependencies": {
     "bun": "1.0.26"

@@ -12,7 +12,9 @@ function throwInvariantViolation(
   before: string | undefined,
   violation: string
 ) {
-  const error = new Error(`Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`);
+  const error = new Error(
+    `Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`
+  );
   logger.error(error.message);
   throw error;
 }
@@ -69,9 +71,17 @@ export async function getTransactionHistory(
         reachedAfter = true;
         break;
       }
-      if (cur.slot < largerThanSlot) {
-        throwInvariantViolation(account, after, before, `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`);
-      }
+      // this causes unnecessary loss of txs being indexed,
+      // and if we have an indexer who STRICTLY needs everything in order, then we should create a config field
+      // on the indexers table that specifies this as being needed or not needed
+      // if (cur.slot < largerThanSlot) {
+      //   throwInvariantViolation(
+      //     account,
+      //     after,
+      //     before,
+      //     `index ${i} signature ${cur.signature} has slot ${cur.slot} which is less than min slot ${largerThanSlot}`
+      //   );
+      // }
       history.push(cur);
       earliestSig = cur.signature;
     }

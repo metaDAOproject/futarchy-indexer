@@ -1,0 +1,2177 @@
+{
+  "id": "b96590ab-5f44-42d1-9f4b-6a056c1dfae6",
+  "prevId": "e100ea44-a868-423b-bebe-2b71651bdf0a",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "candles": {
+      "name": "candles",
+      "schema": "",
+      "columns": {
+        "market_acct": {
+          "name": "market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "candle_duration": {
+          "name": "candle_duration",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "volume": {
+          "name": "volume",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "open": {
+          "name": "open",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "high": {
+          "name": "high",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "low": {
+          "name": "low",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close": {
+          "name": "close",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "candle_average": {
+          "name": "candle_average",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cond_market_twap": {
+          "name": "cond_market_twap",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "candles_market_acct_markets_market_acct_fk": {
+          "name": "candles_market_acct_markets_market_acct_fk",
+          "tableFrom": "candles",
+          "tableTo": "markets",
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "candles_market_acct_candle_duration_timestamp_pk": {
+          "name": "candles_market_acct_candle_duration_timestamp_pk",
+          "columns": [
+            "market_acct",
+            "candle_duration",
+            "timestamp"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "comments": {
+      "name": "comments",
+      "schema": "",
+      "columns": {
+        "comment_id": {
+          "name": "comment_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "commentor_acct": {
+          "name": "commentor_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposal_acct": {
+          "name": "proposal_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "responding_comment_id": {
+          "name": "responding_comment_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "comments_proposal_acct_proposals_proposal_acct_fk": {
+          "name": "comments_proposal_acct_proposals_proposal_acct_fk",
+          "tableFrom": "comments",
+          "tableTo": "proposals",
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "comments_responding_comment_id_comments_comment_id_fk": {
+          "name": "comments_responding_comment_id_comments_comment_id_fk",
+          "tableFrom": "comments",
+          "tableTo": "comments",
+          "columnsFrom": [
+            "responding_comment_id"
+          ],
+          "columnsTo": [
+            "comment_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "comments_comment_id_unique": {
+          "name": "comments_comment_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "comment_id"
+          ]
+        }
+      }
+    },
+    "conditional_vaults": {
+      "name": "conditional_vaults",
+      "schema": "",
+      "columns": {
+        "cond_vault_acct": {
+          "name": "cond_vault_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "settlement_authority": {
+          "name": "settlement_authority",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "underlying_mint_acct": {
+          "name": "underlying_mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "underlying_token_acct": {
+          "name": "underlying_token_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nonce": {
+          "name": "nonce",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cond_finalize_token_mint_acct": {
+          "name": "cond_finalize_token_mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cond_revert_token_mint_acct": {
+          "name": "cond_revert_token_mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "conditional_vaults_settlement_authority_daos_treasury_acct_fk": {
+          "name": "conditional_vaults_settlement_authority_daos_treasury_acct_fk",
+          "tableFrom": "conditional_vaults",
+          "tableTo": "daos",
+          "columnsFrom": [
+            "settlement_authority"
+          ],
+          "columnsTo": [
+            "treasury_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conditional_vaults_underlying_mint_acct_tokens_mint_acct_fk": {
+          "name": "conditional_vaults_underlying_mint_acct_tokens_mint_acct_fk",
+          "tableFrom": "conditional_vaults",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "underlying_mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "dao_details": {
+      "name": "dao_details",
+      "schema": "",
+      "columns": {
+        "dao_id": {
+          "name": "dao_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url": {
+          "name": "url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "x_account": {
+          "name": "x_account",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "github": {
+          "name": "github",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "creator_acct": {
+          "name": "creator_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_accts": {
+          "name": "admin_accts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_image_url": {
+          "name": "token_image_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pass_token_image_url": {
+          "name": "pass_token_image_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fail_token_image_url": {
+          "name": "fail_token_image_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lp_token_image_url": {
+          "name": "lp_token_image_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dao_details_name_unique": {
+          "name": "dao_details_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        },
+        "dao_details_slug_unique": {
+          "name": "dao_details_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        },
+        "dao_details_url_unique": {
+          "name": "dao_details_url_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "url"
+          ]
+        },
+        "dao_details_x_account_unique": {
+          "name": "dao_details_x_account_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "x_account"
+          ]
+        },
+        "dao_details_github_unique": {
+          "name": "dao_details_github_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "github"
+          ]
+        },
+        "id_name_url": {
+          "name": "id_name_url",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dao_id",
+            "url",
+            "name"
+          ]
+        }
+      }
+    },
+    "daos": {
+      "name": "daos",
+      "schema": "",
+      "columns": {
+        "dao_acct": {
+          "name": "dao_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "program_acct": {
+          "name": "program_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dao_id": {
+          "name": "dao_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "base_acct": {
+          "name": "base_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_acct": {
+          "name": "quote_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "treasury_acct": {
+          "name": "treasury_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slots_per_proposal": {
+          "name": "slots_per_proposal",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "daos_program_acct_programs_program_acct_fk": {
+          "name": "daos_program_acct_programs_program_acct_fk",
+          "tableFrom": "daos",
+          "tableTo": "programs",
+          "columnsFrom": [
+            "program_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "daos_dao_id_dao_details_dao_id_fk": {
+          "name": "daos_dao_id_dao_details_dao_id_fk",
+          "tableFrom": "daos",
+          "tableTo": "dao_details",
+          "columnsFrom": [
+            "dao_id"
+          ],
+          "columnsTo": [
+            "dao_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "daos_base_acct_tokens_mint_acct_fk": {
+          "name": "daos_base_acct_tokens_mint_acct_fk",
+          "tableFrom": "daos",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "base_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "daos_quote_acct_tokens_mint_acct_fk": {
+          "name": "daos_quote_acct_tokens_mint_acct_fk",
+          "tableFrom": "daos",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "quote_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "daos_treasury_acct_unique": {
+          "name": "daos_treasury_acct_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "treasury_acct"
+          ]
+        },
+        "dao_acct_program": {
+          "name": "dao_acct_program",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dao_acct",
+            "program_acct"
+          ]
+        }
+      }
+    },
+    "indexer_account_dependencies": {
+      "name": "indexer_account_dependencies",
+      "schema": "",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acct": {
+          "name": "acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latest_tx_sig_processed": {
+          "name": "latest_tx_sig_processed",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "indexer_account_dependencies_name_indexers_name_fk": {
+          "name": "indexer_account_dependencies_name_indexers_name_fk",
+          "tableFrom": "indexer_account_dependencies",
+          "tableTo": "indexers",
+          "columnsFrom": [
+            "name"
+          ],
+          "columnsTo": [
+            "name"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "indexer_account_dependencies_latest_tx_sig_processed_transactions_tx_sig_fk": {
+          "name": "indexer_account_dependencies_latest_tx_sig_processed_transactions_tx_sig_fk",
+          "tableFrom": "indexer_account_dependencies",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "latest_tx_sig_processed"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "indexer_account_dependencies_name_acct_pk": {
+          "name": "indexer_account_dependencies_name_acct_pk",
+          "columns": [
+            "name",
+            "acct"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "indexers": {
+      "name": "indexers",
+      "schema": "",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "implementation": {
+          "name": "implementation",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latest_slot_processed": {
+          "name": "latest_slot_processed",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indexer_type": {
+          "name": "indexer_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "makes": {
+      "name": "makes",
+      "schema": "",
+      "columns": {
+        "order_tx_sig": {
+          "name": "order_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "market_acct": {
+          "name": "market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unfilled_base_amount": {
+          "name": "unfilled_base_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "filled_base_amount": {
+          "name": "filled_base_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_price": {
+          "name": "quote_price",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "market_index": {
+          "name": "market_index",
+          "columns": [
+            "market_acct"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "makes_order_tx_sig_orders_order_tx_sig_fk": {
+          "name": "makes_order_tx_sig_orders_order_tx_sig_fk",
+          "tableFrom": "makes",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_tx_sig"
+          ],
+          "columnsTo": [
+            "order_tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "makes_market_acct_markets_market_acct_fk": {
+          "name": "makes_market_acct_markets_market_acct_fk",
+          "tableFrom": "makes",
+          "tableTo": "markets",
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "markets": {
+      "name": "markets",
+      "schema": "",
+      "columns": {
+        "market_acct": {
+          "name": "market_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "market_type": {
+          "name": "market_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "create_tx_sig": {
+          "name": "create_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposal_acct": {
+          "name": "proposal_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "base_mint_acct": {
+          "name": "base_mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_mint_acct": {
+          "name": "quote_mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "base_lot_size": {
+          "name": "base_lot_size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_lot_size": {
+          "name": "quote_lot_size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_tick_size": {
+          "name": "quote_tick_size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bids_token_acct": {
+          "name": "bids_token_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "asks_token_acct": {
+          "name": "asks_token_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "base_maker_fee": {
+          "name": "base_maker_fee",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "base_taker_fee": {
+          "name": "base_taker_fee",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_maker_fee": {
+          "name": "quote_maker_fee",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_taker_fee": {
+          "name": "quote_taker_fee",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_slot": {
+          "name": "active_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inactive_slot": {
+          "name": "inactive_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "markets_proposal_acct_proposals_proposal_acct_fk": {
+          "name": "markets_proposal_acct_proposals_proposal_acct_fk",
+          "tableFrom": "markets",
+          "tableTo": "proposals",
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "markets_base_mint_acct_tokens_mint_acct_fk": {
+          "name": "markets_base_mint_acct_tokens_mint_acct_fk",
+          "tableFrom": "markets",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "base_mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "markets_quote_mint_acct_tokens_mint_acct_fk": {
+          "name": "markets_quote_mint_acct_tokens_mint_acct_fk",
+          "tableFrom": "markets",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "quote_mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "markets_bids_token_acct_token_accts_token_acct_fk": {
+          "name": "markets_bids_token_acct_token_accts_token_acct_fk",
+          "tableFrom": "markets",
+          "tableTo": "token_accts",
+          "columnsFrom": [
+            "bids_token_acct"
+          ],
+          "columnsTo": [
+            "token_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "markets_asks_token_acct_token_accts_token_acct_fk": {
+          "name": "markets_asks_token_acct_token_accts_token_acct_fk",
+          "tableFrom": "markets",
+          "tableTo": "token_accts",
+          "columnsFrom": [
+            "asks_token_acct"
+          ],
+          "columnsTo": [
+            "token_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "orders": {
+      "name": "orders",
+      "schema": "",
+      "columns": {
+        "order_tx_sig": {
+          "name": "order_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "market_acct": {
+          "name": "market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_acct": {
+          "name": "actor_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "side": {
+          "name": "side",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unfilled_base_amount": {
+          "name": "unfilled_base_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "filled_base_amount": {
+          "name": "filled_base_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_price": {
+          "name": "quote_price",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_block": {
+          "name": "order_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_time": {
+          "name": "order_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancel_tx_sig": {
+          "name": "cancel_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_block": {
+          "name": "cancel_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_time": {
+          "name": "cancel_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "actor_index": {
+          "name": "actor_index",
+          "columns": [
+            "market_acct",
+            "actor_acct"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "orders_market_acct_markets_market_acct_fk": {
+          "name": "orders_market_acct_markets_market_acct_fk",
+          "tableFrom": "orders",
+          "tableTo": "markets",
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "proposal_details": {
+      "name": "proposal_details",
+      "schema": "",
+      "columns": {
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "proposal_acct": {
+          "name": "proposal_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "categories": {
+          "name": "categories",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "proposer_acct": {
+          "name": "proposer_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "base_cond_vault_acct": {
+          "name": "base_cond_vault_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote_cond_vault_acct": {
+          "name": "quote_cond_vault_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pass_market_acct": {
+          "name": "pass_market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fail_market_acct": {
+          "name": "fail_market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposal_details_proposal_acct_proposals_proposal_acct_fk": {
+          "name": "proposal_details_proposal_acct_proposals_proposal_acct_fk",
+          "tableFrom": "proposal_details",
+          "tableTo": "proposals",
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "proposal_details_slug_unique": {
+          "name": "proposal_details_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      }
+    },
+    "prices": {
+      "name": "prices",
+      "schema": "",
+      "columns": {
+        "market_acct": {
+          "name": "market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_slot": {
+          "name": "updated_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "base_amount": {
+          "name": "base_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote_amount": {
+          "name": "quote_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price": {
+          "name": "price",
+          "type": "numeric(40, 20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "prices_type": {
+          "name": "prices_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "prices_market_acct_markets_market_acct_fk": {
+          "name": "prices_market_acct_markets_market_acct_fk",
+          "tableFrom": "prices",
+          "tableTo": "markets",
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "prices_created_at_market_acct_pk": {
+          "name": "prices_created_at_market_acct_pk",
+          "columns": [
+            "created_at",
+            "market_acct"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "program_system": {
+      "name": "program_system",
+      "schema": "",
+      "columns": {
+        "system_version": {
+          "name": "system_version",
+          "type": "double precision",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "autocrat_acct": {
+          "name": "autocrat_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conditional_vault_acct": {
+          "name": "conditional_vault_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pricing_model_acct": {
+          "name": "pricing_model_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "migrator_acct": {
+          "name": "migrator_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "program_system_autocrat_acct_programs_program_acct_fk": {
+          "name": "program_system_autocrat_acct_programs_program_acct_fk",
+          "tableFrom": "program_system",
+          "tableTo": "programs",
+          "columnsFrom": [
+            "autocrat_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "program_system_conditional_vault_acct_programs_program_acct_fk": {
+          "name": "program_system_conditional_vault_acct_programs_program_acct_fk",
+          "tableFrom": "program_system",
+          "tableTo": "programs",
+          "columnsFrom": [
+            "conditional_vault_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "program_system_pricing_model_acct_programs_program_acct_fk": {
+          "name": "program_system_pricing_model_acct_programs_program_acct_fk",
+          "tableFrom": "program_system",
+          "tableTo": "programs",
+          "columnsFrom": [
+            "pricing_model_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "program_system_migrator_acct_programs_program_acct_fk": {
+          "name": "program_system_migrator_acct_programs_program_acct_fk",
+          "tableFrom": "program_system",
+          "tableTo": "programs",
+          "columnsFrom": [
+            "migrator_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "programs": {
+      "name": "programs",
+      "schema": "",
+      "columns": {
+        "program_acct": {
+          "name": "program_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "program_name": {
+          "name": "program_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deployed_at": {
+          "name": "deployed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "program_version": {
+          "name": "program_version",
+          "nullsNotDistinct": false,
+          "columns": [
+            "program_acct",
+            "version"
+          ]
+        }
+      }
+    },
+    "proposals": {
+      "name": "proposals",
+      "schema": "",
+      "columns": {
+        "proposal_acct": {
+          "name": "proposal_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dao_acct": {
+          "name": "dao_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposal_num": {
+          "name": "proposal_num",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "autocrat_version": {
+          "name": "autocrat_version",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposer_acct": {
+          "name": "proposer_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "initial_slot": {
+          "name": "initial_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_slot": {
+          "name": "end_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description_url": {
+          "name": "description_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pricing_model_pass_acct": {
+          "name": "pricing_model_pass_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pricing_model_fail_acct": {
+          "name": "pricing_model_fail_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pass_market_acct": {
+          "name": "pass_market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fail_market_acct": {
+          "name": "fail_market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "base_vault": {
+          "name": "base_vault",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote_vault": {
+          "name": "quote_vault",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposals_dao_acct_daos_dao_acct_fk": {
+          "name": "proposals_dao_acct_daos_dao_acct_fk",
+          "tableFrom": "proposals",
+          "tableTo": "daos",
+          "columnsFrom": [
+            "dao_acct"
+          ],
+          "columnsTo": [
+            "dao_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "proposals_base_vault_conditional_vaults_cond_vault_acct_fk": {
+          "name": "proposals_base_vault_conditional_vaults_cond_vault_acct_fk",
+          "tableFrom": "proposals",
+          "tableTo": "conditional_vaults",
+          "columnsFrom": [
+            "base_vault"
+          ],
+          "columnsTo": [
+            "cond_vault_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "proposals_quote_vault_conditional_vaults_cond_vault_acct_fk": {
+          "name": "proposals_quote_vault_conditional_vaults_cond_vault_acct_fk",
+          "tableFrom": "proposals",
+          "tableTo": "conditional_vaults",
+          "columnsFrom": [
+            "quote_vault"
+          ],
+          "columnsTo": [
+            "cond_vault_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "reactions": {
+      "name": "reactions",
+      "schema": "",
+      "columns": {
+        "reactor_acct": {
+          "name": "reactor_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comment_id": {
+          "name": "comment_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "proposal_acct": {
+          "name": "proposal_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reaction": {
+          "name": "reaction",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "reactions_comment_id_comments_comment_id_fk": {
+          "name": "reactions_comment_id_comments_comment_id_fk",
+          "tableFrom": "reactions",
+          "tableTo": "comments",
+          "columnsFrom": [
+            "comment_id"
+          ],
+          "columnsTo": [
+            "comment_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "reactions_proposal_acct_proposals_proposal_acct_fk": {
+          "name": "reactions_proposal_acct_proposals_proposal_acct_fk",
+          "tableFrom": "reactions",
+          "tableTo": "proposals",
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "reactions_proposal_acct_reaction_reactor_acct_pk": {
+          "name": "reactions_proposal_acct_reaction_reactor_acct_pk",
+          "columns": [
+            "proposal_acct",
+            "reaction",
+            "reactor_acct"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "takes": {
+      "name": "takes",
+      "schema": "",
+      "columns": {
+        "order_tx_sig": {
+          "name": "order_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "base_amount": {
+          "name": "base_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quote_price": {
+          "name": "quote_price",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taker_base_fee": {
+          "name": "taker_base_fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taker_quote_fee": {
+          "name": "taker_quote_fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "maker_order_tx_sig": {
+          "name": "maker_order_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maker_base_fee": {
+          "name": "maker_base_fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maker_quote_fee": {
+          "name": "maker_quote_fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "market_acct": {
+          "name": "market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_block": {
+          "name": "order_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_time": {
+          "name": "order_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "block_index": {
+          "name": "block_index",
+          "columns": [
+            "market_acct",
+            "order_block"
+          ],
+          "isUnique": false
+        },
+        "time_index": {
+          "name": "time_index",
+          "columns": [
+            "market_acct",
+            "order_time"
+          ],
+          "isUnique": false
+        },
+        "maker_index": {
+          "name": "maker_index",
+          "columns": [
+            "maker_order_tx_sig"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "takes_order_tx_sig_orders_order_tx_sig_fk": {
+          "name": "takes_order_tx_sig_orders_order_tx_sig_fk",
+          "tableFrom": "takes",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_tx_sig"
+          ],
+          "columnsTo": [
+            "order_tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "takes_maker_order_tx_sig_makes_order_tx_sig_fk": {
+          "name": "takes_maker_order_tx_sig_makes_order_tx_sig_fk",
+          "tableFrom": "takes",
+          "tableTo": "makes",
+          "columnsFrom": [
+            "maker_order_tx_sig"
+          ],
+          "columnsTo": [
+            "order_tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "takes_market_acct_markets_market_acct_fk": {
+          "name": "takes_market_acct_markets_market_acct_fk",
+          "tableFrom": "takes",
+          "tableTo": "markets",
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "token_accts": {
+      "name": "token_accts",
+      "schema": "",
+      "columns": {
+        "token_acct": {
+          "name": "token_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "mint_acct": {
+          "name": "mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_acct": {
+          "name": "owner_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "token_accts_mint_acct_tokens_mint_acct_fk": {
+          "name": "token_accts_mint_acct_tokens_mint_acct_fk",
+          "tableFrom": "token_accts",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "tokens": {
+      "name": "tokens",
+      "schema": "",
+      "columns": {
+        "mint_acct": {
+          "name": "mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "symbol": {
+          "name": "symbol",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supply": {
+          "name": "supply",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decimals": {
+          "name": "decimals",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "transaction_watcher_transactions": {
+      "name": "transaction_watcher_transactions",
+      "schema": "",
+      "columns": {
+        "watcher_acct": {
+          "name": "watcher_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tx_sig": {
+          "name": "tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slot": {
+          "name": "slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "watcher_slot_index": {
+          "name": "watcher_slot_index",
+          "columns": [
+            "watcher_acct",
+            "slot"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "transaction_watcher_transactions_watcher_acct_transaction_watchers_acct_fk": {
+          "name": "transaction_watcher_transactions_watcher_acct_transaction_watchers_acct_fk",
+          "tableFrom": "transaction_watcher_transactions",
+          "tableTo": "transaction_watchers",
+          "columnsFrom": [
+            "watcher_acct"
+          ],
+          "columnsTo": [
+            "acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "transaction_watcher_transactions_tx_sig_transactions_tx_sig_fk": {
+          "name": "transaction_watcher_transactions_tx_sig_transactions_tx_sig_fk",
+          "tableFrom": "transaction_watcher_transactions",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "transaction_watcher_transactions_watcher_acct_tx_sig_pk": {
+          "name": "transaction_watcher_transactions_watcher_acct_tx_sig_pk",
+          "columns": [
+            "watcher_acct",
+            "tx_sig"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "transaction_watchers": {
+      "name": "transaction_watchers",
+      "schema": "",
+      "columns": {
+        "acct": {
+          "name": "acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "latest_tx_sig": {
+          "name": "latest_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_tx_sig": {
+          "name": "first_tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checked_up_to_slot": {
+          "name": "checked_up_to_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "serializer_logic_version": {
+          "name": "serializer_logic_version",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'disabled'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "transaction_watchers_latest_tx_sig_transactions_tx_sig_fk": {
+          "name": "transaction_watchers_latest_tx_sig_transactions_tx_sig_fk",
+          "tableFrom": "transaction_watchers",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "latest_tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "transaction_watchers_first_tx_sig_transactions_tx_sig_fk": {
+          "name": "transaction_watchers_first_tx_sig_transactions_tx_sig_fk",
+          "tableFrom": "transaction_watchers",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "first_tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "transactions": {
+      "name": "transactions",
+      "schema": "",
+      "columns": {
+        "tx_sig": {
+          "name": "tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slot": {
+          "name": "slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_time": {
+          "name": "block_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "failed": {
+          "name": "failed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "serializer_logic_version": {
+          "name": "serializer_logic_version",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "txn_slot_index": {
+          "name": "txn_slot_index",
+          "columns": [
+            "slot"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "twaps": {
+      "name": "twaps",
+      "schema": "",
+      "columns": {
+        "market_acct": {
+          "name": "market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposal_acct": {
+          "name": "proposal_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_slot": {
+          "name": "updated_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observation_agg": {
+          "name": "observation_agg",
+          "type": "numeric(40, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_observation": {
+          "name": "last_observation",
+          "type": "numeric(40, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_price": {
+          "name": "last_price",
+          "type": "numeric(40, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_amount": {
+          "name": "token_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "twaps_market_acct_markets_market_acct_fk": {
+          "name": "twaps_market_acct_markets_market_acct_fk",
+          "tableFrom": "twaps",
+          "tableTo": "markets",
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "twaps_proposal_acct_proposals_proposal_acct_fk": {
+          "name": "twaps_proposal_acct_proposals_proposal_acct_fk",
+          "tableFrom": "twaps",
+          "tableTo": "proposals",
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "twaps_updated_slot_market_acct_pk": {
+          "name": "twaps_updated_slot_market_acct_pk",
+          "columns": [
+            "updated_slot",
+            "market_acct"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "user_acct": {
+          "name": "user_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_user": {
+          "name": "unique_user",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_acct"
+          ]
+        }
+      }
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
