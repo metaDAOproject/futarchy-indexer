@@ -5,16 +5,14 @@ export type TaggedUnion = {
   type: string;
 };
 
-export type ErrEnum = TaggedUnion;
-
-export type Result<Ok, Err extends ErrEnum> =
+export type Result<Ok, Err extends TaggedUnion> =
   | { success: true; ok: Ok }
   | { success: false; error: Err };
 
-export function Err<Ok, Err extends ErrEnum>(error: Err): Result<Ok, Err> {
+export function Err<Ok, Err extends TaggedUnion>(error: Err): Result<Ok, Err> {
   return { success: false, error };
 }
 
-export function Ok<Ok, Err extends ErrEnum>(ok: Ok): Result<Ok, Err> {
+export function Ok<Ok, Err extends TaggedUnion>(ok: Ok): Result<Ok, Err> {
   return { success: true, ok };
 }
