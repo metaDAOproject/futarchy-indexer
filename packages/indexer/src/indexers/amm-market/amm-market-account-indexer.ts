@@ -1,6 +1,6 @@
 import { AccountInfoIndexer } from "../account-info-indexer";
 import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../result";
 import { indexAmmMarketAccountWithContext } from "./utils";
 
 export enum AmmAccountIndexerError {

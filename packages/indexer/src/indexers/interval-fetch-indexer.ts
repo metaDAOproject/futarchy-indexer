@@ -1,4 +1,4 @@
-import { Result, TaggedUnion } from "../match";
+import { Result, TaggedUnion } from "../result";
 export type IntervalFetchIndexer = {
   cronExpression: string;
   retries?: number;

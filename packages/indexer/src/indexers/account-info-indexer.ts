@@ -1,5 +1,5 @@
 import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
-import { Result, TaggedUnion } from "../match";
+import { Result, TaggedUnion } from "../result";
 export type AccountInfoIndexer = {
   index(
     accountInfo: AccountInfo<Buffer>,

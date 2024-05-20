@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../result";
 import { indexAmmMarketAccountWithContext } from "./utils";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
 import { connection } from "../../connection";

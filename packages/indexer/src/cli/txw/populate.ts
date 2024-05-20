@@ -20,7 +20,7 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { connection, readonlyWallet } from "../../connection";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../result";
 import {
   JupiterQuoteIndexingError,
   JupiterQuotesIndexer,

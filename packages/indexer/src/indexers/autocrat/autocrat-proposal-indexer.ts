@@ -5,7 +5,7 @@ import {
   provider,
 } from "../../connection";
 import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../result";
 import { PublicKey } from "@solana/web3.js";
 import {
   ConditionalVaultRecord,

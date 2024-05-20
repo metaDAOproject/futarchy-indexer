@@ -1,6 +1,6 @@
 import { schema, usingDb } from "@metadaoproject/indexer-db";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../result";
 import {
   PricesRecord,
   PricesType,

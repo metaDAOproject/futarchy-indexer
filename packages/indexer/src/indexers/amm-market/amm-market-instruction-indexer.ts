@@ -1,7 +1,7 @@
 import { connection, provider } from "../../connection";
 import { VersionedTransactionResponse } from "@solana/web3.js";
 import { schema, usingDb } from "@metadaoproject/indexer-db";
-import { Err, Ok, Result, TaggedUnion } from "../../match";
+import { Err, Ok, Result, TaggedUnion } from "../../result";
 import { BN } from "@coral-xyz/anchor";
 import {
   OrderSide,
