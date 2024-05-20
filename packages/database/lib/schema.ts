@@ -14,6 +14,7 @@ import {
   varchar,
   text,
   jsonb,
+  pgView,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -729,6 +730,11 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
+
+// TODO: This is commented out give these are timescale views, but I wanted to include them
+// export const twapChartData = pgView('twap_chart_data')
+// export const pricesChartData = pgView('prices_chart_data')
+
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;
