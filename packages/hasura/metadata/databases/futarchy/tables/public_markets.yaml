@@ -1,0 +1,104 @@
+table:
+  name: markets
+  schema: public
+object_relationships:
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
+  - name: token
+    using:
+      foreign_key_constraint_on: base_mint_acct
+  - name: tokenAcctByAsksTokenAcct
+    using:
+      manual_configuration:
+        column_mapping:
+          asks_token_acct: token_acct
+        insertion_order: null
+        remote_table:
+          name: token_accts
+          schema: public
+  - name: tokenAcctByBidsTokenAcct
+    using:
+      foreign_key_constraint_on: bids_token_acct
+  - name: tokenByBaseMintAcct
+    using:
+      manual_configuration:
+        column_mapping:
+          base_mint_acct: mint_acct
+        insertion_order: null
+        remote_table:
+          name: tokens
+          schema: public
+  - name: tokenByQuoteMintAcct
+    using:
+      foreign_key_constraint_on: quote_mint_acct
+  - name: token_acct
+    using:
+      foreign_key_constraint_on: asks_token_acct
+array_relationships:
+  - name: candles
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: candles
+          schema: public
+  - name: makes
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: makes
+          schema: public
+  - name: orders
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: orders
+          schema: public
+  - name: prices
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: prices
+          schema: public
+  - name: takes
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: takes
+          schema: public
+  - name: twaps
+    using:
+      foreign_key_constraint_on:
+        column: market_acct
+        table:
+          name: twaps
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - active_slot
+        - base_lot_size
+        - inactive_slot
+        - quote_lot_size
+        - quote_tick_size
+        - asks_token_acct
+        - base_mint_acct
+        - bids_token_acct
+        - create_tx_sig
+        - market_acct
+        - market_type
+        - proposal_acct
+        - quote_mint_acct
+        - base_maker_fee
+        - base_taker_fee
+        - quote_maker_fee
+        - quote_taker_fee
+        - created_at
+      filter: {}
+    comment: ""

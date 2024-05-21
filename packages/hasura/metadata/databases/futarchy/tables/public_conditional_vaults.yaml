@@ -1,0 +1,22 @@
+table:
+  name: conditional_vaults
+  schema: public
+object_relationships:
+  - name: token
+    using:
+      foreign_key_constraint_on: underlying_mint_acct
+array_relationships:
+  - name: proposals
+    using:
+      foreign_key_constraint_on:
+        column: base_vault
+        table:
+          name: proposals
+          schema: public
+  - name: proposalsByQuoteVault
+    using:
+      foreign_key_constraint_on:
+        column: quote_vault
+        table:
+          name: proposals
+          schema: public

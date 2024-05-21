@@ -1,0 +1,23 @@
+table:
+  name: twap_chart_data
+  schema: public
+object_relationships:
+  - name: market
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - token_amount
+        - market_acct
+        - interv
+      filter: {}
+      allow_aggregations: true
+    comment: ""

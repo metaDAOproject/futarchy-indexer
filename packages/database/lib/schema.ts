@@ -713,6 +713,7 @@ export const programSystem = pgTable("program_system", {
     .notNull()
     .references(() => programs.programAcct),
   migratorAcct: pubkey("migrator_acct").references(() => programs.programAcct),
+
 });
 
 export const conditionalVaults = pgTable("conditional_vaults", {
@@ -729,6 +730,11 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condFinalizeTokenMintAcct: pubkey("cond_finalize_token_mint_acct").notNull(),
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
+
+// TODO: This is commented out give these are timescale views, but I wanted to include them
+// export const twapChartData = pgView('twap_chart_data')
+// export const pricesChartData = pgView('prices_chart_data')
+
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;

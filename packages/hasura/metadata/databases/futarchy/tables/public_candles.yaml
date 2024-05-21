@@ -1,0 +1,7 @@
+table:
+  name: candles
+  schema: public
+object_relationships:
+  - name: market
+    using:
+      foreign_key_constraint_on: market_acct

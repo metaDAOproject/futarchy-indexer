@@ -1,0 +1,10 @@
+table:
+  name: reactions
+  schema: public
+object_relationships:
+  - name: comment
+    using:
+      foreign_key_constraint_on: comment_id
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
