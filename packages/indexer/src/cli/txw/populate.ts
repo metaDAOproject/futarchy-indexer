@@ -45,13 +45,6 @@ async function populateIndexerAccountDependencies() {
     await populateAmmMarketIndexerAccountDependencies();
     await populateOpenbookMarketIndexerAccountDependencies();
     await populateSpotPriceMarketIndexerAccountDependencies();
-export async function populateIndexers() {
-  // populating market indexers
-  try {
-    await populateTokenMintIndexers();
-    await populateAmmMarketIndexers();
-    await populateOpenbookMarketIndexers();
-    await populateSpotPriceMarkets();
   } catch (e) {
     console.error("error populating indexers", e);
   }
