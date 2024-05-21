@@ -25,22 +25,30 @@ import {
   JupiterQuoteIndexingError,
   JupiterQuotesIndexer,
 } from "../../indexers/jupiter/jupiter-quotes-indexer";
+import Cron from "croner";
 
 type IndexerAccountDependency =
   typeof schema.indexerAccountDependencies._.inferInsert;
 
-export async function populateIndexers() {
+export function startIndexerAccountDependencyPopulation() {
+  const job = Cron("*/5 * * * *", () => {
+    populateIndexerAccountDependencies();
+  });
+  console.log("populating indexers at ", job.nextRun());
+}
+
+async function populateIndexerAccountDependencies() {
   // populating market indexers
   try {
-    await populateTokenMintIndexers();
-    await populateAmmMarketIndexers();
-    await populateOpenbookMarketIndexers();
-    await populateSpotPriceMarkets();
+    await populateTokenMintIndexerAccountDependencies();
+    await populateAmmMarketIndexerAccountDependencies();
+    await populateOpenbookMarketIndexerAccountDependencies();
+    await populateSpotPriceMarketIndexerAccountDependencies();
   } catch (e) {
     console.error("error populating indexers", e);
   }
 }
-async function populateTokenMintIndexers() {
+async function populateTokenMintIndexerAccountDependencies() {
   const mints: TokenRecord[] = await usingDb((db) =>
     db.select().from(schema.tokens).execute()
   );
@@ -68,7 +76,7 @@ async function populateTokenMintIndexers() {
 
   console.log("Successfully populated token mint indexers");
 }
-async function populateAmmMarketIndexers() {
+async function populateAmmMarketIndexerAccountDependencies() {
   const ammMarkets = await usingDb((db) =>
     db
       .select()
@@ -107,7 +115,7 @@ async function populateAmmMarketIndexers() {
   console.log(`Successfully populated AMM indexers`);
 }
 
-async function populateOpenbookMarketIndexers() {
+async function populateOpenbookMarketIndexerAccountDependencies() {
   const indexerAccountsQuery = await usingDb((db) =>
     db
       .select({ acct: schema.indexerAccountDependencies.acct })
@@ -163,7 +171,7 @@ enum PopulateSpotPriceMarketErrors {
   GeneralJupError = "GeneralJupError",
 }
 
-async function populateSpotPriceMarkets() {
+async function populateSpotPriceMarketIndexerAccountDependencies() {
   const baseDaoTokens = await usingDb((db) =>
     db
       .select()
