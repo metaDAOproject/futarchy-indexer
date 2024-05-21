@@ -25,6 +25,7 @@ import {
   JupiterQuoteIndexingError,
   JupiterQuotesIndexer,
 } from "../../indexers/jupiter/jupiter-quotes-indexer";
+
 import Cron from "croner";
 
 type IndexerAccountDependency =
@@ -44,6 +45,13 @@ async function populateIndexerAccountDependencies() {
     await populateAmmMarketIndexerAccountDependencies();
     await populateOpenbookMarketIndexerAccountDependencies();
     await populateSpotPriceMarketIndexerAccountDependencies();
+export async function populateIndexers() {
+  // populating market indexers
+  try {
+    await populateTokenMintIndexers();
+    await populateAmmMarketIndexers();
+    await populateOpenbookMarketIndexers();
+    await populateSpotPriceMarkets();
   } catch (e) {
     console.error("error populating indexers", e);
   }
@@ -76,6 +84,7 @@ async function populateTokenMintIndexerAccountDependencies() {
 
   console.log("Successfully populated token mint indexers");
 }
+
 async function populateAmmMarketIndexerAccountDependencies() {
   const ammMarkets = await usingDb((db) =>
     db

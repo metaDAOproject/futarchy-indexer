@@ -713,6 +713,7 @@ export const programSystem = pgTable("program_system", {
     .notNull()
     .references(() => programs.programAcct),
   migratorAcct: pubkey("migrator_acct").references(() => programs.programAcct),
+
 });
 
 export const conditionalVaults = pgTable("conditional_vaults", {

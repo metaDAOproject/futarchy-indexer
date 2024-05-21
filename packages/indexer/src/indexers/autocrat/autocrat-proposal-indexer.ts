@@ -94,6 +94,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           new PublicKey(dao[0].baseAcct),
           provider
         );
+
         const storedBaseVault = await conditionalVaultClient.getVault(
           proposal.account.baseVault
         );
@@ -144,6 +145,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         for (const token of [basePass, baseFail, quotePass, quoteFail]) {
           const metadata = await enrichTokenMetadata(token, provider);
           const storedMint = await getMint(provider.connection, token);
+
           // NOTE: THIS IS ONLY FOR PROPOSALS AND ONLY FOR BASE / QUOTE CONDITIONAL
           const isQuote = [quoteFail, quotePass].includes(token);
           const isFail = [quoteFail, baseFail].includes(token);

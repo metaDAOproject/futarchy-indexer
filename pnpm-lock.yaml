@@ -1732,21 +1732,27 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@metaplex-foundation/mpl-token-metadata@3.2.1(@metaplex-foundation/umi@0.9.1):
-    resolution: {integrity: sha512-26W1NhQwDWmLOg/pBRYut7x/vEs/5kFS2sWVEY5/X0f2jJOLhnd4NaZQcq+5u+XZsXvm1jq2AtrRGPNK43oqWQ==}
+  /@metaplex-foundation/umi-eddsa-web3js@0.9.1(@metaplex-foundation/umi@0.9.1)(@solana/web3.js@1.91.8):
+    resolution: {integrity: sha512-D+ZP8jOEzfr1ncF18zRdxfE820xjTf6AIBZd926TRj8dlOFIDfu1J0FGS7pC+52CAC9BRNrRvYQyc1TPORkfTQ==}
     peerDependencies:
-      '@metaplex-foundation/umi': '>= 0.8.2 < 1'
+      '@metaplex-foundation/umi': ^0.9.1
+      '@solana/web3.js': ^1.72.0
     dependencies:
-      '@metaplex-foundation/mpl-toolbox': 0.9.4(@metaplex-foundation/umi@0.9.1)
       '@metaplex-foundation/umi': 0.9.1
+      '@metaplex-foundation/umi-web3js-adapters': 0.9.1(@metaplex-foundation/umi@0.9.1)(@solana/web3.js@1.91.8)
+      '@noble/curves': 1.4.0
+      '@solana/web3.js': 1.91.8
     dev: false
 
-  /@metaplex-foundation/mpl-toolbox@0.9.4(@metaplex-foundation/umi@0.9.1):
-    resolution: {integrity: sha512-fd6JxfoLbj/MM8FG2x91KYVy1U6AjBQw4qjt7+Da3trzQaWnSaYHDcYRG/53xqfvZ9qofY1T2t53GXPlD87lnQ==}
+  /@metaplex-foundation/umi-http-fetch@0.9.1(@metaplex-foundation/umi@0.9.1):
+    resolution: {integrity: sha512-Flh5wSbiYmeDg4V6IE9BNX1BH3eewcIzHxZ1RT1sagU0PlDwy37dm0gcU+svYM/usDvnbk4hwOMGcZkhQLN1QQ==}
     peerDependencies:
-      '@metaplex-foundation/umi': '>= 0.8.2 < 1'
+      '@metaplex-foundation/umi': ^0.9.1
     dependencies:
       '@metaplex-foundation/umi': 0.9.1
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@metaplex-foundation/umi-bundle-defaults@0.9.1(@metaplex-foundation/umi@0.9.1)(@solana/web3.js@1.90.0):
@@ -3262,6 +3268,13 @@ packages:
     dependencies:
       '@types/node': 20.11.16
       '@types/ws': 8.5.10
+
+  /bun-types@1.1.6:
+    resolution: {integrity: sha512-LK2aaJdBBTUkDyN+kRiJHLF3VGrAcdkEHrbBvbmTkccShPw6ZalxxKjWSBJwn4UkikhZdrdA87bZWmfUgkRUYg==}
+    dependencies:
+      '@types/node': 20.11.16
+      '@types/ws': 8.5.10
+    dev: false
 
   /bun-types@1.1.6:
     resolution: {integrity: sha512-LK2aaJdBBTUkDyN+kRiJHLF3VGrAcdkEHrbBvbmTkccShPw6ZalxxKjWSBJwn4UkikhZdrdA87bZWmfUgkRUYg==}
