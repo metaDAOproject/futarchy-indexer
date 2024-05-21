@@ -110,12 +110,6 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
           quoteAmount = args.args.outputAmountMin; // Trading TO
         }
 
-        const priceBig = quoteAmount.div(baseAmount);
-        console.log("quoteAmount:", quoteAmount.toString());
-        console.log("baseAmount:", baseAmount.toString());
-        console.log(priceBig.toNumber());
-        console.log(priceBig.toString());
-
         // determine price
         // NOTE: This is estimated given the output is a min expected value
         // default is input / output (buying a token with USDC or whatever)
