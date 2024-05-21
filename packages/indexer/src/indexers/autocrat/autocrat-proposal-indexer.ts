@@ -272,6 +272,64 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         );
       });
 
+      console.log("inserted proposals");
+
+      for (const onChainProposal of onChainProposals) {
+        if (onChainProposal.account.state.passed) {
+          await usingDb((db) =>
+            db
+              .update(schema.proposals)
+              .set({ status: ProposalStatus.Passed })
+              .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
+              .execute()
+          );
+
+          await usingDb((db) =>
+            db
+              .update(schema.conditionalVaults)
+              .set({ status: "finalized" })
+              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.baseVault.toString()))
+              .execute()
+          );
+
+          await usingDb((db) =>
+            db
+              .update(schema.conditionalVaults)
+              .set({ status: "finalized" })
+              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.quoteVault.toString()))
+              .execute()
+          );
+        }
+
+        if (onChainProposal.account.state.failed) {
+          await usingDb((db) =>
+            db
+              .update(schema.proposals)
+              .set({ status: ProposalStatus.Failed })
+              .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
+              .execute()
+          );
+
+          await usingDb((db) =>
+            db
+              .update(schema.conditionalVaults)
+              .set({ status: "reverted" })
+              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.baseVault.toString()))
+              .execute()
+          );
+
+          await usingDb((db) =>
+            db
+              .update(schema.conditionalVaults)
+              .set({ status: "reverted" })
+              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.quoteVault.toString()))
+              .execute()
+          );
+        }
+      }
+
+      console.log("updated proposal and vault states");
+
       return Ok({ acct: "urmom" });
     } catch (err) {
       console.error(err);
