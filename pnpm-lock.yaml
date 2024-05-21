@@ -3270,6 +3270,13 @@ packages:
       '@types/ws': 8.5.10
     dev: false
 
+  /bun-types@1.1.6:
+    resolution: {integrity: sha512-LK2aaJdBBTUkDyN+kRiJHLF3VGrAcdkEHrbBvbmTkccShPw6ZalxxKjWSBJwn4UkikhZdrdA87bZWmfUgkRUYg==}
+    dependencies:
+      '@types/node': 20.11.16
+      '@types/ws': 8.5.10
+    dev: false
+
   /bun@1.0.26:
     resolution: {integrity: sha512-+aSzKvGLE9hWwCRDwvnhoMTDntCYEk5bKn16L0QGD0v630WJMPhazAMxaSJmfq6dSAtiqPpauPpmHbzwoGPjlQ==}
     cpu: [arm64, x64]
