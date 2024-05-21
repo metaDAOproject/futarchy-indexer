@@ -1,6 +1,6 @@
 import { connection, provider } from "../../connection";
 import { VersionedTransactionResponse } from "@solana/web3.js";
-import { schema, usingDb } from "@metadaoproject/indexer-db";
+import { schema, usingDb, and, eq } from "@metadaoproject/indexer-db";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { BN } from "@coral-xyz/anchor";
 import {
@@ -9,10 +9,16 @@ import {
   TakesRecord,
   TransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
-import { AMM_PROGRAM_ID, AmmClient, SwapType } from "@metadaoproject/futarchy";
+import {
+  AMM_PROGRAM_ID,
+  AmmClient,
+  PriceMath,
+  SwapType,
+} from "@metadaoproject/futarchy";
 import { InstructionIndexer } from "../instruction-indexer";
 import { IDL } from "@openbook-dex/openbook-v2";
 import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
+import { alias } from "drizzle-orm/pg-core";
 
 export enum AmmInstructionIndexerError {
   GeneralError = "GeneralError",
@@ -103,19 +109,66 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
           baseAmount = args.args.inputAmount; // Trading FROM
           quoteAmount = args.args.outputAmountMin; // Trading TO
         }
+
+        const priceBig = quoteAmount.div(baseAmount);
+        console.log("quoteAmount:", quoteAmount.toString());
+        console.log("baseAmount:", baseAmount.toString());
+        console.log(priceBig.toNumber());
+        console.log(priceBig.toString());
+
         // determine price
         // NOTE: This is estimated given the output is a min expected value
         // default is input / output (buying a token with USDC or whatever)
-        const price = (
-          quoteAmount.toNumber() / baseAmount.toNumber()
-        ).toString(); // TODO: Need to likely handle rounding.....
+        const marketAcctRecord = await usingDb((db) =>
+          db
+            .select()
+            .from(schema.markets)
+            .where(eq(schema.markets.marketAcct, marketAcct.pubkey.toBase58()))
+            .execute()
+        );
+        if (marketAcctRecord.length === 0) {
+          return Err({ type: AmmInstructionIndexerError.MissingMarket });
+        }
+        const baseToken = await usingDb((db) =>
+          db
+            .select()
+            .from(schema.tokens)
+            .where(eq(schema.tokens.mintAcct, marketAcctRecord[0].baseMintAcct))
+            .execute()
+        );
+        if (baseToken.length === 0) {
+          return Err({ type: AmmInstructionIndexerError.MissingMarket });
+        }
+        const quoteToken = await usingDb((db) =>
+          db
+            .select()
+            .from(schema.tokens)
+            .where(
+              eq(schema.tokens.mintAcct, marketAcctRecord[0].quoteMintAcct)
+            )
+            .limit(1)
+            .execute()
+        );
+        if (baseToken.length === 0) {
+          return Err({ type: AmmInstructionIndexerError.MissingMarket });
+        }
+
+        const ammPrice = quoteAmount
+          .mul(new BN(10).pow(new BN(12)))
+          .div(baseAmount);
+        const price = PriceMath.getHumanPrice(
+          ammPrice,
+          baseToken[0].decimals,
+          quoteToken[0].decimals
+        );
+        // TODO: Need to likely handle rounding.....
         // index a swap here
         const swapOrder: OrdersRecord = {
           marketAcct: marketAcct.pubkey.toBase58(),
           orderBlock: BigInt(transaction.slot),
           orderTime: transaction.blockTime,
           orderTxSig: transaction.txSig,
-          quotePrice: price,
+          quotePrice: price.toString(),
           actorAcct: userAcct.pubkey.toBase58(),
           // TODO: If and only if the transaction is SUCCESSFUL does this value equal this..
           filledBaseAmount: BigInt(baseAmount.toNumber()),
@@ -151,7 +204,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
           orderBlock: BigInt(transaction.slot),
           orderTime: transaction.blockTime,
           orderTxSig: transaction.txSig,
-          quotePrice: price,
+          quotePrice: price.toString(),
           // TODO: this is coded into the market, in the case of our AMM, it's 1%
           // this fee is based on the INPUT value (so if we're buying its USDC, selling its TOKEN)
           takerBaseFee: BigInt(0),

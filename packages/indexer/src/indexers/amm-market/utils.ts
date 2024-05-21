@@ -54,7 +54,7 @@ export async function indexAmmMarketAccountWithContext(
     );
     const twapNumber: number = twapCalculation.toNumber();
     const newTwap: TwapRecord = {
-      curTwap: BigInt(twapNumber),
+      curTwap: twapNumber.toString(),
       marketAcct: account.toBase58(),
       observationAgg: ammMarketAccount.oracle.aggregator.toString(),
       proposalAcct: market[0].proposalAcct ?? "",
