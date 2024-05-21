@@ -66,25 +66,34 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         proposalsToInsert.map((proposal) => proposal.publicKey.toString())
       );
 
-      
-
       proposalsToInsert.map(async (proposal) => {
         // TODO: Refactor this as we only need to fetch it once if it's the same in the proposal....
-        const dao = await usingDb((db) => 
-          db.select().from(schema.daos).where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58())).execute()
+        const dao = await usingDb((db) =>
+          db
+            .select()
+            .from(schema.daos)
+            .where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58()))
+            .execute()
         );
 
         let daoDetails;
-        if(dao.length > 0) {
+        if (dao.length > 0) {
           const daoId = dao[0].daoId;
-          if(daoId) {
+          if (daoId) {
             daoDetails = await usingDb((db) =>
-              db.select().from(schema.daoDetails).where(eq(schema.daoDetails.daoId, daoId)).execute()
+              db
+                .select()
+                .from(schema.daoDetails)
+                .where(eq(schema.daoDetails.daoId, daoId))
+                .execute()
             );
           }
         }
 
-        const baseTokenMetadata = await enrichTokenMetadata(new PublicKey(dao[0].baseAcct), provider);
+        const baseTokenMetadata = await enrichTokenMetadata(
+          new PublicKey(dao[0].baseAcct),
+          provider
+        );
         const storedBaseVault = await conditionalVaultClient.getVault(
           proposal.account.baseVault
         );
@@ -144,15 +153,19 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           // TODO: This MAY have issue with devnet...
           let baseSymbol = isQuote ? "USDC" : baseTokenMetadata.symbol;
           defaultSymbol = passOrFailPrefix + baseSymbol;
-          defaultName = `Proposal ${proposal.account.number}: ${defaultSymbol}`
-          
-          if(dao && daoDetails) {
-            if(isQuote){
+          defaultName = `Proposal ${proposal.account.number}: ${defaultSymbol}`;
+
+          if (dao && daoDetails) {
+            if (isQuote) {
               // Fail / Pass USDC
-              imageUrl = isFail ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/6b1ce817-861f-4980-40ca-b55f28f21400/public" : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f236a0ca-5d7c-4f4a-ca8a-52eb9d72ef00/public";
+              imageUrl = isFail
+                ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/6b1ce817-861f-4980-40ca-b55f28f21400/public"
+                : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f236a0ca-5d7c-4f4a-ca8a-52eb9d72ef00/public";
             } else {
               // Base Token
-              imageUrl = isFail ? daoDetails[0].fail_token_image_url : daoDetails[0].pass_token_image_url;
+              imageUrl = isFail
+                ? daoDetails[0].fail_token_image_url
+                : daoDetails[0].pass_token_image_url;
             }
           }
           let tokenToInsert: TokenRecord = {
@@ -318,7 +331,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             db
               .update(schema.proposals)
               .set({ status: ProposalStatus.Passed })
-              .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
+              .where(
+                eq(
+                  schema.proposals.proposalAcct,
+                  onChainProposal.publicKey.toString()
+                )
+              )
               .execute()
           );
 
@@ -326,7 +344,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             db
               .update(schema.conditionalVaults)
               .set({ status: "finalized" })
-              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.baseVault.toString()))
+              .where(
+                eq(
+                  schema.conditionalVaults.condVaultAcct,
+                  onChainProposal.account.baseVault.toString()
+                )
+              )
               .execute()
           );
 
@@ -334,7 +357,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             db
               .update(schema.conditionalVaults)
               .set({ status: "finalized" })
-              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.quoteVault.toString()))
+              .where(
+                eq(
+                  schema.conditionalVaults.condVaultAcct,
+                  onChainProposal.account.quoteVault.toString()
+                )
+              )
               .execute()
           );
         }
@@ -344,7 +372,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             db
               .update(schema.proposals)
               .set({ status: ProposalStatus.Failed })
-              .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
+              .where(
+                eq(
+                  schema.proposals.proposalAcct,
+                  onChainProposal.publicKey.toString()
+                )
+              )
               .execute()
           );
 
@@ -352,7 +385,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             db
               .update(schema.conditionalVaults)
               .set({ status: "reverted" })
-              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.baseVault.toString()))
+              .where(
+                eq(
+                  schema.conditionalVaults.condVaultAcct,
+                  onChainProposal.account.baseVault.toString()
+                )
+              )
               .execute()
           );
 
@@ -360,7 +398,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             db
               .update(schema.conditionalVaults)
               .set({ status: "reverted" })
-              .where(eq(schema.conditionalVaults.condVaultAcct, onChainProposal.account.quoteVault.toString()))
+              .where(
+                eq(
+                  schema.conditionalVaults.condVaultAcct,
+                  onChainProposal.account.quoteVault.toString()
+                )
+              )
               .execute()
           );
         }

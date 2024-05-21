@@ -14,7 +14,6 @@ import {
   varchar,
   text,
   jsonb,
-  pgView,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
