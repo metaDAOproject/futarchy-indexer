@@ -136,28 +136,27 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           const metadata = await enrichTokenMetadata(token, provider);
           const storedMint = await getMint(provider.connection, token);
           // NOTE: THIS IS ONLY FOR PROPOSALS AND ONLY FOR BASE / QUOTE CONDITIONAL
-          // TODO: Need to update this for the symbol, name, and image_url base on pass / fail
           const isQuote = [quoteFail, quotePass].includes(token);
           const isFail = [quoteFail, baseFail].includes(token);
-          // TODO: Need to get metadata for the base token
-          // TODO: This needs to be refactored
-          let noMetadataName = isFail ? `Proposal ${proposal.account.number}: f${baseTokenMetadata.symbol}` : `Proposal ${proposal.account.number}: p${baseTokenMetadata.symbol}`;
-          let noMetadataSymbol = isFail ? `f${baseTokenMetadata.symbol}` : `p${baseTokenMetadata.symbol}`;
-          let imageUrl;
-          if(isQuote){
-            noMetadataName = isFail ? `Proposal ${proposal.account.number}: fUSDC` : `Proposal ${proposal.account.number}: pUSDC`;
-            noMetadataSymbol = isFail ? `fUSDC` : `pUSDC`;
-          }
+          let imageUrl, defaultSymbol, defaultName;
 
+          let passOrFailPrefix = isFail ? "f" : "p";
+          // TODO: This MAY have issue with devnet...
+          let baseSymbol = isQuote ? "USDC" : baseTokenMetadata.symbol;
+          defaultSymbol = passOrFailPrefix + baseSymbol;
+          defaultName = `Proposal ${proposal.account.number}: ${defaultSymbol}`
+          
           if(dao && daoDetails) {
+            // Base Token
             imageUrl = isFail ? daoDetails[0].fail_token_image_url : daoDetails[0].pass_token_image_url;
             if(isQuote){
+              // Fail / Pass USDC
               imageUrl = isFail ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/6b1ce817-861f-4980-40ca-b55f28f21400/public" : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f236a0ca-5d7c-4f4a-ca8a-52eb9d72ef00/public";
             }
           }
           let tokenToInsert: TokenRecord = {
-            symbol: metadata.name ? metadata.symbol : noMetadataSymbol,
-            name: metadata.name ? metadata.name : noMetadataName,
+            symbol: metadata.name ? metadata.symbol : defaultSymbol,
+            name: metadata.name ? metadata.name : defaultName,
             decimals: metadata.decimals,
             mintAcct: token.toString(),
             supply: storedMint.supply,
