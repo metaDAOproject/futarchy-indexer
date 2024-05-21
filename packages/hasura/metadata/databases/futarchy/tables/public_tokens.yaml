@@ -37,6 +37,13 @@ array_relationships:
         table:
           name: markets
           schema: public
+  - name: token_acct_balances
+    using:
+      foreign_key_constraint_on:
+        column: mint_acct
+        table:
+          name: token_acct_balances
+          schema: public
   - name: token_accts
     using:
       foreign_key_constraint_on:
@@ -44,3 +51,16 @@ array_relationships:
         table:
           name: token_accts
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - supply
+        - image_url
+        - mint_acct
+        - name
+        - symbol
+        - decimals
+        - updated_at
+      filter: {}
+    comment: ""

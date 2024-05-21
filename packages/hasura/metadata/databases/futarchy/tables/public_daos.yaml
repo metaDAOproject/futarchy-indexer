@@ -24,13 +24,6 @@ object_relationships:
     using:
       foreign_key_constraint_on: quote_acct
 array_relationships:
-  - name: conditional_vaults
-    using:
-      foreign_key_constraint_on:
-        column: settlement_authority
-        table:
-          name: conditional_vaults
-          schema: public
   - name: proposals
     using:
       foreign_key_constraint_on:
@@ -38,3 +31,19 @@ array_relationships:
         table:
           name: proposals
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - dao_id
+        - pass_threshold_bps
+        - slots_per_proposal
+        - base_acct
+        - dao_acct
+        - program_acct
+        - quote_acct
+        - treasury_acct
+        - created_at
+        - updated_at
+      filter: {}
+    comment: ""

@@ -1,6 +1,14 @@
 table:
   name: transactions
   schema: public
+object_relationships:
+  - name: order
+    using:
+      foreign_key_constraint_on:
+        column: order_tx_sig
+        table:
+          name: orders
+          schema: public
 array_relationships:
   - name: indexer_account_dependencies
     using:
@@ -30,3 +38,12 @@ array_relationships:
         table:
           name: transaction_watchers
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - failed
+        - slot
+        - tx_sig
+      filter: {}
+    comment: ""

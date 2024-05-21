@@ -1,0 +1,40 @@
+table:
+  name: proposal_prices_chart_data
+  schema: public
+object_relationships:
+  - name: proposalPriceFailMarket
+    using:
+      manual_configuration:
+        column_mapping:
+          fail_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
+  - name: proposalPricePassMarket
+    using:
+      manual_configuration:
+        column_mapping:
+          pass_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - fail_market_base_amount
+        - fail_market_quote_amount
+        - pass_market_base_amount
+        - pass_market_quote_amount
+        - proposal_acct
+        - fail_market_price
+        - pass_market_price
+        - fail_market_acct
+        - fail_market_prices_type
+        - pass_market_acct
+        - pass_market_prices_type
+        - interv
+      filter: {}
+    comment: ""

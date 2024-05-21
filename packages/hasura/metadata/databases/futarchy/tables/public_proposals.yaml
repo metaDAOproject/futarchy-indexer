@@ -47,3 +47,28 @@ array_relationships:
         table:
           name: twaps
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - end_slot
+        - initial_slot
+        - proposal_num
+        - base_vault
+        - dao_acct
+        - description_url
+        - fail_market_acct
+        - pass_market_acct
+        - pricing_model_fail_acct
+        - pricing_model_pass_acct
+        - proposal_acct
+        - proposer_acct
+        - quote_vault
+        - status
+        - autocrat_version
+        - completed_at
+        - created_at
+        - ended_at
+        - updated_at
+      filter: {}
+    comment: ""

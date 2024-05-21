@@ -11,3 +11,20 @@ object_relationships:
   - name: order
     using:
       foreign_key_constraint_on: order_tx_sig
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - base_amount
+        - maker_base_fee
+        - maker_quote_fee
+        - order_block
+        - quote_price
+        - taker_base_fee
+        - taker_quote_fee
+        - maker_order_tx_sig
+        - market_acct
+        - order_tx_sig
+        - order_time
+      filter: {}
+    comment: ""

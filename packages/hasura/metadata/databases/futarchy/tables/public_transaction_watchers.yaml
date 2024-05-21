@@ -9,13 +9,6 @@ object_relationships:
     using:
       foreign_key_constraint_on: latest_tx_sig
 array_relationships:
-  - name: indexer_account_dependencies
-    using:
-      foreign_key_constraint_on:
-        column: acct
-        table:
-          name: indexer_account_dependencies
-          schema: public
   - name: transaction_watcher_transactions
     using:
       foreign_key_constraint_on:

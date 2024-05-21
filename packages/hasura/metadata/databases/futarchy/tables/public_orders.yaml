@@ -19,3 +19,70 @@ object_relationships:
         table:
           name: takes
           schema: public
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          order_tx_sig: tx_sig
+        insertion_order: null
+        remote_table:
+          name: transactions
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - cancel_block
+        - filled_base_amount
+        - order_block
+        - quote_price
+        - unfilled_base_amount
+        - is_active
+        - actor_acct
+        - cancel_tx_sig
+        - market_acct
+        - order_tx_sig
+        - side
+        - cancel_time
+        - order_time
+        - updated_at
+      filter: {}
+    comment: ""
+  - role: creator
+    permission:
+      columns:
+        - cancel_block
+        - filled_base_amount
+        - order_block
+        - quote_price
+        - unfilled_base_amount
+        - is_active
+        - actor_acct
+        - cancel_tx_sig
+        - market_acct
+        - order_tx_sig
+        - side
+        - cancel_time
+        - order_time
+        - updated_at
+      filter: {}
+    comment: ""
+  - role: proposer
+    permission:
+      columns:
+        - cancel_block
+        - filled_base_amount
+        - order_block
+        - quote_price
+        - unfilled_base_amount
+        - is_active
+        - actor_acct
+        - cancel_tx_sig
+        - market_acct
+        - order_tx_sig
+        - side
+        - cancel_time
+        - order_time
+        - updated_at
+      filter: {}
+    comment: ""

@@ -8,6 +8,3 @@ object_relationships:
   - name: transaction
     using:
       foreign_key_constraint_on: latest_tx_sig_processed
-  - name: transaction_watcher
-    using:
-      foreign_key_constraint_on: acct

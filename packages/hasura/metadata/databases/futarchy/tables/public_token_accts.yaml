@@ -20,3 +20,21 @@ array_relationships:
         table:
           name: markets
           schema: public
+  - name: token_acct_balances
+    using:
+      foreign_key_constraint_on:
+        column: token_acct
+        table:
+          name: token_acct_balances
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - amount
+        - mint_acct
+        - owner_acct
+        - token_acct
+        - updated_at
+      filter: {}
+    comment: ""
