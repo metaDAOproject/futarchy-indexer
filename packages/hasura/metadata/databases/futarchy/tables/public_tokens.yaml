@@ -1,0 +1,66 @@
+table:
+  name: tokens
+  schema: public
+array_relationships:
+  - name: conditional_vaults
+    using:
+      foreign_key_constraint_on:
+        column: underlying_mint_acct
+        table:
+          name: conditional_vaults
+          schema: public
+  - name: daos
+    using:
+      foreign_key_constraint_on:
+        column: base_acct
+        table:
+          name: daos
+          schema: public
+  - name: daosByQuoteAcct
+    using:
+      foreign_key_constraint_on:
+        column: quote_acct
+        table:
+          name: daos
+          schema: public
+  - name: markets
+    using:
+      foreign_key_constraint_on:
+        column: base_mint_acct
+        table:
+          name: markets
+          schema: public
+  - name: marketsByQuoteMintAcct
+    using:
+      foreign_key_constraint_on:
+        column: quote_mint_acct
+        table:
+          name: markets
+          schema: public
+  - name: token_acct_balances
+    using:
+      foreign_key_constraint_on:
+        column: mint_acct
+        table:
+          name: token_acct_balances
+          schema: public
+  - name: token_accts
+    using:
+      foreign_key_constraint_on:
+        column: mint_acct
+        table:
+          name: token_accts
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - supply
+        - image_url
+        - mint_acct
+        - name
+        - symbol
+        - decimals
+        - updated_at
+      filter: {}
+    comment: ""

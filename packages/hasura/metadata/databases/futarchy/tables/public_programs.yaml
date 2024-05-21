@@ -1,0 +1,39 @@
+table:
+  name: programs
+  schema: public
+array_relationships:
+  - name: daos
+    using:
+      foreign_key_constraint_on:
+        column: program_acct
+        table:
+          name: daos
+          schema: public
+  - name: programSystemsByConditionalVaultAcct
+    using:
+      foreign_key_constraint_on:
+        column: conditional_vault_acct
+        table:
+          name: program_system
+          schema: public
+  - name: programSystemsByMigratorAcct
+    using:
+      foreign_key_constraint_on:
+        column: migrator_acct
+        table:
+          name: program_system
+          schema: public
+  - name: programSystemsByPricingModelAcct
+    using:
+      foreign_key_constraint_on:
+        column: pricing_model_acct
+        table:
+          name: program_system
+          schema: public
+  - name: program_systems
+    using:
+      foreign_key_constraint_on:
+        column: autocrat_acct
+        table:
+          name: program_system
+          schema: public

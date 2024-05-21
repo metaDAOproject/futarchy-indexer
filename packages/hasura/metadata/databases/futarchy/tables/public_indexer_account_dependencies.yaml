@@ -1,0 +1,10 @@
+table:
+  name: indexer_account_dependencies
+  schema: public
+object_relationships:
+  - name: indexer
+    using:
+      foreign_key_constraint_on: name
+  - name: transaction
+    using:
+      foreign_key_constraint_on: latest_tx_sig_processed

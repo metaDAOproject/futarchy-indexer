@@ -1,0 +1,31 @@
+table:
+  name: makes
+  schema: public
+object_relationships:
+  - name: market
+    using:
+      foreign_key_constraint_on: market_acct
+  - name: order
+    using:
+      foreign_key_constraint_on: order_tx_sig
+array_relationships:
+  - name: takes
+    using:
+      foreign_key_constraint_on:
+        column: maker_order_tx_sig
+        table:
+          name: takes
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - filled_base_amount
+        - quote_price
+        - unfilled_base_amount
+        - is_active
+        - market_acct
+        - order_tx_sig
+        - updated_at
+      filter: {}
+    comment: ""

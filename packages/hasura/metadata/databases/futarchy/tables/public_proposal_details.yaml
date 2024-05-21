@@ -1,0 +1,46 @@
+table:
+  name: proposal_details
+  schema: public
+object_relationships:
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
+insert_permissions:
+  - role: proposer
+    permission:
+      check: {}
+      columns:
+        - proposal_id
+        - description
+        - proposal_acct
+        - slug
+        - title
+        - categories
+        - content
+    comment: ""
+select_permissions:
+  - role: proposer
+    permission:
+      columns:
+        - proposal_id
+        - description
+        - proposal_acct
+        - slug
+        - title
+        - categories
+        - content
+      filter: {}
+    comment: ""
+update_permissions:
+  - role: proposer
+    permission:
+      columns:
+        - categories
+        - content
+        - description
+        - proposal_acct
+        - slug
+        - title
+      filter: {}
+      check: null
+    comment: ""

@@ -1,0 +1,74 @@
+table:
+  name: proposals
+  schema: public
+object_relationships:
+  - name: conditionalVaultByQuoteVault
+    using:
+      foreign_key_constraint_on: quote_vault
+  - name: conditional_vault
+    using:
+      foreign_key_constraint_on: base_vault
+  - name: dao
+    using:
+      foreign_key_constraint_on: dao_acct
+array_relationships:
+  - name: comments
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: comments
+          schema: public
+  - name: markets
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: markets
+          schema: public
+  - name: proposal_details
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: proposal_details
+          schema: public
+  - name: reactions
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: reactions
+          schema: public
+  - name: twaps
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: twaps
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - end_slot
+        - initial_slot
+        - proposal_num
+        - base_vault
+        - dao_acct
+        - description_url
+        - fail_market_acct
+        - pass_market_acct
+        - pricing_model_fail_acct
+        - pricing_model_pass_acct
+        - proposal_acct
+        - proposer_acct
+        - quote_vault
+        - status
+        - autocrat_version
+        - completed_at
+        - created_at
+        - ended_at
+        - updated_at
+      filter: {}
+    comment: ""

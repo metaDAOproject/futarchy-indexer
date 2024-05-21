@@ -1,0 +1,72 @@
+table:
+  name: dao_details
+  schema: public
+array_relationships:
+  - name: daos
+    using:
+      foreign_key_constraint_on:
+        column: dao_id
+        table:
+          name: daos
+          schema: public
+insert_permissions:
+  - role: creator
+    permission:
+      check: {}
+      columns:
+        - dao_id
+        - github
+        - image_url
+        - name
+        - slug
+        - url
+        - x_account
+        - description
+    comment: ""
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - dao_id
+        - creator_acct
+        - fail_token_image_url
+        - github
+        - image_url
+        - lp_token_image_url
+        - name
+        - pass_token_image_url
+        - slug
+        - token_image_url
+        - url
+        - x_account
+        - admin_accts
+        - description
+      filter: {}
+    comment: ""
+  - role: creator
+    permission:
+      columns:
+        - dao_id
+        - github
+        - image_url
+        - name
+        - slug
+        - url
+        - x_account
+        - description
+      filter: {}
+    comment: ""
+update_permissions:
+  - role: creator
+    permission:
+      columns:
+        - description
+        - github
+        - image_url
+        - name
+        - slug
+        - url
+        - x_account
+      filter: {}
+      check: {}
+    comment: ""
