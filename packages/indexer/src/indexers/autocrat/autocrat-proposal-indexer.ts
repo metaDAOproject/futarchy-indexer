@@ -147,11 +147,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           defaultName = `Proposal ${proposal.account.number}: ${defaultSymbol}`
           
           if(dao && daoDetails) {
-            // Base Token
-            imageUrl = isFail ? daoDetails[0].fail_token_image_url : daoDetails[0].pass_token_image_url;
             if(isQuote){
               // Fail / Pass USDC
               imageUrl = isFail ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/6b1ce817-861f-4980-40ca-b55f28f21400/public" : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f236a0ca-5d7c-4f4a-ca8a-52eb9d72ef00/public";
+            } else {
+              // Base Token
+              imageUrl = isFail ? daoDetails[0].fail_token_image_url : daoDetails[0].pass_token_image_url;
             }
           }
           let tokenToInsert: TokenRecord = {
