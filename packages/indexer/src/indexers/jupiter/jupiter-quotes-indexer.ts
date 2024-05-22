@@ -24,9 +24,16 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
           .execute()
       );
       // call jup
+
+      // if it's USDC we compare to USDT
+      const outputMint =
+        acct === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ? "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
       const url =
         `https://quote-api.jup.ag/v6/quote?inputMint=${acct}&` +
-        "outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&" +
+        `outputMint=${outputMint}&` +
         `amount=${(100_000).toString()}&` +
         "slippageBps=50&" +
         "swapMode=ExactIn&" +
