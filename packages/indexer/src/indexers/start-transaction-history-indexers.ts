@@ -49,7 +49,7 @@ export async function startTransactionHistoryIndexer(
         .execute();
     });
 
-    await indexExistingTxs(transactions, implementation, indexer);
+    await indexExistingTxs(transactions ?? [], implementation, indexer);
   }
 }
 
@@ -77,9 +77,9 @@ async function indexExistingTxs(
               latestSlotProcessed: schema.indexers.latestSlotProcessed,
             })
         );
-        if (updateResult.length > 0) {
+        if ((updateResult?.length ?? 0) > 0) {
           console.log(
-            `successfully updated indexer "${indexer.name}" to slot ${updateResult[0].latestSlotProcessed}`
+            `successfully updated indexer "${indexer.name}" to slot ${updateResult?.[0].latestSlotProcessed}`
           );
         }
       }
@@ -111,14 +111,14 @@ async function handleNewTxs(msg: {
       )
       .execute();
   });
-  if (indexerQueryRes.length === 0) {
+  if (indexerQueryRes?.length === 0) {
     console.log(
       "skipping processing new tx, no indexer query result. Tx Sig:",
       tx?.txSig
     );
     return;
   }
-  const { indexers: indexer } = indexerQueryRes[0];
+  const { indexers: indexer } = indexerQueryRes?.[0] ?? {};
   if (!indexer) {
     console.log(
       "skipping processing new tx, no indexer tied to query result. Tx Sig:",

@@ -12,7 +12,7 @@ export enum JupiterQuoteIndexingError {
 }
 
 export const JupiterQuotesIndexer: IntervalFetchIndexer = {
-  cronExpression: "* * * * *",
+  cronExpression: "10 * * * * *",
   index: async (acct: string) => {
     // get decimals from our DB
     try {
@@ -38,6 +38,12 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
           .where(eq(schema.tokens.mintAcct, outputMint))
           .execute()
       );
+
+      if (!inputToken || !outputToken) {
+        return Err({
+          type: JupiterQuoteIndexingError.GeneralJupiterQuoteIndexError,
+        });
+      }
 
       const url =
         `https://quote-api.jup.ag/v6/quote?inputMint=${acct}&` +
@@ -74,8 +80,8 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
         marketAcct: acct,
         price: convertJupTokenPrice(
           tokenPriceJson,
-          inputToken[0].decimals,
-          outputToken[0].decimals
+          inputToken?.[0]?.decimals ?? 6,
+          outputToken?.[0]?.decimals ?? 6
         ).toString(),
         pricesType: PricesType.Spot,
         createdBy: "jupiter-quotes-indexer",

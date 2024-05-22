@@ -15,7 +15,7 @@ enum BirdeyePricesIndexingError {
 }
 
 export const BirdeyePricesIndexer: IntervalFetchIndexer = {
-  cronExpression: "* * * * *",
+  cronExpression: "10 * * * * *",
   index: async (acct: string) => {
     try {
       const url = `https://public-api.birdeye.so/defi/price?address=${acct}`;
@@ -59,13 +59,13 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
         updatedSlot: BigInt(0),
       };
 
-      const insertPriceRes = await usingDb((db) =>
-        db
-          .insert(schema.prices)
-          .values(newPrice)
-          .onConflictDoNothing()
-          .execute()
-      );
+      console.log("about to insert", acct);
+
+      const insertPriceRes = await usingDb(async (db) => {
+        const res = await db.insert(schema.prices).values(newPrice).execute();
+        return res;
+      });
+      console.log("insert prices Res", insertPriceRes, acct);
       if ((insertPriceRes?.rowCount ?? 0) > 0) {
         console.log("inserted new birdeye price", acct);
       }

@@ -42,9 +42,9 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
   index: async () => {
     try {
       console.log("Autocrat proposal indexer");
-      const dbProposals: ProposalRecord[] = await usingDb((db) =>
-        db.select().from(schema.proposals).execute()
-      );
+      const dbProposals: ProposalRecord[] =
+        (await usingDb((db) => db.select().from(schema.proposals).execute())) ??
+        [];
 
       for (const dbProposal of dbProposals) {
         const dao = (
@@ -55,11 +55,11 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .where(eq(schema.daos.daoAcct, dbProposal.daoAcct))
               .execute()
           )
-        )[0];
+        )?.[0];
         if (
           !dbProposal.endedAt &&
           dbProposal.createdAt &&
-          dao.slotsPerProposal
+          dao?.slotsPerProposal
         ) {
           // we can update endedAt since we don't have it yet
           const endedAtDate = dbProposal.createdAt;
@@ -110,9 +110,13 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .execute()
         );
 
+        if (!dao) {
+          return null;
+        }
+
         let daoDetails;
-        if (dao.length > 0) {
-          const daoId = dao[0].daoId;
+        if ((dao?.length ?? 0) > 0) {
+          const daoId = dao?.[0]?.daoId;
           if (daoId) {
             daoDetails = await usingDb((db) =>
               db
@@ -125,7 +129,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         }
 
         const baseTokenMetadata = await enrichTokenMetadata(
-          new PublicKey(dao[0].baseAcct),
+          new PublicKey(dao?.[0]?.baseAcct),
           provider
         );
 
@@ -257,7 +261,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         );
         console.log("inserted token accounts");
 
-        let dbDao: DaoRecord = (
+        let dbDao: DaoRecord | undefined = (
           await usingDb((db) =>
             db
               .select()
@@ -265,7 +269,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .where(eq(schema.daos.daoAcct, proposal.account.dao.toString()))
               .execute()
           )
-        )[0];
+        )?.[0];
 
         const dbProposal: ProposalRecord = {
           proposalAcct: proposal.publicKey.toString(),
@@ -282,7 +286,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           quoteVault: proposal.account.quoteVault.toString(),
           endSlot: BigInt(
             proposal.account.slotEnqueued
-              .add(new BN(dbDao.slotsPerProposal?.toString()))
+              .add(new BN(dbDao?.slotsPerProposal?.toString()))
               .toString()
           ),
         };

@@ -15,6 +15,7 @@ import {
   TransactionWatcherTransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
 import { newTxQueue } from "../indexers/start-transaction-history-indexers";
+import Cron from "croner";
 
 /*
 $ pnpm sql "select table_catalog, table_schema, table_name, column_name, ordinal_position from information_schema.columns where table_schema='public' and table_name='transaction_watchers'"
@@ -55,7 +56,7 @@ class TransactionWatcher {
   private latestTxSig: string | undefined;
   private checkedUpToSlot: bigint;
   private logicVersion: number;
-  private pollerIntervalId: ReturnType<typeof setInterval> | undefined;
+  private pollerCron: Cron | undefined;
   private rpcWebsocket: number | undefined;
   private stopped: boolean;
   private backfilling: boolean;
@@ -77,19 +78,17 @@ class TransactionWatcher {
   }
 
   private async start() {
-    if (this.pollerIntervalId !== undefined) {
+    if (this.pollerCron !== undefined) {
       logger.error(
-        `Interval was ${
-          this.pollerIntervalId
-        } when starting ${this.account.toBase58()}`
+        `Interval was ${this.pollerCron.getPattern()} when starting ${this.account.toBase58()}`
       );
       return Err({ type: WatcherBackfillError.StartedWithPollingIntervalSet });
     }
     await this.handleBackfillFromLatest();
     // TODO: add websocket for realtime updates (might be lossy, but would allow us to increase poll time meaning less rpc costs)
-    this.pollerIntervalId = setInterval(async () => {
+    this.pollerCron = Cron("*/10 * * * * *", async () => {
       await this.handleBackfillFromLatest();
-    }, 10000);
+    });
     return Ok(`successfully started watcher for ${this.account.toBase58()}`);
   }
 
@@ -128,7 +127,7 @@ class TransactionWatcher {
         ok: string;
       }
   > {
-    if (this.stopped)
+    if (this.pollerCron?.isStopped())
       return Ok("tried to call backfillFromLatest a stopped watcher");
     if (this.backfilling)
       return Ok(
@@ -195,7 +194,7 @@ class TransactionWatcher {
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct })
     );
-    if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
+    if (updateResult?.length !== 1 || updateResult?.[0]?.acct !== acct) {
       logger.error(
         `Failed to update tx watcher for acct ${acct} at end of backfill`
       );
@@ -238,7 +237,7 @@ class TransactionWatcher {
           .where(eq(schema.transactionWatchers.acct, acct))
           .execute()
       )
-    )[0];
+    )?.[0];
     // TODO: we don't need to necessarily stop this watcher
     // just because of one txn slot being less than the checked up to slo
     // const { checkedUpToSlot } = curWatcherRecord;
@@ -256,8 +255,8 @@ class TransactionWatcher {
         .execute()
     );
     if (
-      maybeCurTxRecord.length === 0 ||
-      maybeCurTxRecord[0].serializerLogicVersion <
+      maybeCurTxRecord?.length === 0 ||
+      (maybeCurTxRecord?.[0]?.serializerLogicVersion ?? 0) <
         SERIALIZED_TRANSACTION_LOGIC_VERSION
     ) {
       const parseTxResult = await getTransaction(signature);
@@ -293,7 +292,7 @@ class TransactionWatcher {
         .set({
           acct,
           latestTxSig: signature,
-          firstTxSig: curWatcherRecord.firstTxSig ?? signature,
+          firstTxSig: curWatcherRecord?.firstTxSig ?? signature,
           serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
           checkedUpToSlot: newCheckedUpToSlot,
           updatedAt: new Date(),
@@ -301,7 +300,7 @@ class TransactionWatcher {
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct })
     );
-    if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
+    if (updateResult?.length !== 1 || updateResult?.[0].acct !== acct) {
       logger.error(
         `Failed to update tx watcher for acct ${acct} on tx ${signature}`
       );
@@ -376,7 +375,7 @@ class TransactionWatcher {
         .where(eq(schema.transactionWatchers.acct, acct))
         .returning({ acct: schema.transactionWatchers.acct })
     );
-    if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
+    if (updateResult?.length !== 1 || updateResult?.[0].acct !== acct) {
       logger.error(`Failed to mark tx watcher for acct ${acct} as failed`);
       return Err({ type: WatcherBackfillError.WatcherUpdateFailure });
     }
@@ -384,16 +383,17 @@ class TransactionWatcher {
   }
 
   public stop() {
+    // TODO remove this stopped thing
     this.stopped = true;
-    if (this.pollerIntervalId === undefined) {
+    if (this.pollerCron === undefined) {
       logger.warn(
         `Interval was ${
-          this.pollerIntervalId
+          this.pollerCron
         } when stopping ${this.account.toBase58()}`
       );
     }
-    clearInterval(this.pollerIntervalId);
-    this.pollerIntervalId = undefined;
+    this.pollerCron?.stop();
+    this.pollerCron = undefined;
   }
 }
 
@@ -423,7 +423,7 @@ async function handleNewTransaction(
       })
       .returning({ txSig: schema.transactions.txSig })
   );
-  if (upsertResult.length !== 1 || upsertResult[0].txSig !== signature) {
+  if (upsertResult?.length !== 1 || upsertResult[0].txSig !== signature) {
     logger.error(
       `Failed to upsert ${signature}. ${JSON.stringify(transactionRecord)}`
     );
@@ -444,8 +444,8 @@ async function handleNewTransaction(
       .onConflictDoNothing()
       .returning({ acct: schema.transactionWatcherTransactions.watcherAcct })
   );
-  if (insertRes.length > 0) {
-    console.log("successfully inserted new t watch tx", insertRes[0].acct);
+  if ((insertRes?.length ?? 0) > 0) {
+    console.log("successfully inserted new t watch tx", insertRes?.[0]?.acct);
   }
 
   // now insert into queue
@@ -458,15 +458,16 @@ async function handleNewTransaction(
 export async function startTransactionWatchers() {
   async function getWatchers() {
     updatingWatchers = true;
-    const curWatchers = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.transactionWatchers)
-        .where(
-          eq(schema.transactionWatchers.status, TransactionWatchStatus.Active)
-        )
-        .execute()
-    );
+    const curWatchers =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.transactionWatchers)
+          .where(
+            eq(schema.transactionWatchers.status, TransactionWatchStatus.Active)
+          )
+          .execute()
+      )) ?? [];
     const curWatchersByAccount: Record<string, TransactionWatcherRecord> = {};
     const watchersToStart: Set<string> = new Set();
     const watchersToStop: Set<string> = new Set();
@@ -499,7 +500,7 @@ export async function startTransactionWatchers() {
               .where(eq(schema.transactionWatchers.acct, acct))
               .returning({ acct: schema.transactionWatchers.acct })
           );
-          if (updated.length !== 1 || updated[0].acct !== acct) {
+          if (updated?.length !== 1 || updated?.[0].acct !== acct) {
             const error = new Error(
               `Failed to update ${acct} watcher. ${JSON.stringify(updated)}`
             );

@@ -120,17 +120,22 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
             .where(eq(schema.markets.marketAcct, marketAcct.pubkey.toBase58()))
             .execute()
         );
-        if (marketAcctRecord.length === 0) {
+        if (marketAcctRecord?.length === 0) {
           return Err({ type: AmmInstructionIndexerError.MissingMarket });
         }
         const baseToken = await usingDb((db) =>
           db
             .select()
             .from(schema.tokens)
-            .where(eq(schema.tokens.mintAcct, marketAcctRecord[0].baseMintAcct))
+            .where(
+              eq(
+                schema.tokens.mintAcct,
+                marketAcctRecord?.[0].baseMintAcct ?? ""
+              )
+            )
             .execute()
         );
-        if (baseToken.length === 0) {
+        if (baseToken?.length === 0) {
           return Err({ type: AmmInstructionIndexerError.MissingMarket });
         }
         const quoteToken = await usingDb((db) =>
@@ -138,12 +143,15 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
             .select()
             .from(schema.tokens)
             .where(
-              eq(schema.tokens.mintAcct, marketAcctRecord[0].quoteMintAcct)
+              eq(
+                schema.tokens.mintAcct,
+                marketAcctRecord?.[0]?.quoteMintAcct ?? ""
+              )
             )
             .limit(1)
             .execute()
         );
-        if (baseToken.length === 0) {
+        if (quoteToken?.length === 0) {
           return Err({ type: AmmInstructionIndexerError.MissingMarket });
         }
 
@@ -152,8 +160,8 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
           .div(baseAmount);
         const price = PriceMath.getHumanPrice(
           ammPrice,
-          baseToken[0].decimals,
-          quoteToken[0].decimals
+          baseToken?.[0]?.decimals ?? 0,
+          quoteToken?.[0]?.decimals ?? 0
         );
         // TODO: Need to likely handle rounding.....
         // index a swap here
@@ -180,10 +188,10 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
             .onConflictDoNothing()
             .returning({ txSig: schema.takes.orderTxSig })
         );
-        if (orderInsertRes.length > 0) {
+        if ((orderInsertRes?.length ?? 0) > 0) {
           console.log(
             "successfully inserted swap order record",
-            orderInsertRes[0].txSig
+            orderInsertRes?.[0].txSig
           );
         }
 
@@ -212,10 +220,10 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
             .onConflictDoNothing()
             .returning({ txSig: schema.takes.orderTxSig })
         );
-        if (takeInsertRes.length > 0) {
+        if ((takeInsertRes?.length ?? 0) > 0) {
           console.log(
             "successfully inserted swap take record",
-            takeInsertRes[0].txSig
+            takeInsertRes?.[0]?.txSig
           );
         }
       }

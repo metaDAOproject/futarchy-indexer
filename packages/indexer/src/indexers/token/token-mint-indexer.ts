@@ -32,17 +32,18 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
         }
       }
 
-      const dbMint: TokenRecord = (
-        await usingDb((db) =>
-          db
-            .select()
-            .from(schema.tokens)
-            .where(eq(schema.tokens.mintAcct, mint.toString()))
-            .execute()
-        )
-      )[0];
+      const dbMint: TokenRecord | null =
+        (
+          await usingDb((db) =>
+            db
+              .select()
+              .from(schema.tokens)
+              .where(eq(schema.tokens.mintAcct, mint.toString()))
+              .execute()
+          )
+        )?.[0] ?? null;
 
-      if (dbMint.supply !== storedMint.supply) {
+      if (dbMint?.supply !== storedMint.supply) {
         await usingDb((db) =>
           db
             .update(schema.tokens)
@@ -52,7 +53,7 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
         );
         console.log(
           `Updated supply for mint ${mint.toString()} from ${
-            dbMint.supply
+            dbMint?.supply
           } to ${storedMint.supply}`
         );
       }

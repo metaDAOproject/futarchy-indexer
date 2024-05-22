@@ -98,7 +98,7 @@ async function handleIntervalFetchFailure(
       )
       .returning({ acct: schema.indexerAccountDependencies.acct })
   );
-  if (updateResult.length !== 1) {
+  if (updateResult?.length !== 1) {
     logger.error(
       `final error with interval fetch indexer ${indexerWithAcct?.acct}. status set to disabled.`
     );

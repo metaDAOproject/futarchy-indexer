@@ -43,7 +43,7 @@ export async function indexAmmMarketAccountWithContext(
         .where(eq(schema.markets.marketAcct, account.toBase58()))
         .execute()
     );
-    if (market.length === 0) {
+    if (market?.length === 0) {
       return Err({ type: AmmMarketAccountIndexingErrors.MarketMissingError });
     }
 
@@ -57,7 +57,7 @@ export async function indexAmmMarketAccountWithContext(
       curTwap: BigInt(twapNumber),
       marketAcct: account.toBase58(),
       observationAgg: ammMarketAccount.oracle.aggregator.toString(),
-      proposalAcct: market[0].proposalAcct ?? "",
+      proposalAcct: market?.[0].proposalAcct ?? "",
       // alternatively, we could pass in the context of the update here
       updatedSlot: context
         ? BigInt(context.slot)
@@ -73,7 +73,7 @@ export async function indexAmmMarketAccountWithContext(
         .returning({ marketAcct: schema.twaps.marketAcct })
     );
 
-    if (twapUpsertResult.length === 0) {
+    if (twapUpsertResult?.length === 0) {
       console.error("failed to upsert twap");
       return Err({ type: "AmmTwapIndexError" });
     }
@@ -110,7 +110,7 @@ export async function indexAmmMarketAccountWithContext(
       })
       .returning({ marketAcct: schema.prices.marketAcct })
   );
-  if (pricesInsertResult.length === 0) {
+  if (pricesInsertResult?.length === 0) {
     console.error(
       "failed to index amm price",
       newAmmConditionaPrice.marketAcct

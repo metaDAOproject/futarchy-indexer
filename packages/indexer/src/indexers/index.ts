@@ -1,7 +1,6 @@
 import { eq, schema, usingDb } from "@metadaoproject/indexer-db";
 import {
   IndexerAccountDependencyStatus,
-  IndexerImplementation,
   IndexerType,
 } from "@metadaoproject/indexer-db/lib/schema";
 import { startIntervalFetchIndexer } from "./start-interval-fetch-indexers";
@@ -14,22 +13,23 @@ export async function startIndexers() {
 }
 
 export async function startMainIndexers() {
-  const allIndexers = await usingDb((db) =>
-    db
-      .select()
-      .from(schema.indexers)
-      .fullJoin(
-        schema.indexerAccountDependencies,
-        eq(schema.indexerAccountDependencies.name, schema.indexers.name)
-      )
-      .where(
-        eq(
-          schema.indexerAccountDependencies.status,
-          IndexerAccountDependencyStatus.Active
+  const allIndexers =
+    (await usingDb((db) =>
+      db
+        .select()
+        .from(schema.indexers)
+        .fullJoin(
+          schema.indexerAccountDependencies,
+          eq(schema.indexerAccountDependencies.name, schema.indexers.name)
         )
-      )
-      .execute()
-  );
+        .where(
+          eq(
+            schema.indexerAccountDependencies.status,
+            IndexerAccountDependencyStatus.Active
+          )
+        )
+        .execute()
+    )) ?? [];
 
   const accountInfoIndexers = allIndexers.filter(
     (i) => i.indexers?.indexerType === IndexerType.AccountInfo

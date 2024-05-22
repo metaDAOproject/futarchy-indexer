@@ -81,7 +81,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
           .returning({ marketAcct: schema.prices.marketAcct })
       );
 
-      return Ok({ acct: pricesInsertResult[0].marketAcct });
+      return Ok({ acct: pricesInsertResult?.[0]?.marketAcct ?? "" });
     } catch (error) {
       console.error(
         "Unexpected error in openbook v2 market info index function:",
