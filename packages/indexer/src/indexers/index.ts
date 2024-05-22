@@ -1,6 +1,7 @@
 import { eq, schema, usingDb } from "@metadaoproject/indexer-db";
 import {
   IndexerAccountDependencyStatus,
+  IndexerImplementation,
   IndexerType,
 } from "@metadaoproject/indexer-db/lib/schema";
 import { startIntervalFetchIndexer } from "./start-interval-fetch-indexers";
@@ -43,7 +44,16 @@ export async function startMainIndexers() {
   );
 
   for (const indexerQueryRes of intervalFetchIndexers) {
-    startIntervalFetchIndexer(indexerQueryRes);
+    const job = await startIntervalFetchIndexer(indexerQueryRes);
+    if (job) {
+      console.log(
+        `scheduled to run account ${
+          indexerQueryRes?.indexer_account_dependencies?.acct
+        } on the ${indexerQueryRes.indexers?.implementation} indexer at ${job
+          .nextRun()
+          ?.toISOString()} and on a pattern of ${job.getPattern()}`
+      );
+    }
   }
 
   const transactionHistoryIndexers = allIndexers.filter(

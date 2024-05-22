@@ -49,6 +49,15 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
         "maxAccounts=64&" +
         "experimentalDexes=Jupiter%20LO";
       const tokenPriceRes = await fetch(url);
+
+      if (tokenPriceRes.status !== 200) {
+        console.error(
+          "non-200 response from jupiter quotes:",
+          tokenPriceRes.status,
+          tokenPriceRes.statusText
+        );
+      }
+
       const tokenPriceJson = (await tokenPriceRes.json()) as JupTokenQuoteRes;
 
       if (tokenPriceJson.error) {

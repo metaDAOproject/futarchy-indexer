@@ -24,6 +24,15 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
           "X-API-KEY": apiKey,
         },
       });
+
+      if (tokenPriceRes.status !== 200) {
+        console.error(
+          "non-200 response from birdeye:",
+          tokenPriceRes.status,
+          tokenPriceRes.statusText
+        );
+      }
+
       const tokenPriceJson = (await tokenPriceRes.json()) as BirdeyePricesRes;
 
       if (!tokenPriceJson.success) {
@@ -62,7 +71,7 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
       }
       return Ok({ acct });
     } catch (e) {
-      console.error(e);
+      console.error("general error with birdeye prices indexer:", e);
       return Err({
         type: BirdeyePricesIndexingError.GeneralBirdeyePricesIndexError,
       });

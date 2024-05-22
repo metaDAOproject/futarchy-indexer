@@ -48,6 +48,12 @@ export function startIntervalFetchIndexer(
           ) {
             handleIntervalFetchFailure(dependentAccount, self);
           }
+        } else {
+          console.log(
+            `next run for ${dependentAccount.acct} with ${
+              indexer.implementation
+            } at ${self.nextRun()}`
+          );
         }
       }
     );
