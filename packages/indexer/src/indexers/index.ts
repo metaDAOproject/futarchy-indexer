@@ -56,11 +56,11 @@ export async function startMainIndexers() {
     }
   }
 
-  // const transactionHistoryIndexers = allIndexers.filter(
-  //   (i) => i.indexers?.indexerType === IndexerType.TXHistory
-  // );
+  const transactionHistoryIndexers = allIndexers.filter(
+    (i) => i.indexers?.indexerType === IndexerType.TXHistory
+  );
 
-  // for (const indexerQueryRes of transactionHistoryIndexers) {
-  //   startTransactionHistoryIndexer(indexerQueryRes);
-  // }
+  for (const indexerQueryRes of transactionHistoryIndexers) {
+    startTransactionHistoryIndexer(indexerQueryRes);
+  }
 }
