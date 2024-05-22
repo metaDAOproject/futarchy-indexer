@@ -7,6 +7,7 @@ import {
 import { startIntervalFetchIndexer } from "./start-interval-fetch-indexers";
 import { startAccountInfoIndexer } from "./start-account-info-indexers";
 import { startTransactionHistoryIndexer } from "./start-transaction-history-indexers";
+import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
 
 export async function startIndexers() {
   await startMainIndexers();
@@ -31,36 +32,43 @@ export async function startMainIndexers() {
       .execute()
   );
 
-  const accountInfoIndexers = allIndexers.filter(
-    (i) => i.indexers?.indexerType === IndexerType.AccountInfo
-  );
+  // const accountInfoIndexers = allIndexers.filter(
+  //   (i) => i.indexers?.indexerType === IndexerType.AccountInfo
+  // );
 
-  for (const indexerQueryRes of accountInfoIndexers) {
-    await startAccountInfoIndexer(indexerQueryRes);
-  }
+  // for (const indexerQueryRes of accountInfoIndexers) {
+  //   await startAccountInfoIndexer(indexerQueryRes);
+  // }
 
   const intervalFetchIndexers = allIndexers.filter(
     (i) => i.indexers?.indexerType === IndexerType.IntervalFetch
   );
 
   for (const indexerQueryRes of intervalFetchIndexers) {
-    const job = await startIntervalFetchIndexer(indexerQueryRes);
-    if (job) {
-      console.log(
-        `scheduled to run account ${
-          indexerQueryRes?.indexer_account_dependencies?.acct
-        } on the ${indexerQueryRes.indexers?.implementation} indexer at ${job
-          .nextRun()
-          ?.toISOString()} and on a pattern of ${job.getPattern()}`
-      );
+    if (
+      indexerQueryRes.indexers?.implementation ===
+        IndexerImplementation.JupiterQuotesIndexer ||
+      indexerQueryRes.indexers?.implementation ===
+        IndexerImplementation.BirdeyePricesIndexer
+    ) {
+      const job = await startIntervalFetchIndexer(indexerQueryRes);
+      if (job) {
+        console.log(
+          `scheduled to run account ${
+            indexerQueryRes?.indexer_account_dependencies?.acct
+          } on the ${indexerQueryRes.indexers?.implementation} indexer at ${job
+            .nextRun()
+            ?.toISOString()} and on a pattern of ${job.getPattern()}`
+        );
+      }
     }
-  }
 
-  const transactionHistoryIndexers = allIndexers.filter(
-    (i) => i.indexers?.indexerType === IndexerType.TXHistory
-  );
+    // const transactionHistoryIndexers = allIndexers.filter(
+    //   (i) => i.indexers?.indexerType === IndexerType.TXHistory
+    // );
 
-  for (const indexerQueryRes of transactionHistoryIndexers) {
-    startTransactionHistoryIndexer(indexerQueryRes);
+    // for (const indexerQueryRes of transactionHistoryIndexers) {
+    //   startTransactionHistoryIndexer(indexerQueryRes);
+    // }
   }
 }

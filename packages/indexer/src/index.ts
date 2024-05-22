@@ -5,5 +5,9 @@ import { startTransactionWatchers } from "./transaction/watcher";
 
 startIndexerAccountDependencyPopulation();
 startMetricsServer();
-await startTransactionWatchers();
-await startIndexers();
+if (process.env.ENABLE_TRANSACTION_WATCHERS) {
+  await startTransactionWatchers();
+}
+if (process.env.ENABLE_INDEXERS) {
+  await startIndexers();
+}
