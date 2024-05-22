@@ -24,6 +24,7 @@ import {
 } from "@solana/spl-token";
 import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
+import { SLOTS_TO_DAYS } from "../../constants";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -33,12 +34,6 @@ export enum AutocratDaoIndexerError {
   MissingChainResponseError = "MissingChainResponseError",
   NothingToInsertError = "NothingToInsertError",
 }
-
-const SLOTS_TO_DAYS: Record<string, number> = {
-  "648000": 3,
-  "2160000": 10,
-  "1080000": 5,
-};
 
 //TODO we want to make an RPC call for the block time and use that as the createdAt
 // then cascade that by using slots per proposal times 4000 ms
