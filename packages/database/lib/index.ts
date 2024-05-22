@@ -1,12 +1,13 @@
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schemaDefs from "./schema";
-import { Pool } from "pg";
+import { Pool, PoolClient } from "pg";
 import "dotenv/config";
 
 let connectionString = process.env.FUTARCHY_PG_URL;
 
 const pool = new Pool({
   connectionString: connectionString,
+
   // https://stackoverflow.com/a/73997522
   // I noticed that there was always a connection timeout error after 9 loops of the startWatchers interval;
   // it repeats every 5 seconds and immediately after service start.
@@ -22,14 +23,20 @@ export async function getClient() {
 
 export async function usingDb<T>(
   fn: (connection: NodePgDatabase<typeof schemaDefs>) => Promise<T>
-): Promise<T> {
-  const client = await pool.connect();
-  const connection = drizzle(pool, { schema: schemaDefs });
+): Promise<T | null> {
+  let client: PoolClient | null = null;
+  let result: T | null = null;
   try {
-    const result = await fn(connection);
-    return result;
+    client = await pool.connect();
+    const connection = drizzle(pool, { schema: schemaDefs });
+    result = await fn(connection);
+  } catch (e) {
+    console.error("usingDb error", e);
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
+    return result;
   }
 }
 
