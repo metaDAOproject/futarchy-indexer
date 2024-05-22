@@ -16,7 +16,7 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
   index: async (acct: string) => {
     // get decimals from our DB
     try {
-      const token = await usingDb((db) =>
+      const inputToken = await usingDb((db) =>
         db
           .select()
           .from(schema.tokens)
@@ -24,9 +24,24 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
           .execute()
       );
       // call jup
+
+      // if it's USDC we compare to USDT
+      const outputMint =
+        acct === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          ? "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+      const outputToken = await usingDb((db) =>
+        db
+          .select()
+          .from(schema.tokens)
+          .where(eq(schema.tokens.mintAcct, outputMint))
+          .execute()
+      );
+
       const url =
         `https://quote-api.jup.ag/v6/quote?inputMint=${acct}&` +
-        "outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&" +
+        `outputMint=${outputMint}&` +
         `amount=${(100_000).toString()}&` +
         "slippageBps=50&" +
         "swapMode=ExactIn&" +
@@ -40,11 +55,18 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
         return Err({ type: JupiterQuoteIndexingError.JupiterFetchError });
       }
 
+      if (!tokenPriceJson.outAmount || !tokenPriceJson.inAmount) {
+        console.error("token price output or input is 0 value");
+        return Err({
+          type: JupiterQuoteIndexingError.GeneralJupiterQuoteIndexError,
+        });
+      }
       const newPrice: PricesRecord = {
         marketAcct: acct,
         price: convertJupTokenPrice(
           tokenPriceJson,
-          token[0].decimals
+          inputToken[0].decimals,
+          outputToken[0].decimals
         ).toString(),
         pricesType: PricesType.Spot,
         createdBy: "jupiter-quotes-indexer",
@@ -80,14 +102,12 @@ type JupTokenQuoteRes = {
 
 const convertJupTokenPrice = (
   data: JupTokenQuoteRes,
-  decimals: number
+  inputTokenDecimals: number,
+  outputTokenDecimals: number
 ): number => {
   const price =
-    Math.round(
-      (Number(data.outAmount ?? "0") / Number(data.inAmount ?? "0")) *
-        1_000 *
-        10 ** decimals
-    ) /
-    10 ** decimals;
+    Number(data.outAmount ?? "0") /
+    10 ** outputTokenDecimals /
+    (Number(data.inAmount ?? "0") / 10 ** inputTokenDecimals);
   return price;
 };

@@ -27,10 +27,15 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
       const tokenPriceJson = (await tokenPriceRes.json()) as BirdeyePricesRes;
 
       if (!tokenPriceJson.success) {
+        console.error(
+          "error fetching from birdeye tokenPriceJson:",
+          tokenPriceJson
+        );
         return Err({ type: BirdeyePricesIndexingError.BirdeyeFetchError });
       }
 
       if (!tokenPriceJson.data) {
+        console.error("bird eye prices fetch missing data");
         return Err({
           type: BirdeyePricesIndexingError.BirdeyeFetchMissingResponse,
         });
