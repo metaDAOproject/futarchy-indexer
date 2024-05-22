@@ -34,6 +34,14 @@ export enum AutocratDaoIndexerError {
   NothingToInsertError = "NothingToInsertError",
 }
 
+const SLOTS_TO_DAYS: Record<string, number> = {
+  "648000": 3,
+  "2160000": 10,
+  "1080000": 5,
+};
+
+//TODO we want to make an RPC call for the block time and use that as the createdAt
+// then cascade that by using slots per proposal times 4000 ms
 export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "30 * * * * *",
   index: async () => {
@@ -42,6 +50,37 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       const dbProposals: ProposalRecord[] = await usingDb((db) =>
         db.select().from(schema.proposals).execute()
       );
+
+      for (const dbProposal of dbProposals) {
+        const dao = (
+          await usingDb((db) =>
+            db
+              .select()
+              .from(schema.daos)
+              .where(eq(schema.daos.daoAcct, dbProposal.daoAcct))
+              .execute()
+          )
+        )[0];
+        if (
+          !dbProposal.endedAt &&
+          dbProposal.createdAt &&
+          dao.slotsPerProposal
+        ) {
+          // we can update endedAt since we don't have it yet
+          const endedAtDate = dbProposal.createdAt;
+          endedAtDate.setDate(
+            dbProposal.createdAt?.getDate() +
+              SLOTS_TO_DAYS[dao.slotsPerProposal.toString()]
+          );
+          await usingDb((db) =>
+            db
+              .update(schema.proposals)
+              .set({ endedAt: endedAtDate })
+              .where(eq(schema.proposals.proposalAcct, dbProposal.proposalAcct))
+              .execute()
+          );
+        }
+      }
 
       let protocolV0_3 = rpcReadClient.futarchyProtocols.find(
         (protocol) => protocol.deploymentVersion == "V0.3"
@@ -233,7 +272,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           )
         )[0];
 
-        let dbProposal: ProposalRecord = {
+        const dbProposal: ProposalRecord = {
           proposalAcct: proposal.publicKey.toString(),
           proposalNum: BigInt(proposal.account.number.toString()),
           autocratVersion: 0.3,
