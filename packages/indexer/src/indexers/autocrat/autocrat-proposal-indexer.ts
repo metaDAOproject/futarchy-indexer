@@ -35,8 +35,6 @@ export enum AutocratDaoIndexerError {
   NothingToInsertError = "NothingToInsertError",
 }
 
-//TODO we want to make an RPC call for the block time and use that as the createdAt
-// then cascade that by using slots per proposal times 4000 ms
 export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "30 * * * * *",
   index: async () => {
