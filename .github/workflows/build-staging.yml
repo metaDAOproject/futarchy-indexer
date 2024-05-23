@@ -33,7 +33,7 @@ jobs:
           context: .
           file: packages/indexer/Dockerfile
           push: true
-          tags: themetadao/indexer:${{ github.head_ref || github.ref_name }}
+          tags: themetadao/indexer:price-indexing-only
           labels: ${{ steps.meta.outputs.labels }}
 
   redeploy_app:
