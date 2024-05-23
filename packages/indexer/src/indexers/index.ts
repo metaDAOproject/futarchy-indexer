@@ -49,7 +49,9 @@ export async function startMainIndexers() {
       indexerQueryRes.indexers?.implementation ===
         IndexerImplementation.JupiterQuotesIndexer ||
       indexerQueryRes.indexers?.implementation ===
-        IndexerImplementation.BirdeyePricesIndexer
+        IndexerImplementation.BirdeyePricesIndexer ||
+      indexerQueryRes.indexers?.implementation ===
+        IndexerImplementation.AmmMarketsAccountFetch
     ) {
       const job = await startIntervalFetchIndexer(indexerQueryRes);
       if (job) {
