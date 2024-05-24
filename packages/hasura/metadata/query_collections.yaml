@@ -1,1 +1,18 @@
-[]
+- name: allowed-queries
+  definition:
+    queries:
+      - name: getProposalDescription
+        query: |
+          query ProposalQuery ($pk: String!) {
+            proposals_by_pk(proposal_acct: $pk) {
+              proposal_details {
+                description
+                title
+              }
+              dao {
+                dao_detail {
+                  name
+                }
+              }
+            }
+          }
