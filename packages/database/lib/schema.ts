@@ -14,6 +14,8 @@ import {
   varchar,
   text,
   jsonb,
+  uuid,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -608,15 +610,76 @@ export const users = pgTable(
     // Just the pub key of anything that interacts with the system.
     // Eventually want to add this constraint to the other tables, but for now
     // want to see how it feels.
+    id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
     userAcct: pubkey("user_acct").notNull(),
-    createdAt: timestamp("created_at")
-      .notNull()
-      .default(sql`now()`),
+    createdAt: timestamp("created_at").notNull().default(sql`now()`),
   },
   (table) => ({
     userUnique: unique("unique_user").on(table.userAcct),
   })
 );
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refreshToken: text("refresh_token"),
+    accessToken: text("access_token"),
+    expiresAt: integer("expires_at"),
+    tokenType: text("token_type"),
+    scope: text("scope"),
+    idToken: text("id_token"),
+    sessionState: text("session_state"),
+    "userId": uuid("userId").notNull()
+  },
+  (table) => ({
+    accounts_userId_fkey: foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+    }).onUpdate("restrict").onDelete("cascade"),
+    accounts_type_fkey: foreignKey({
+      columns: [table.type],
+      foreignColumns: [provider_type.value],
+    }).onUpdate("restrict").onDelete("restrict")
+  })
+);
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
+    sessionToken: text("sessionToken").notNull(),
+    "userId": uuid("userId").notNull(),
+    expires: timestamp("expires").notNull()
+  }
+  ,
+  (table) => ({
+    accounts_userId_fkey: foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+    }).onUpdate("restrict").onDelete("cascade")
+  })
+);
+
+export const verification_tokens = pgTable(
+  "verification_tokens",
+  {
+    token: text("token").notNull().primaryKey(),
+    identifier: text("identifier").notNull(),
+    expires: timestamp("expires").notNull()
+  }
+)
+
+// INSERT INTO provider_type (value) VALUES ('credentials'), ('email'), ('oauth'), ('oidc');
+export const provider_type = pgTable(
+  "provider_type",
+  {
+    value: text("value").notNull().primaryKey()
+  }
+)
 
 export const programs = pgTable(
   "programs",
