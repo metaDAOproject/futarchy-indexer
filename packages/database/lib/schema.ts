@@ -15,7 +15,6 @@ import {
   text,
   jsonb,
   uuid,
-  foreignKey,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -623,7 +622,7 @@ export const accounts = pgTable(
   "accounts",
   {
     id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
-    type: text("type").notNull(),
+    type: text("type").references(() => provider_type.value, {onDelete: "restrict", onUpdate: "restrict"}).notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
     refreshToken: text("refresh_token"),
@@ -633,18 +632,8 @@ export const accounts = pgTable(
     scope: text("scope"),
     idToken: text("id_token"),
     sessionState: text("session_state"),
-    "userId": uuid("userId").notNull()
-  },
-  (table) => ({
-    accounts_userId_fkey: foreignKey({
-      columns: [table.userId],
-      foreignColumns: [users.id],
-    }).onUpdate("restrict").onDelete("cascade"),
-    accounts_type_fkey: foreignKey({
-      columns: [table.type],
-      foreignColumns: [provider_type.value],
-    }).onUpdate("restrict").onDelete("restrict")
-  })
+    "userId": uuid("userId").references(() => users.id, {onDelete: "cascade", onUpdate: "restrict"}).notNull()
+  }
 );
 
 export const sessions = pgTable(
@@ -652,16 +641,9 @@ export const sessions = pgTable(
   {
     id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
     sessionToken: text("sessionToken").notNull(),
-    "userId": uuid("userId").notNull(),
+    "userId": uuid("userId").references(() => users.id, {onDelete: "cascade", onUpdate: "restrict"}).notNull(),
     expires: timestamp("expires").notNull()
   }
-  ,
-  (table) => ({
-    accounts_userId_fkey: foreignKey({
-      columns: [table.userId],
-      foreignColumns: [users.id],
-    }).onUpdate("restrict").onDelete("cascade")
-  })
 );
 
 export const verification_tokens = pgTable(
@@ -673,6 +655,7 @@ export const verification_tokens = pgTable(
   }
 )
 
+// export const ProviderType = pgEnum('provider_type', ['credentials', 'email', 'oauth', 'oidc']);
 // INSERT INTO provider_type (value) VALUES ('credentials'), ('email'), ('oauth'), ('oidc');
 export const provider_type = pgTable(
   "provider_type",
