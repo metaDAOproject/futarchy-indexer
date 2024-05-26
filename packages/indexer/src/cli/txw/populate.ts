@@ -98,6 +98,11 @@ async function populateAmmMarketIndexerAccountDependencies() {
       name: "amm-market-accounts-fetch",
       latestTxSigProcessed: null,
     };
+    const newAmmLogsSubscribeIndexerDep: IndexerAccountDependency = {
+      acct: ammMarket.marketAcct.toString(),
+      name: "amm-markets-logs-subscribe-indexer",
+      latestTxSigProcessed: null,
+    };
 
     const ammInsertResult = await usingDb((db) =>
       db

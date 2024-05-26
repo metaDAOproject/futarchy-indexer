@@ -16,23 +16,9 @@ import {
   SwapType,
 } from "@metadaoproject/futarchy";
 import { InstructionIndexer } from "../instruction-indexer";
-import { IDL } from "@openbook-dex/openbook-v2";
-import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
-import { alias } from "drizzle-orm/pg-core";
-
-export enum AmmInstructionIndexerError {
-  GeneralError = "GeneralError",
-  MissingMarket = "MissingMarket",
-}
-
-const ammClient = new AmmClient(provider, AMM_PROGRAM_ID, []);
-type IDL = typeof ammClient.program.idl;
-const ammParser = new SolanaParser([
-  {
-    idl: ammClient.program.idl,
-    programId: AMM_PROGRAM_ID,
-  },
-]);
+import { IDL as IDLValue } from "@openbook-dex/openbook-v2";
+import { AmmInstructionIndexerError } from "../../types/errors";
+import { ammClient, ammParser, IDL } from "../common";
 
 export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
   PROGRAM_ID: AMM_PROGRAM_ID.toString(),

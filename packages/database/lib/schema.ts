@@ -322,6 +322,7 @@ export enum IndexerImplementation {
   AmmMarketIndexer = "AmmMarketIndexer",
   AmmMarketInstructionsIndexer = "AmmMarketInstructionsIndexer",
   AmmMarketsAccountFetch = "AmmMarketsAccountFetch",
+  AmmMarketsLogsSubscribe = "AmmMarketsLogsSubscribe",
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
@@ -333,6 +334,7 @@ export enum IndexerType {
   TXHistory = "TXHistory",
   AccountInfo = "AccountInfo",
   IntervalFetch = "IntervalFetch",
+  LogSubscribe = "LogsSubscribe",
 }
 
 export const indexers = pgTable("indexers", {
@@ -713,7 +715,6 @@ export const programSystem = pgTable("program_system", {
     .notNull()
     .references(() => programs.programAcct),
   migratorAcct: pubkey("migrator_acct").references(() => programs.programAcct),
-
 });
 
 export const conditionalVaults = pgTable("conditional_vaults", {
