@@ -1,7 +1,7 @@
 import { Context, Logs, PublicKey } from "@solana/web3.js";
 import { Err, Ok } from "../../match";
 import { AccountLogsIndexer } from "../account-logs-indexer";
-import { SwapBuilder } from "../../persisters/swap-persister";
+import { SwapBuilder } from "../../builders/swaps";
 import { ammParser } from "../common";
 
 export enum AmmAccountLogsIndexerError {

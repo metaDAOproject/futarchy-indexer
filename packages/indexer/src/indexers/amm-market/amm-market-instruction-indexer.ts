@@ -1,25 +1,11 @@
-import { connection, provider } from "../../connection";
 import { VersionedTransactionResponse } from "@solana/web3.js";
-import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
-import { BN } from "@coral-xyz/anchor";
-import {
-  OrderSide,
-  OrdersRecord,
-  TakesRecord,
-  TransactionRecord,
-} from "@metadaoproject/indexer-db/lib/schema";
-import {
-  AMM_PROGRAM_ID,
-  AmmClient,
-  PriceMath,
-  SwapType,
-} from "@metadaoproject/futarchy";
+import { TransactionRecord } from "@metadaoproject/indexer-db/lib/schema";
+import { AMM_PROGRAM_ID } from "@metadaoproject/futarchy";
 import { InstructionIndexer } from "../instruction-indexer";
-import { IDL as IDLValue } from "@openbook-dex/openbook-v2";
 import { AmmInstructionIndexerError } from "../../types/errors";
 import { ammClient, ammParser, IDL } from "../common";
-import { SwapBuilder } from "../../persisters/swap-persister";
+import { SwapBuilder } from "../../builders/swaps";
 
 export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
   PROGRAM_ID: AMM_PROGRAM_ID.toString(),
