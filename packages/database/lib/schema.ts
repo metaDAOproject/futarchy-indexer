@@ -614,9 +614,10 @@ export const users = pgTable(
 export const sessions = pgTable(
   "sessions",
   {
-    id: uuid("id").primaryKey(),
+    id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
     userAcct: pubkey("user_acct").references(() => users.userAcct, {onDelete: "restrict", onUpdate: "restrict"}),
-    expires: timestamp("expires").notNull()
+    created_at: timestamp("created_at"),
+    expires_at: timestamp("expires_at")
   }
 )
 
