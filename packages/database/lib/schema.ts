@@ -606,61 +606,17 @@ export const reactions = pgTable(
 export const users = pgTable(
   "users",
   {
-    // Just the pub key of anything that interacts with the system.
-    // Eventually want to add this constraint to the other tables, but for now
-    // want to see how it feels.
-    id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
-    userAcct: pubkey("user_acct").notNull(),
+    userAcct: pubkey("user_acct").primaryKey(),
     createdAt: timestamp("created_at").notNull().default(sql`now()`),
-  },
-  (table) => ({
-    userUnique: unique("unique_user").on(table.userAcct),
-  })
-);
-
-export const accounts = pgTable(
-  "accounts",
-  {
-    id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
-    type: text("type").references(() => provider_type.value, {onDelete: "restrict", onUpdate: "restrict"}).notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("providerAccountId").notNull(),
-    refreshToken: text("refresh_token"),
-    accessToken: text("access_token"),
-    expiresAt: integer("expires_at"),
-    tokenType: text("token_type"),
-    scope: text("scope"),
-    idToken: text("id_token"),
-    sessionState: text("session_state"),
-    "userId": uuid("userId").references(() => users.id, {onDelete: "cascade", onUpdate: "restrict"}).notNull()
   }
 );
 
 export const sessions = pgTable(
   "sessions",
   {
-    id: uuid("id").notNull().default(sql`gen_random_uuid()`).primaryKey(),
-    sessionToken: text("sessionToken").notNull(),
-    "userId": uuid("userId").references(() => users.id, {onDelete: "cascade", onUpdate: "restrict"}).notNull(),
+    id: uuid("id").primaryKey(),
+    userAcct: pubkey("user_acct").references(() => users.userAcct, {onDelete: "restrict", onUpdate: "restrict"}),
     expires: timestamp("expires").notNull()
-  }
-);
-
-export const verification_tokens = pgTable(
-  "verification_tokens",
-  {
-    token: text("token").notNull().primaryKey(),
-    identifier: text("identifier").notNull(),
-    expires: timestamp("expires").notNull()
-  }
-)
-
-// export const ProviderType = pgEnum('provider_type', ['credentials', 'email', 'oauth', 'oidc']);
-// INSERT INTO provider_type (value) VALUES ('credentials'), ('email'), ('oauth'), ('oidc');
-export const provider_type = pgTable(
-  "provider_type",
-  {
-    value: text("value").notNull().primaryKey()
   }
 )
 
