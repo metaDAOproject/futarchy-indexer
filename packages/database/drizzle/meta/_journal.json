@@ -323,6 +323,13 @@
       "when": 1716184009818,
       "tag": "0045_last_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "5",
+      "when": 1716789149069,
+      "tag": "0046_little_trish_tilby",
+      "breakpoints": true
     }
   ]
 }

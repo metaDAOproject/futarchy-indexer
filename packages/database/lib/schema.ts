@@ -603,6 +603,7 @@ export const reactions = pgTable(
   })
 );
 
+// Note: Before a user can generate a session they need to be insterted into the DB
 export const users = pgTable(
   "users",
   {
@@ -616,7 +617,7 @@ export const sessions = pgTable(
   {
     id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
     userAcct: pubkey("user_acct").references(() => users.userAcct, {onDelete: "restrict", onUpdate: "restrict"}),
-    created_at: timestamp("created_at"),
+    created_at: timestamp("created_at").notNull().defaultNow(),
     expires_at: timestamp("expires_at")
   }
 )
