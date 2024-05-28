@@ -16,6 +16,7 @@ enum BirdeyePricesIndexingError {
 
 export const BirdeyePricesIndexer: IntervalFetchIndexer = {
   cronExpression: "* * * * *",
+  retries: 12,
   index: async (acct: string) => {
     try {
       const url = `https://public-api.birdeye.so/defi/price?address=${acct}`;

@@ -30,6 +30,7 @@ export function startIntervalFetchIndexer(
     indexer.implementation
   );
   if (implementation && dependentAccount && dependentAccount.acct) {
+    const retries = implementation.retries ?? 3; // default 3 interval fetch retries
     console.log("setting interval fetch for:", dependentAccount.acct);
     const job = new Cron(
       implementation.cronExpression,
@@ -42,13 +43,11 @@ export function startIntervalFetchIndexer(
             res.error
           );
           errorCount += 1;
-          if (
-            (implementation.retries && errorCount > implementation.retries) ||
-            !implementation.retries
-          ) {
+          if (errorCount > retries) {
             handleIntervalFetchFailure(dependentAccount, self);
           }
         } else {
+          errorCount = 0;
           console.log(
             `next run for ${dependentAccount.acct} with ${
               indexer.implementation
