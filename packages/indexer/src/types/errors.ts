@@ -7,4 +7,5 @@ export enum SwapPersistableError {
   GeneralError = "GeneralError",
   AlreadyPersistedSwap = "AlreadyPersistedSwap",
   NonSwapTransaction = "NonSwapTransaction",
+  TransactionParseError = "TransactionParseError",
 }

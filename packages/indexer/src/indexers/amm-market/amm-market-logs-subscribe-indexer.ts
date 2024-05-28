@@ -14,7 +14,7 @@ export const AmmMarketLogsSubscribeIndexer: AccountLogsIndexer = {
     const buildRes = await builder.withSignatureAndCtx(logs.signature, context);
     if (!buildRes.success) {
       console.error(
-        "error with indexing amm on logs subscriber",
+        `error with indexing amm on logs subscriber tx ${logs.signature}`,
         buildRes.error
       );
       return Err({ type: AmmAccountLogsIndexerError.GeneralError });

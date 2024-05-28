@@ -1,4 +1,4 @@
-import { Context, Logs } from "@solana/web3.js";
+import { Context } from "@solana/web3.js";
 import { Err, Ok, Result, TaggedUnion } from "../match";
 import {
   AmmInstructionIndexerError,
@@ -15,51 +15,87 @@ import { PriceMath, SwapType } from "@metadaoproject/futarchy";
 import { BN } from "@coral-xyz/anchor";
 import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
 import { connection } from "../connection";
+import {
+  SERIALIZED_TRANSACTION_LOGIC_VERSION,
+  getTransaction,
+  serialize,
+} from "../transaction/serializer";
+import { logger } from "../logger";
 
 export class SwapPersistable {
   private ordersRecord: OrdersRecord;
   private takesRecord: TakesRecord;
-  constructor(ordersRecord: OrdersRecord, takesRecord: TakesRecord) {
+  private transactionRecord: TransactionRecord;
+  constructor(
+    ordersRecord: OrdersRecord,
+    takesRecord: TakesRecord,
+    transactionRecord: TransactionRecord
+  ) {
     this.ordersRecord = ordersRecord;
     this.takesRecord = takesRecord;
+    this.transactionRecord = transactionRecord;
   }
 
   async persist() {
-    const orderInsertRes = await usingDb((db) =>
-      db
-        .insert(schema.orders)
-        .values(this.ordersRecord)
-        .onConflictDoNothing()
-        .returning({ txSig: schema.takes.orderTxSig })
-    );
-    if (orderInsertRes.length > 0) {
-      console.log(
-        "successfully inserted swap order record",
-        orderInsertRes[0].txSig
+    try {
+      const upsertResult = await usingDb((db) =>
+        db
+          .insert(schema.transactions)
+          .values(this.transactionRecord)
+          .onConflictDoUpdate({
+            target: schema.transactions.txSig,
+            set: this.transactionRecord,
+          })
+          .returning({ txSig: schema.transactions.txSig })
       );
-    } else {
-      console.warn(
-        "did not save swap order in persister.",
-        this.ordersRecord.orderTxSig
+      if (
+        upsertResult.length !== 1 ||
+        upsertResult[0].txSig !== this.transactionRecord.txSig
+      ) {
+        logger.error(
+          `Failed to upsert ${this.transactionRecord.txSig}. ${JSON.stringify(
+            this.transactionRecord
+          )}`
+        );
+      }
+      const orderInsertRes = await usingDb((db) =>
+        db
+          .insert(schema.orders)
+          .values(this.ordersRecord)
+          .onConflictDoNothing()
+          .returning({ txSig: schema.takes.orderTxSig })
       );
-    }
-    const takeInsertRes = await usingDb((db) =>
-      db
-        .insert(schema.takes)
-        .values(this.takesRecord)
-        .onConflictDoNothing()
-        .returning({ txSig: schema.takes.orderTxSig })
-    );
-    if (takeInsertRes.length > 0) {
-      console.log(
-        "successfully inserted swap take record",
-        takeInsertRes[0].txSig
+      if (orderInsertRes.length > 0) {
+        console.log(
+          "successfully inserted swap order record",
+          orderInsertRes[0].txSig
+        );
+      } else {
+        logger.warn(
+          `did not save swap order in persister.
+        ${this.ordersRecord.orderTxSig}`
+        );
+      }
+      const takeInsertRes = await usingDb((db) =>
+        db
+          .insert(schema.takes)
+          .values(this.takesRecord)
+          .onConflictDoNothing()
+          .returning({ txSig: schema.takes.orderTxSig })
       );
-    } else {
-      console.warn(
-        "did not save swap take record in persister.",
-        this.takesRecord.orderTxSig
-      );
+      if (takeInsertRes.length > 0) {
+        logger.log(
+          `successfully inserted swap take record.
+        ${takeInsertRes[0].txSig}`
+        );
+      } else {
+        logger.warn(
+          `did not save swap take record in persister.
+        ${this.takesRecord.orderTxSig}`
+        );
+      }
+    } catch (e) {
+      logger.error(`error with persisting swap: ${e}`);
     }
   }
 }
@@ -74,17 +110,17 @@ export class SwapBuilder {
     ctx: Context
   ): Promise<Result<SwapPersistable, TaggedUnion>> {
     try {
-      const swapTime = new Date();
+      const now = new Date();
 
       // first check to see if swap is already persisted
       const swapOrder = await usingDb((db) =>
         db
           .select()
           .from(schema.orders)
-          .where(eq(schema.markets.createTxSig, signature))
+          .where(eq(schema.orders.orderTxSig, signature))
           .execute()
       );
-      if (swapOrder) {
+      if (swapOrder.length > 0) {
         return Err({ type: SwapPersistableError.AlreadyPersistedSwap });
       }
 
@@ -185,7 +221,7 @@ export class SwapBuilder {
         const swapOrder: OrdersRecord = {
           marketAcct: marketAcct.pubkey.toBase58(),
           orderBlock: BigInt(ctx.slot),
-          orderTime: new Date(),
+          orderTime: now,
           orderTxSig: signature,
           quotePrice: price.toString(),
           actorAcct: userAcct.pubkey.toBase58(),
@@ -195,7 +231,7 @@ export class SwapBuilder {
           side: side,
           // TODO: If transaction is failed then this is the output amount...
           unfilledBaseAmount: BigInt(0),
-          updatedAt: new Date(),
+          updatedAt: now,
         };
 
         const swapTake: TakesRecord = {
@@ -204,7 +240,7 @@ export class SwapBuilder {
           // to use to reference on data aggregate, it's not directly necessary.
           baseAmount: BigInt(baseAmount.toNumber()), // NOTE: This is always the base token given we have a BASE / QUOTE relationship
           orderBlock: BigInt(ctx.slot),
-          orderTime: swapTime,
+          orderTime: now,
           orderTxSig: signature,
           quotePrice: price.toString(),
           // TODO: this is coded into the market, in the case of our AMM, it's 1%
@@ -212,10 +248,31 @@ export class SwapBuilder {
           takerBaseFee: BigInt(0),
           takerQuoteFee: BigInt(0),
         };
-        return Ok(new SwapPersistable(swapOrder, swapTake));
+
+        // TODO: consider co-locating this logic so it can be shared
+        const parseTxResult = await getTransaction(signature);
+        if (!parseTxResult.success) {
+          logger.error(
+            `Failed to parse tx ${signature}\n` +
+              JSON.stringify(parseTxResult.error)
+          );
+          return Err({ type: SwapPersistableError.TransactionParseError });
+        }
+        const { ok: parsedTx } = parseTxResult;
+        const transactionRecord: TransactionRecord = {
+          txSig: signature,
+          slot: BigInt(ctx.slot),
+          blockTime: new Date(parsedTx.blockTime * 1000), // TODO need to verify if this is correct
+          failed: parsedTx.err !== undefined,
+          payload: serialize(parsedTx),
+          serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+        };
+
+        return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord));
       }
       return Err({ type: SwapPersistableError.NonSwapTransaction });
     } catch (e) {
+      console.error("swap peristable general error", e);
       return Err({ type: SwapPersistableError.GeneralError });
     }
   }

@@ -5,13 +5,13 @@ import { IndexerWithAccountDeps } from "../types";
 import { AccountLogsIndexer } from "./account-logs-indexer";
 import { AmmMarketLogsSubscribeIndexer } from "./amm-market/amm-market-logs-subscribe-indexer";
 
-export async function startAccountInfoIndexer(
+export async function startLogsSubscribeIndexer(
   indexerQueryRes: IndexerWithAccountDeps
 ) {
   const { indexers: indexer, indexer_account_dependencies: dependentAccount } =
     indexerQueryRes;
   if (!indexer) return;
-  const implementation = getAccountInfoIndexerImplementation(
+  const implementation = getLogsSubscribeIndexerImplementation(
     indexer.implementation
   );
   if (implementation && dependentAccount && dependentAccount.acct) {
@@ -25,7 +25,7 @@ export async function startAccountInfoIndexer(
     });
   }
 }
-function getAccountInfoIndexerImplementation(
+function getLogsSubscribeIndexerImplementation(
   implementation: IndexerImplementation
 ): AccountLogsIndexer | null {
   switch (implementation) {

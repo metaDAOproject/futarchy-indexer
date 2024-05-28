@@ -38,7 +38,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
     });
     if (!buildRes.success) {
       console.error(
-        "error with indexing amm on logs subscriber",
+        `error with indexing amm on logs instruction tx ${transaction.txSig}`,
         buildRes.error
       );
       return Err({ type: AmmInstructionIndexerError.GeneralError });

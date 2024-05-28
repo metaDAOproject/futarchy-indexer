@@ -1,12 +1,12 @@
 import { eq, schema, usingDb } from "@metadaoproject/indexer-db";
 import {
   IndexerAccountDependencyStatus,
-  IndexerImplementation,
   IndexerType,
 } from "@metadaoproject/indexer-db/lib/schema";
 import { startIntervalFetchIndexer } from "./start-interval-fetch-indexers";
 import { startAccountInfoIndexer } from "./start-account-info-indexers";
 import { startTransactionHistoryIndexer } from "./start-transaction-history-indexers";
+import { startLogsSubscribeIndexer } from "./start-logs-subscribe-indexer";
 
 export async function startIndexers() {
   await startMainIndexers();
@@ -34,7 +34,6 @@ export async function startMainIndexers() {
   const accountInfoIndexers = allIndexers.filter(
     (i) => i.indexers?.indexerType === IndexerType.AccountInfo
   );
-
   for (const indexerQueryRes of accountInfoIndexers) {
     await startAccountInfoIndexer(indexerQueryRes);
   }
@@ -42,7 +41,6 @@ export async function startMainIndexers() {
   const intervalFetchIndexers = allIndexers.filter(
     (i) => i.indexers?.indexerType === IndexerType.IntervalFetch
   );
-
   for (const indexerQueryRes of intervalFetchIndexers) {
     const job = await startIntervalFetchIndexer(indexerQueryRes);
     if (job) {
@@ -59,8 +57,14 @@ export async function startMainIndexers() {
   const transactionHistoryIndexers = allIndexers.filter(
     (i) => i.indexers?.indexerType === IndexerType.TXHistory
   );
-
   for (const indexerQueryRes of transactionHistoryIndexers) {
     startTransactionHistoryIndexer(indexerQueryRes);
+  }
+
+  const logsSubscribeIndexers = allIndexers.filter(
+    (i) => i.indexers?.indexerType === IndexerType.LogSubscribe
+  );
+  for (const indexerQueryRes of logsSubscribeIndexers) {
+    startLogsSubscribeIndexer(indexerQueryRes);
   }
 }

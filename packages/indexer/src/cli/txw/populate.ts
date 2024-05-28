@@ -107,7 +107,11 @@ async function populateAmmMarketIndexerAccountDependencies() {
     const ammInsertResult = await usingDb((db) =>
       db
         .insert(schema.indexerAccountDependencies)
-        .values([newAmmIndexerDep, newAmmIntervalIndexerDep])
+        .values([
+          newAmmIndexerDep,
+          newAmmIntervalIndexerDep,
+          newAmmLogsSubscribeIndexerDep,
+        ])
         .onConflictDoNothing()
         .returning({ acct: schema.indexerAccountDependencies.acct })
     );
