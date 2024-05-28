@@ -14,6 +14,7 @@ import {
   varchar,
   text,
   jsonb,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -322,6 +323,7 @@ export enum IndexerImplementation {
   AmmMarketIndexer = "AmmMarketIndexer",
   AmmMarketInstructionsIndexer = "AmmMarketInstructionsIndexer",
   AmmMarketsAccountFetch = "AmmMarketsAccountFetch",
+  AmmMarketsLogsSubscribe = "AmmMarketsLogsSubscribe",
   OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
@@ -333,6 +335,7 @@ export enum IndexerType {
   TXHistory = "TXHistory",
   AccountInfo = "AccountInfo",
   IntervalFetch = "IntervalFetch",
+  LogSubscribe = "LogsSubscribe",
 }
 
 export const indexers = pgTable("indexers", {
@@ -602,22 +605,24 @@ export const reactions = pgTable(
   })
 );
 
+// Note: Before a user can generate a session they need to be insterted into the DB
 export const users = pgTable(
   "users",
   {
-    // Just the pub key of anything that interacts with the system.
-    // Eventually want to add this constraint to the other tables, but for now
-    // want to see how it feels.
-    userAcct: pubkey("user_acct").notNull(),
-    createdAt: timestamp("created_at")
-      .notNull()
-      .default(sql`now()`),
-  },
-  (table) => ({
-    userUnique: unique("unique_user").on(table.userAcct),
-  })
+    userAcct: pubkey("user_acct").primaryKey(),
+    createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  }
 );
 
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
+    userAcct: pubkey("user_acct").references(() => users.userAcct, {onDelete: "restrict", onUpdate: "restrict"}),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    expires_at: timestamp("expires_at")
+  }
+)
 export const programs = pgTable(
   "programs",
   {
@@ -713,7 +718,6 @@ export const programSystem = pgTable("program_system", {
     .notNull()
     .references(() => programs.programAcct),
   migratorAcct: pubkey("migrator_acct").references(() => programs.programAcct),
-
 });
 
 export const conditionalVaults = pgTable("conditional_vaults", {
