@@ -47,6 +47,7 @@ export function startIntervalFetchIndexer(
             handleIntervalFetchFailure(dependentAccount, self);
           }
         } else {
+          errorCount = 0;
           console.log(
             `next run for ${dependentAccount.acct} with ${
               indexer.implementation
