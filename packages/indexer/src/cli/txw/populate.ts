@@ -23,7 +23,7 @@ import { connection, readonlyWallet } from "../../connection";
 import { Err, Ok } from "../../match";
 import {
   JupiterQuoteIndexingError,
-  JupiterQuotesIndexer,
+  fetchQuoteFromJupe,
 } from "../../indexers/jupiter/jupiter-quotes-indexer";
 
 import Cron from "croner";
@@ -211,12 +211,9 @@ async function populateJupQuoteIndexerAndMarket(token: {
   const { mintAcct } = token;
   try {
     //check to see if jupiter can support this token
-    const res = await JupiterQuotesIndexer.index(mintAcct);
-    if (
-      !res.success &&
-      res.error.type === JupiterQuoteIndexingError.JupiterFetchError
-    ) {
-      return Err({ type: PopulateSpotPriceMarketErrors.NotSupportedByJup });
+    const number = await fetchQuoteFromJupe(mintAcct);
+    if (!number) {
+      return Err({ type: JupiterQuoteIndexingError.JupiterFetchError });
     }
 
     // it is supported, so let's continue on
