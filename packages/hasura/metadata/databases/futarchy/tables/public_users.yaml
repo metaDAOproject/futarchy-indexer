@@ -1,3 +1,11 @@
 table:
   name: users
   schema: public
+array_relationships:
+  - name: sessions
+    using:
+      foreign_key_constraint_on:
+        column: user_acct
+        table:
+          name: sessions
+          schema: public

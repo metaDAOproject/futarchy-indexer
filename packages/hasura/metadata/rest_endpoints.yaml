@@ -2,6 +2,15 @@
   definition:
     query:
       collection_name: allowed-queries
+      query_name: getDaoNameFromSlug
+  methods:
+    - GET
+  name: getDaoNameFromSlug
+  url: dao-name/:slug
+- comment: ""
+  definition:
+    query:
+      collection_name: allowed-queries
       query_name: getProposalDescription
   methods:
     - GET
