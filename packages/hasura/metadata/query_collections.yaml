@@ -16,3 +16,10 @@
               }
             }
           }
+      - name: getDaoNameFromSlug
+        query: |
+          query MyQuery ($slug: String!) {
+            dao_details(where: {slug:{_eq:$slug}}) {
+              name
+            }
+          }

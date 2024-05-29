@@ -16,6 +16,7 @@
 - "!include public_proposal_prices_chart_data.yaml"
 - "!include public_proposals.yaml"
 - "!include public_reactions.yaml"
+- "!include public_sessions.yaml"
 - "!include public_takes.yaml"
 - "!include public_token_acct_balances.yaml"
 - "!include public_token_accts.yaml"
