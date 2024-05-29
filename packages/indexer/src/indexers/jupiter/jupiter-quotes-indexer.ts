@@ -13,6 +13,7 @@ export enum JupiterQuoteIndexingError {
 
 export const JupiterQuotesIndexer: IntervalFetchIndexer = {
   cronExpression: "* * * * *",
+  retries: 12,
   index: async (acct: string) => {
     // get decimals from our DB
     try {
