@@ -366,7 +366,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           await usingDb((db) =>
             db
               .update(schema.proposals)
-              .set({ status: ProposalStatus.Passed })
+              .set({ status: ProposalStatus.Passed, completedAt: new Date() })
               .where(
                 eq(
                   schema.proposals.proposalAcct,
@@ -407,7 +407,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           await usingDb((db) =>
             db
               .update(schema.proposals)
-              .set({ status: ProposalStatus.Failed })
+              .set({ status: ProposalStatus.Failed, completedAt: new Date() })
               .where(
                 eq(
                   schema.proposals.proposalAcct,
