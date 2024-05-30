@@ -4,7 +4,7 @@ import {
   conditionalVaultClient,
   provider,
 } from "../../connection";
-import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
+import { usingDb, schema, eq, and, isNull } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -368,9 +368,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .update(schema.proposals)
               .set({ status: ProposalStatus.Passed, completedAt: new Date() })
               .where(
-                eq(
-                  schema.proposals.proposalAcct,
-                  onChainProposal.publicKey.toString()
+                and(
+                  eq(
+                    schema.proposals.proposalAcct,
+                    onChainProposal.publicKey.toString()
+                  ),
+                  isNull(schema.proposals.completedAt)
                 )
               )
               .execute()
@@ -409,9 +412,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .update(schema.proposals)
               .set({ status: ProposalStatus.Failed, completedAt: new Date() })
               .where(
-                eq(
-                  schema.proposals.proposalAcct,
-                  onChainProposal.publicKey.toString()
+                and(
+                  eq(
+                    schema.proposals.proposalAcct,
+                    onChainProposal.publicKey.toString()
+                  ),
+                  isNull(schema.proposals.completedAt)
                 )
               )
               .execute()

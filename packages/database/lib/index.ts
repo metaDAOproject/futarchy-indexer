@@ -52,4 +52,6 @@ export {
   notIlike,
   like,
   ilike,
+  isNotNull,
+  isNull,
 } from "drizzle-orm";
