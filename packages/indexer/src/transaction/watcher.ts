@@ -48,6 +48,7 @@ type TransactionWatcherRecord = typeof schema.transactionWatchers._.inferSelect;
 type TransactionRecord = typeof schema.transactions._.inferInsert;
 
 const watchers: Record<string, TransactionWatcher> = {};
+const MAX_RETRIES = 12;
 
 class TransactionWatcher {
   private account: PublicKey;
@@ -59,6 +60,7 @@ class TransactionWatcher {
   private rpcWebsocket: number | undefined;
   private stopped: boolean;
   private backfilling: boolean;
+  private errorCount: number = 0;
   public constructor({
     acct,
     description,
@@ -140,14 +142,19 @@ class TransactionWatcher {
     const historyRes =
       await this.getTransactionHistoryFromFinalizedSlotWithRetry();
     if (!historyRes.success) {
-      // update tx watcher status to failed and exit, but other tx watchers continue
-      const markFailedResult = await this.markTransactionWatcherAsFailed(
-        historyRes.error.type
-      );
-      if (!markFailedResult?.success) {
-        return markFailedResult;
+      this.errorCount += 1;
+      if (this.errorCount > MAX_RETRIES) {
+        // update tx watcher status to failed and exit, but other tx watchers continue
+        const markFailedResult = await this.markTransactionWatcherAsFailed(
+          historyRes.error.type
+        );
+        if (!markFailedResult?.success) {
+          return markFailedResult;
+        }
+        return historyRes;
+      } else {
+        return Ok("tx watcher hit an error, retrying backfill");
       }
-      return historyRes;
     }
     // history fetch was successful
     const history = historyRes.ok;
