@@ -35,24 +35,74 @@ CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate(
             -- pass_market_price
             -- fail_market_acct
             -- fail_market_price
-          WITH pass_market_bucket AS
+          -- NOTE: With this we first fetch data based on the market from the newly created table
+          WITH conditional_price_data AS
+          (
+            SELECT
+              proposal_acct,
+              created_at,
+              pass_market_acct,
+              pass_market_price,
+              fail_market_acct,
+              fail_market_price
+            FROM proposal_conditional_price_data
+          ),
+          conditional_price_data_summary AS
+          (
+            SELECT
+              proposal_acct,
+              pass_market_acct,
+              fail_market_acct,
+              MAX(created_at) AS last_time_for_price -- This will fetch us the last created_at
+            FROM conditional_price_data
+            GROUP BY proposal_acct, pass_market_acct, fail_market_acct -- Our grouping so we can aggregate
+          ),
+          pass_market_bucket AS
           (
             SELECT proposal_acct,
-                  TIME_BUCKET('10 SECONDS'::INTERVAL, prices.created_at) AS interv,
-                  last(prices, prices.created_at) FILTER(WHERE prices.created_at IS NOT NULL) AS prices_row
+                  TIME_BUCKET('30 SECONDS'::INTERVAL, prices.created_at) AS interv,
+                  LAST(prices, prices.created_at) FILTER(
+                    WHERE prices.created_at IS NOT NULL
+                    AND prices.created_at <= proposals.ended_at -- TODO: This is a poor filter given our indexing
+                  ) AS prices_row
             FROM proposals
             JOIN prices
-            ON proposals.pass_market_acct = prices.market_acct
+              ON proposals.pass_market_acct = prices.market_acct
+            JOIN conditional_price_data_summary
+              ON conditional_price_data_summary.pass_market_acct = prices.market_acct
+            WHERE 
+              prices.created_at IS NOT NULL
+              AND prices.created_at <= proposals.ended_at -- TODO: This is a poor filter given our indexing
+              AND 
+              CASE
+                WHEN conditional_price_data_summary.last_time_for_price IS NOT NULL
+                  THEN prices.created_at > conditional_price_data_summary.last_time_for_price
+                ELSE TRUE
+              END -- A check to see if we have any data yet, otherwise we know we need to fill all the data in
             GROUP BY proposal_acct, interv
           ),
           fail_market_bucket AS
           (
             SELECT proposal_acct,
-                  TIME_BUCKET('10 SECONDS'::INTERVAL, prices.created_at) AS interv,
-                  last(prices, prices.created_at) FILTER(WHERE prices.created_at IS NOT NULL) AS prices_row
+                  TIME_BUCKET('30 SECONDS'::INTERVAL, prices.created_at) AS interv,
+                  LAST(prices, prices.created_at) FILTER(
+                    WHERE prices.created_at IS NOT NULL
+                    AND prices.created_at <= proposals.ended_at -- TODO: This is a poor filter given our indexing
+                  ) AS prices_row
             FROM proposals
             JOIN prices
-            ON proposals.fail_market_acct = prices.market_acct
+              ON proposals.fail_market_acct = prices.market_acct
+            JOIN conditional_price_data_summary
+              ON conditional_price_data_summary.fail_market_acct = prices.market_acct
+            WHERE
+              prices.created_at IS NOT NULL
+              AND prices.created_at <= proposals.ended_at -- TODO: This is a poor filter given our indexing
+              AND 
+              CASE
+                WHEN conditional_price_data_summary.last_time_for_price IS NOT NULL
+                  THEN prices.created_at > conditional_price_data_summary.last_time_for_price
+                ELSE TRUE
+              END -- A check to see if we have any data yet, otherwise we know we need to fill all the data in
             GROUP BY proposal_acct, interv
           ),
           grouped AS
@@ -75,16 +125,16 @@ CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate(
           )
           SELECT proposal_acct,
                 interv,
-                (fmb_value).price AS fmb_price,
-                (fmb_value).base_amount AS fmb_base_amount,
-                (fmb_value).quote_amount AS fmb_quote_amount,
-                (fmb_value).prices_type AS fmb_prices_type,
-                (fmb_value).market_acct AS fmb_market_acct,
-                (pmb_value).price AS pmb_price,
-                (pmb_value).base_amount AS pmb_base_amount,
-                (pmb_value).quote_amount AS pmb_quote_amount,
-                (pmb_value).prices_type AS pmb_prices_type,
-                (pmb_value).market_acct AS pmb_market_acct
+                (fmb_value).price AS fail_market_price,
+                (fmb_value).base_amount AS fail_market_base_amount,
+                (fmb_value).quote_amount AS fail_market_quote_amount,
+                (fmb_value).prices_type AS fail_market_prices_type,
+                (fmb_value).market_acct AS fail_market_acct,
+                (pmb_value).price AS pass_market_price,
+                (pmb_value).base_amount AS pass_market_base_amount,
+                (pmb_value).quote_amount AS pass_market_quote_amount,
+                (pmb_value).prices_type AS pass_market_prices_type,
+                (pmb_value).market_acct AS pass_market_acct
           FROM ffilled
           WHERE (fmb_value).price IS NOT NULL AND (pmb_value).price IS NOT NULL
           ORDER BY proposal_acct, interv;
