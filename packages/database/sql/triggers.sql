@@ -12,20 +12,23 @@ CREATE TRIGGER generate_conditional_markets_chart_data
     NEW.prices.created_at,
   );
 
+CREATE TRIGGER after_insert_prices
+AFTER INSERT ON prices
+REFERENCING NEW TABLE AS new_data
+FOR EACH STATEMENT
+EXECUTE FUNCTION conditional_markets_chart_data_generate();
+
 -- TODO: Do I care about passing these values in???
-CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate(
-  market_acct VARCHAR,
-  base_amount BIGINT,
-  quote_amount BIGINT,
-  price NUMERIC,
-  prices_type VARCHAR,
-  created_at TIMESTAMP
-) RETURNS integer
-  LANGUAGE SQL
+CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate()
+RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+  rec RECORD;
+BEGIN
+  FOR rec IN SELECT * FROM new_data LOOP
     CASE
       -- TODO: Do we want to check on our other table if we already have this market data inserted, or do we care
       -- and just handle conflict dynamically?
-      WHEN prices_type = 'conditional'
+      WHEN rec.prices_type = 'conditional'
         THEN
           -- TODO: We need to only insert the missing gap data, so going all the way back may be
           -- over doing it... Dunno what to do here.
@@ -128,38 +131,38 @@ CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate(
               (array_agg(fmb_values) FILTER (WHERE (fmb_values).price IS NOT NULL) OVER (PARTITION BY proposal_acct ORDER BY interv DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING))[1] AS fmb_value,
               (array_agg(pmb_values) FILTER (WHERE (pmb_values).price IS NOT NULL) OVER (PARTITION BY proposal_acct ORDER BY interv DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING))[1] AS pmb_value
             FROM grouped
-          )
-          INSERT INTO proposal_conditional_price_data (
-            created_at,
-            proposal_acct,
-            pass_market_acct,
-            pass_market_price,
-            fail_market_acct,
-            fail_market_price
-          )
-          SELECT
-            interv::TIMESTAMPTZ AS created_at,
-            proposal_acct,
-            (pmb_value).market_acct AS pass_market_acct,
-            (pmb_value).price AS pass_market_price,
-            (fmb_value).market_acct AS fail_market_acct,
-            (fmb_value).price AS fail_market_price
-          FROM ffilled
-          WHERE (fmb_value).price IS NOT NULL AND (pmb_value).price IS NOT NULL
-          AND NOT EXISTS (
+          ),
+          inserted_price_data AS (
+            INSERT INTO proposal_conditional_price_data (
+              created_at,
+              proposal_acct,
+              pass_market_acct,
+              pass_market_price,
+              fail_market_acct,
+              fail_market_price
+            )
             SELECT
-              1
-            FROM
-              proposal_conditional_price_data
-            WHERE
-              created_at = interv::TIMESTAMPTZ
-              AND proposal_acct = proposal_acct
-              AND pass_market_acct = (pmb_value).market_acct
-              AND pass_market_price = (pmb_value).price
-              AND fail_market_acct = (fmb_value).market_acct
-              AND fail_market_price = (fmb_value).price 
+              interv::TIMESTAMPTZ AS created_at,
+              proposal_acct,
+              (pmb_value).market_acct AS pass_market_acct,
+              (pmb_value).price AS pass_market_price,
+              (fmb_value).market_acct AS fail_market_acct,
+              (fmb_value).price AS fail_market_price
+            FROM ffilled
+            WHERE (fmb_value).price IS NOT NULL AND (pmb_value).price IS NOT NULL
+            AND NOT EXISTS (
+              SELECT 1
+              FROM proposal_conditional_price_data
+              WHERE
+                created_at = interv::TIMESTAMPTZ
+                AND proposal_acct = proposal_acct
+                AND pass_market_acct = (pmb_value).market_acct
+                AND pass_market_price = (pmb_value).price
+                AND fail_market_acct = (fmb_value).market_acct
+                AND fail_market_price = (fmb_value).price
+            )
+            RETURNING created_at, proposal_acct, pass_market_acct, fail_market_acct
           )
-          ORDER BY proposal_acct, interv;
           -- Create our conditional liquidity table data
           -- proposal_conditional_liquidity_data
             -- created_at
@@ -171,11 +174,51 @@ CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate(
             -- fail_market_base_amount
             -- fail_market_base_amount
             -- fail_market_quote_amount
-      WHEN prices_type = 'spot'
+          INSERT INTO proposal_conditional_liquidity_data (
+            created_at,
+            proposal_acct,
+            pass_market_acct,
+            pass_market_base_amount,
+            pass_market_quote_amount,
+            fail_market_acct,
+            fail_market_base_amount,
+            fail_market_quote_amount
+          )
+          SELECT
+            interv::TIMESTAMPTZ AS created_at,
+            proposal_acct,
+            (pmb_value).market_acct AS pass_market_acct,
+            (pmb_value).base_amount AS pass_market_base_amount,
+            (pmb_value).quote_amount AS pass_market_quote_amount,
+            (fmb_value).market_acct AS fail_market_acct,
+            (fmb_value).base_amount AS fail_market_base_amount,
+            (fmb_value).quote_amount AS fail_market_quote_amount
+          FROM ffilled
+          WHERE (fmb_value).fail_market_base_amount IS NOT NULL AND (pmb_value).fail_market_base_amount IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM proposal_conditional_liquidity_data
+            WHERE
+              created_at = interv::TIMESTAMPTZ
+              AND proposal_acct = proposal_acct
+              AND pass_market_acct = (pmb_value).market_acct
+              AND pass_market_base_amount = (pmb_value).base_amount
+              AND pass_market_quote_amount = (pmb_value).quote_amount
+              AND fail_market_acct = (fmb_value).market_acct
+              AND fail_market_base_amount = (fmb_value).base_amount
+              AND fail_market_quote_amount = (fmb_value).quote_amount
+          )
+      WHEN rec.prices_type = 'spot'
         THEN
+          TRUE
           -- Create our spot price table data
           -- spot_price_data
             -- created_at
             -- spot_price
             -- mint_acct
-      ELSE NULL;
+      ELSE NULL
+    END CASE;
+  END LOOP;
+  RETURN NULL;
+END;
+$$;
