@@ -735,6 +735,58 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
 
+// These are filled tables generated from triggering events in other tables
+// the notion here is it's timebucketed data which ensures set interval with
+// forward filled data for chart display.
+// NOTE: This is aggregated together for a proposal such that displaying and
+// updating the data creates a seamless experience.
+// TBD: Should we include twap, spot in here as well to just fill in the
+// data which at some point may be demanded?
+export const proposalPriceData = pgTable("proposal_conditional_price_data", {
+  createdAt: timestamp('created_at', { precision: 6, withTimezone: true }),
+  proposalAcct: pubkey("proposal_acct").references(
+    () => proposals.proposalAcct
+  ),
+  passMarketAcct: pubkey("pass_market_acct").references(() => markets.marketAcct),
+  passMarketPrice: numeric("pass_market_price", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  failMarketAcct: pubkey("fail_market_acct").references(() => markets.marketAcct),
+  failMarketPrice: numeric("fail_market_price", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+});
+
+// This is used for historical liquidity, but at current the WS would just
+// need to subscribe to the latest value here to get the proper makeup.
+export const proposalLiquidityData = pgTable("proposal_conditional_liquidity_data", {
+  createdAt: timestamp('created_at', { precision: 6, withTimezone: true }),
+  proposalAcct: pubkey("proposal_acct").references(
+    () => proposals.proposalAcct
+  ),
+  passMarketAcct: pubkey("pass_market_acct").references(() => markets.marketAcct),
+  passMarketBaseAmount: bigint("pass_market_base_amount", { mode: "bigint" }),
+  passMarketQuoteAmount: bigint("pass_market_quote_amount", { mode: "bigint" }),
+  failMarketAcct: pubkey("fail_market_acct").references(() => markets.marketAcct),
+  failMarketBaseAmount: bigint("fail_market_base_amount", { mode: "bigint" }),
+  failMarketQuoteAmount: bigint("fail_market_quote_amount", { mode: "bigint" }),
+});
+
+// This too is to be used in sparklines as well as chart data for spot price
+export const spotPriceData = pgTable("spot_price_data", {
+  createdAt: timestamp('created_at', { precision: 6, withTimezone: true }),
+  spotPrice: numeric("spot_price", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  mintAcct: pubkey("mint_acct").references(() => tokens.mintAcct)
+});
+
+// NOTICE: This is missing twaps and other things which may be of use for charting, but for now
+// we're not including it as it's not in the UI
+
 // TODO: This is commented out give these are timescale views, but I wanted to include them
 // export const twapChartData = pgView('twap_chart_data')
 // export const pricesChartData = pgView('prices_chart_data')
