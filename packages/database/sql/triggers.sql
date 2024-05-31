@@ -2,15 +2,17 @@ CREATE TRIGGER generate_conditional_markets_chart_data
   AFTER INSERT ON prices
   REFERENCING NEW TABLE AS generated
   FOR EACH ROW
+  -- TODO: Do we care about passing these values in???
   EXECUTE FUNCTION conditional_markets_chart_data_generate(
-    prices.market_acct,
-    prices.base_amount,
-    prices.quote_amount,
-    prices.price,
-    prices.prices_type,
-    prices.created_at,
+    NEW.prices.market_acct,
+    NEW.prices.base_amount,
+    NEW.prices.quote_amount,
+    NEW.prices.price,
+    NEW.prices.prices_type,
+    NEW.prices.created_at,
   );
 
+-- TODO: Do I care about passing these values in???
 CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate(
   market_acct VARCHAR,
   base_amount BIGINT,
@@ -127,15 +129,36 @@ CREATE OR REPLACE FUNCTION conditional_markets_chart_data_generate(
               (array_agg(pmb_values) FILTER (WHERE (pmb_values).price IS NOT NULL) OVER (PARTITION BY proposal_acct ORDER BY interv DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING))[1] AS pmb_value
             FROM grouped
           )
-          SELECT
+          INSERT INTO proposal_conditional_price_data (
+            created_at,
             proposal_acct,
+            pass_market_acct,
+            pass_market_price,
+            fail_market_acct,
+            fail_market_price
+          )
+          SELECT
             interv::TIMESTAMPTZ AS created_at,
+            proposal_acct,
             (pmb_value).market_acct AS pass_market_acct,
             (pmb_value).price AS pass_market_price,
-            (fmb_value).price AS fail_market_price,
-            (fmb_value).market_acct AS fail_market_acct
+            (fmb_value).market_acct AS fail_market_acct,
+            (fmb_value).price AS fail_market_price
           FROM ffilled
           WHERE (fmb_value).price IS NOT NULL AND (pmb_value).price IS NOT NULL
+          AND NOT EXISTS (
+            SELECT
+              1
+            FROM
+              proposal_conditional_price_data
+            WHERE
+              created_at = interv::TIMESTAMPTZ
+              AND proposal_acct = proposal_acct
+              AND pass_market_acct = (pmb_value).market_acct
+              AND pass_market_price = (pmb_value).price
+              AND fail_market_acct = (fmb_value).market_acct
+              AND fail_market_price = (fmb_value).price 
+          )
           ORDER BY proposal_acct, interv;
           -- Create our conditional liquidity table data
           -- proposal_conditional_liquidity_data
