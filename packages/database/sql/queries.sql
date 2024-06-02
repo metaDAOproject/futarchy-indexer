@@ -1,6 +1,18 @@
-WITH proposal_acct AS ( 
-	SELECT 'GwDTdh3CmxuRjSjvtYAaifdquS1Zwm34W2MiBVAAV4CF' AS proposal_acct
-), proposal_date AS (
+CREATE OR REPLACE FUNCTION get_proposal_bars(_proposal_acct VARCHAR, _bar_size INTERVAL, _start_time TIMESTAMPTZ DEFAULT NULL)
+RETURNS TABLE (bar_start_time    TIMESTAMPTZ,
+               proposal_acct     VARCHAR,
+               pass_market_acct  VARCHAR,
+               pass_price        NUMERIC,
+               pass_base_amount  BIGINT,
+               pass_quote_amount BIGINT,
+               fail_market_acct  VARCHAR,
+               fail_price        NUMERIC,
+               fail_base_amount  BIGINT,
+               fail_quote_amount BIGINT)
+LANGUAGE SQL
+AS
+$$
+WITH proposal_date AS (
 	SELECT
 		proposal_acct,
 		pass_market_acct,
@@ -8,7 +20,7 @@ WITH proposal_acct AS (
 		MIN(created_at)::TIMESTAMPTZ AS created_at,
 		MAX(ended_at)::TIMESTAMPTZ AS ended_at
 	FROM proposals
-	WHERE proposal_acct = (SELECT proposal_acct FROM proposal_acct)
+	WHERE proposal_acct = _proposal_acct
 	GROUP BY proposal_acct, pass_market_acct, fail_market_acct
 	LIMIT 1
 ), series AS (
@@ -16,13 +28,13 @@ WITH proposal_acct AS (
 		time_series_generated
 	FROM
 		GENERATE_SERIES(
-			TIME_BUCKET(INTERVAL '15 SECONDS', (SELECT created_at FROM proposal_date)),
-			TIME_BUCKET(INTERVAL '15 SECONDS', (SELECT ended_at FROM proposal_date)),
-			INTERVAL '30 SECONDS'
+			TIME_BUCKET(_bar_size, (SELECT created_at FROM proposal_date)),
+			TIME_BUCKET(_bar_size, (SELECT ended_at FROM proposal_date)),
+			_bar_size
 		) AS time_series_generated
 ), matching_pass_data AS (
 	SELECT
-		TIME_BUCKET(INTERVAL '30 SECONDS', created_at) AS created_at,
+		TIME_BUCKET(_bar_size, created_at) AS created_at,
 		market_acct,
 		LAST(prices.price, price) AS price,
 		base_amount,
@@ -34,7 +46,7 @@ WITH proposal_acct AS (
 	GROUP BY created_at, market_acct, base_amount, quote_amount
 ), matching_fail_data AS (
 	SELECT
-		TIME_BUCKET(INTERVAL '30 SECONDS', created_at) AS created_at,
+		TIME_BUCKET(_bar_size, created_at) AS created_at,
 		market_acct,
 		LAST(prices.price, price) AS price,
 		base_amount,
@@ -106,7 +118,7 @@ WITH proposal_acct AS (
 )
 SELECT
 	forward_fill_pass.created_at,
-	(SELECT proposal_acct FROM proposal_acct) AS proposal_acct,
+	_proposal_acct AS proposal_acct,
 	forward_fill_pass.market_acct AS pass_market_acct,
 	(forward_fill_pass.price) AS pass_price,
 	(forward_fill_pass.base_amount) AS pass_base_amount,
@@ -121,3 +133,68 @@ WHERE
 	forward_fill_fail.market_acct IS NOT NULL
 	AND forward_fill_pass.market_acct IS NOT NULL
 ORDER BY forward_fill_pass.created_at DESC;
+$$;
+
+CREATE TABLE proposal_bars
+(
+  proposal_acct     VARCHAR,
+  bar_size          INTERVAL,
+  bar_start_time    TIMESTAMPTZ,
+  pass_market_acct  VARCHAR,
+  pass_price        NUMERIC,
+  pass_base_amount  BIGINT,
+  pass_quote_amount BIGINT,
+  fail_market_acct  VARCHAR,
+  fail_price        NUMERIC,
+  fail_base_amount  BIGINT,
+  fail_quote_amount BIGINT,
+  PRIMARY KEY (proposal_acct, bar_size, bar_start_time)   
+);
+
+CREATE OR REPLACE FUNCTION refresh_all_proposal_bars()
+RETURNS VOID
+LANGUAGE PLPGSQL 
+AS
+$$
+DECLARE
+  _proposal_acct VARCHAR;
+BEGIN  
+  FOR _proposal_acct IN
+    SELECT proposal_acct FROM proposals
+  LOOP
+    WITH bars AS (
+        SELECT DISTINCT ON (proposal_acct, bar_start_time) * FROM get_proposal_bars(_proposal_acct, INTERVAL '30 seconds')
+    )
+    INSERT INTO proposal_bars (
+        proposal_acct, bar_size, bar_start_time, 
+        pass_market_acct, pass_price, pass_base_amount, pass_quote_amount, 
+        fail_market_acct, fail_price, fail_base_amount, fail_quote_amount
+    )
+    SELECT 
+        proposal_acct, INTERVAL '30 seconds', bar_start_time, 
+        pass_market_acct, pass_price, pass_base_amount, pass_quote_amount, 
+        fail_market_acct, fail_price, fail_base_amount, fail_quote_amount
+    FROM bars
+    ON CONFLICT (proposal_acct, bar_size, bar_start_time)
+    DO UPDATE SET 
+        pass_market_acct = EXCLUDED.pass_market_acct,
+        pass_price = EXCLUDED.pass_price,
+        pass_base_amount = EXCLUDED.pass_base_amount,
+        pass_quote_amount = EXCLUDED.pass_quote_amount,
+        fail_market_acct = EXCLUDED.fail_market_acct,
+        fail_price = EXCLUDED.fail_price,
+        fail_base_amount = EXCLUDED.fail_base_amount,
+        fail_quote_amount = EXCLUDED.fail_quote_amount;
+  END LOOP;
+END;
+$$;
+
+CREATE FUNCTION refresh_all_proposal_bars_action(job_id INT DEFAULT NULL, config JSONB DEFAULT NULL)
+RETURNS VOID
+LANGUAGE SQL
+AS
+$$
+  SELECT refresh_all_proposal_bars();
+$$;
+
+SELECT add_job('refresh_all_proposal_bars_action', '15s');
