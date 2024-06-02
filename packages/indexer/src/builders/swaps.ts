@@ -11,13 +11,13 @@ import {
   TakesRecord,
   TransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
-import { PriceMath, SwapType } from "@metadaoproject/futarchy";
+import { PriceMath } from "@metadaoproject/futarchy";
 import { BN } from "@coral-xyz/anchor";
 import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
-import { connection } from "../connection";
 import {
   SERIALIZED_TRANSACTION_LOGIC_VERSION,
   getTransaction,
+  parseFormattedInstructionArgsData,
   serialize,
 } from "../transaction/serializer";
 import { logger } from "../logger";
@@ -101,10 +101,7 @@ export class SwapPersistable {
 }
 
 export class SwapBuilder {
-  private ammParser: SolanaParser;
-  constructor(ammParser: SolanaParser) {
-    this.ammParser = ammParser;
-  }
+  constructor() {}
   async withSignatureAndCtx(
     signature: string,
     ctx: Context
@@ -124,8 +121,14 @@ export class SwapBuilder {
         return Err({ type: SwapPersistableError.AlreadyPersistedSwap });
       }
 
-      const ixs = await this.ammParser.parseTransaction(connection, signature);
-      const ixTypes = ixs?.reduce(
+      const txRes = await getTransaction(signature);
+      if (!txRes.success) {
+        return Err({ type: SwapPersistableError.TransactionParseError });
+      }
+
+      const tx = txRes.ok;
+
+      const ixTypes = tx.instructions?.reduce(
         (prev, currIx) => {
           // Check for 'swap' instruction
           if (currIx.name === "swap") {
@@ -145,31 +148,61 @@ export class SwapBuilder {
         { swap: false, addLiquidity: false, removeLiquidity: false }
       );
       if (ixTypes?.swap) {
-        const relatedIx = ixs?.find((i) => i.name === "swap");
-        const marketAcct = relatedIx?.accounts.find((a) => a.name === "amm");
+        const relatedIx = tx.instructions?.find((i) => i.name === "swap");
+        const marketAcct = relatedIx?.accountsWithData.find(
+          (a) => a.name === "amm"
+        );
         if (!marketAcct) return Err({ type: "missing data" });
-        const userAcct = relatedIx?.accounts.find((a) => a.name === "user");
+        const userAcct = relatedIx?.accountsWithData.find(
+          (a) => a.name === "user"
+        );
         if (!userAcct) return Err({ type: "missing data" });
+        // TODO fix
+        const userBaseAcct = relatedIx?.accountsWithData.find(
+          (a) => a.name === "userBaseAccount"
+        );
+        if (!userBaseAcct) return Err({ type: "missing data" });
+        const userQuoteAcct = relatedIx?.accountsWithData.find(
+          (a) => a.name === "userQuoteAccount"
+        );
+        if (!userQuoteAcct) return Err({ type: "missing data" });
+
         if (!relatedIx?.args) return Err({ type: "missing data" });
-        const args = relatedIx.args as {
-          args: {
-            swapType: SwapType;
-            inputAmount: BN;
-            outputAmountMin: BN;
-          };
-        };
+        const swapArgs = relatedIx.args.find((a) => a.type === "SwapArgs");
+        if (!swapArgs) return Err({ type: "missing swap args" });
+        const swapArgsParsed = parseFormattedInstructionArgsData<{
+          swapType: string;
+          inputAmount: number;
+          outputAmount: number;
+        }>(swapArgs?.data ?? "");
         // determine side
-        const side = args.args.swapType.buy ? OrderSide.BID : OrderSide.ASK;
+        const side =
+          swapArgsParsed?.swapType === "Buy" ? OrderSide.BID : OrderSide.ASK;
 
-        // get the base/quote amount (NOTE: this can be confusing given the directionality, but solved based on side)
-        let baseAmount = args.args.outputAmountMin; // What you're trading INTO (output)
-        let quoteAmount = args.args.inputAmount; // What you're trading FROM (input)
+        // get balances
+        const userBaseAcctWithBalances = tx.accounts.find(
+          (a) => a.pubkey === userBaseAcct.pubkey
+        );
+        const userBasePreBalance =
+          userBaseAcctWithBalances?.preTokenBalance?.amount;
+        const userBasePostBalance =
+          userBaseAcctWithBalances?.postTokenBalance?.amount;
+        const userQuoteAcctWithBalances = tx.accounts.find(
+          (a) => a.pubkey === userQuoteAcct.pubkey
+        );
+        const userQuotePreBalance =
+          userQuoteAcctWithBalances?.preTokenBalance?.amount;
+        const userQuotePostBalance =
+          userQuoteAcctWithBalances?.postTokenBalance?.amount;
 
-        // if we're selling we need to take the inverse
-        if (side === OrderSide.ASK) {
-          baseAmount = args.args.inputAmount; // Trading FROM
-          quoteAmount = args.args.outputAmountMin; // Trading TO
-        }
+        //TODO you need to populate post and prebalance here based on the txn balances perhaps...
+        const baseAmount = new BN(
+          (userBasePostBalance ?? BigInt(0)) - (userBasePreBalance ?? BigInt(0))
+        ).abs();
+        const quoteAmount = new BN(
+          (userQuotePostBalance ?? BigInt(0)) -
+            (userQuotePreBalance ?? BigInt(0))
+        ).abs();
 
         // determine price
         // NOTE: This is estimated given the output is a min expected value
@@ -178,7 +211,7 @@ export class SwapBuilder {
           db
             .select()
             .from(schema.markets)
-            .where(eq(schema.markets.marketAcct, marketAcct.pubkey.toBase58()))
+            .where(eq(schema.markets.marketAcct, marketAcct.pubkey))
             .execute()
         );
         if (marketAcctRecord.length === 0) {
@@ -219,12 +252,12 @@ export class SwapBuilder {
         // TODO: Need to likely handle rounding.....
         // index a swap here
         const swapOrder: OrdersRecord = {
-          marketAcct: marketAcct.pubkey.toBase58(),
+          marketAcct: marketAcct.pubkey,
           orderBlock: BigInt(ctx.slot),
           orderTime: now,
           orderTxSig: signature,
           quotePrice: price.toString(),
-          actorAcct: userAcct.pubkey.toBase58(),
+          actorAcct: userAcct.pubkey,
           // TODO: If and only if the transaction is SUCCESSFUL does this value equal this..
           filledBaseAmount: BigInt(baseAmount.toNumber()),
           isActive: false,
@@ -235,7 +268,7 @@ export class SwapBuilder {
         };
 
         const swapTake: TakesRecord = {
-          marketAcct: marketAcct.pubkey.toBase58(),
+          marketAcct: marketAcct.pubkey,
           // This will always be the DAO / proposal base token, so while it may be NICE to have a key
           // to use to reference on data aggregate, it's not directly necessary.
           baseAmount: BigInt(baseAmount.toNumber()), // NOTE: This is always the base token given we have a BASE / QUOTE relationship
