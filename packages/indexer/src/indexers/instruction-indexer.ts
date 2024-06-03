@@ -1,11 +1,14 @@
 import { VersionedTransactionResponse } from "@solana/web3.js";
 import { Idl } from "@coral-xyz/anchor";
 import { Result, TaggedUnion } from "../match";
+import { IDL } from "./common";
 
 export const Ok = { indexed: true };
 export const Err = { indexed: false };
 
-export type InstructionIndexer<IDL extends Idl> = {
+type InstructionIDL = Idl | IDL;
+
+export type InstructionIndexer<IDL extends InstructionIDL> = {
   readonly PROGRAM_NAME: string;
   readonly PROGRAM_ID: string;
   readonly PROGRAM_IDL: IDL;
