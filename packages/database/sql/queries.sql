@@ -25,6 +25,7 @@ WITH proposal_date AS (
 	LIMIT 1
 ), series AS (
 	SELECT
+    _proposal_acct AS proposal_acct,
 		time_series_generated
 	FROM
 		GENERATE_SERIES(
@@ -35,6 +36,7 @@ WITH proposal_date AS (
 ), matching_pass_data AS (
 	SELECT
 		TIME_BUCKET(_bar_size, created_at) AS created_at,
+    _proposal_acct AS proposal_acct,
 		market_acct,
 		LAST(prices.price, price) AS price,
 		base_amount,
@@ -47,6 +49,7 @@ WITH proposal_date AS (
 ), matching_fail_data AS (
 	SELECT
 		TIME_BUCKET(_bar_size, created_at) AS created_at,
+    _proposal_acct AS proposal_acct,
 		market_acct,
 		LAST(prices.price, price) AS price,
 		base_amount,
@@ -58,63 +61,50 @@ WITH proposal_date AS (
 	GROUP BY created_at, market_acct, base_amount, quote_amount
 ), aggregate_pass_data_with_series AS (
 	SELECT
-		created_at,
+		time_series_generated AS created_at,
+		series.proposal_acct AS proposal_acct,
 		market_acct,
 		price,
 		base_amount,
 		quote_amount
-	FROM matching_pass_data
-	UNION
-	SELECT
-		time_series_generated created_at,
-		NULL market_acct,
-		NULL price,
-		NULL base_amount,
-		NULL quote_amount
-	FROM
-		series
+	FROM series
+	LEFT JOIN matching_pass_data ON time_series_generated = created_at
 	ORDER BY created_at DESC
 ), aggregate_fail_data_with_series AS (
 	SELECT
-		created_at,
+		time_series_generated AS created_at,
+		series.proposal_acct AS proposal_acct,
 		market_acct,
 		price,
 		base_amount,
 		quote_amount
-	FROM matching_fail_data
-	UNION
-	SELECT
-		time_series_generated created_at,
-		NULL market_acct,
-		NULL price,
-		NULL base_amount,
-		NULL quote_amount
-	FROM
-		series
+	FROM series
+	LEFT JOIN matching_fail_data ON time_series_generated = created_at
 	ORDER BY created_at DESC
 ), forward_fill_pass AS (
 	SELECT
 		created_at,
-		market_acct,
+		proposal_acct,
+		MAX(market_acct) FILTER (WHERE market_acct IS NOT NULL) OVER lookback AS market_acct,
 		MAX(price) FILTER (WHERE price IS NOT NULL) OVER lookback AS price,
 		MAX(base_amount) FILTER (WHERE base_amount IS NOT NULL) OVER lookback AS base_amount,
 		MAX(quote_amount) FILTER (WHERE quote_amount IS NOT NULL) OVER lookback AS quote_amount
 	FROM
 		aggregate_pass_data_with_series
-	GROUP BY created_at, market_acct, price, base_amount, quote_amount
-	WINDOW lookback AS (PARTITION BY market_acct, created_at ORDER BY created_at DESC)
-	
+	GROUP BY created_at, proposal_acct, market_acct, price, base_amount, quote_amount
+	WINDOW lookback AS (PARTITION BY proposal_acct ORDER BY created_at DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
 ), forward_fill_fail AS (
 	SELECT
 		created_at,
-		market_acct,
+		proposal_acct,
+		MAX(market_acct) FILTER (WHERE market_acct IS NOT NULL) OVER lookback AS market_acct,
 		MAX(price) FILTER (WHERE price IS NOT NULL) OVER lookback AS price,
 		MAX(base_amount) FILTER (WHERE base_amount IS NOT NULL) OVER lookback AS base_amount,
 		MAX(quote_amount) FILTER (WHERE quote_amount IS NOT NULL) OVER lookback AS quote_amount
 	FROM
 		aggregate_fail_data_with_series
-	GROUP BY created_at, market_acct, price, base_amount, quote_amount
-	WINDOW lookback AS (PARTITION BY market_acct, created_at ORDER BY created_at DESC)
+	GROUP BY created_at, proposal_acct, market_acct, price, base_amount, quote_amount
+	WINDOW lookback AS (PARTITION BY proposal_acct ORDER BY created_at DESC ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
 )
 SELECT
 	forward_fill_pass.created_at,
@@ -129,9 +119,6 @@ SELECT
 	forward_fill_fail.quote_amount AS fail_quote_amount
 FROM forward_fill_pass
 JOIN forward_fill_fail ON forward_fill_pass.created_at = forward_fill_fail.created_at
-WHERE 
-	forward_fill_fail.market_acct IS NOT NULL
-	AND forward_fill_pass.market_acct IS NOT NULL
 ORDER BY forward_fill_pass.created_at DESC;
 $$;
 
