@@ -1,15 +1,25 @@
 import {
+  AccountMeta,
   CompiledInstruction,
   ConfirmedTransactionMeta,
   Message,
   MessageAccountKeys,
+  MessageCompiledInstruction,
+  PublicKey,
   VersionedTransactionResponse,
 } from "@solana/web3.js";
 import { Ok, Err, Result } from "../match";
 import { z } from "zod";
 import { resolveAccounts, ResolveAccountsError } from "./account-resolver";
 import * as base58 from "bs58";
-import { connection } from "../connection";
+import { connection, provider } from "../connection";
+import { BorshInstructionCoder, Idl, Program } from "@coral-xyz/anchor";
+import { PROGRAM_ID_TO_IDL_MAP } from "../constants";
+import {
+  InstructionDisplay,
+  Instruction as AnchorInstruction,
+} from "@coral-xyz/anchor/dist/cjs/coder/borsh/instruction";
+import { InstructionFormatter } from "./instruction-formatter";
 
 /**
  * This version should be bumped every time we update this file.
@@ -53,23 +63,37 @@ export const SerializableTokenMeta = z.strictObject({
   decimals: z.number(),
 });
 
+/**
+ * on the transaction level this will not have a name, but it will have the pre and post balances.
+ * At the instruction level, we WILL see the name, but we will not have pre and post balances.
+ */
 export const SerializableAccountMeta = z.strictObject({
+  name: z.string().optional(),
   pubkey: z.string(),
-  isSigner: z.boolean(),
-  isWriteable: z.boolean(),
+  isSigner: z.boolean().optional(),
+  isWriteable: z.boolean().optional(),
   // lamport balances (rent)
-  preBalance: z.bigint(),
-  postBalance: z.bigint(),
+  preBalance: z.bigint().optional(),
+  postBalance: z.bigint().optional(),
   // if the account was an ATA
   preTokenBalance: SerializableTokenMeta.optional(),
   postTokenBalance: SerializableTokenMeta.optional(),
 });
 
+export const SerializableInstructionArg = z.strictObject({
+  name: z.string(),
+  type: z.string(),
+  data: z.string(),
+});
+
 export const SerializableInstruction = z.strictObject({
+  name: z.string(),
   stackHeight: z.number(),
   programIdIndex: z.number(),
   data: z.string(),
   accounts: z.array(z.number()),
+  accountsWithData: z.array(SerializableAccountMeta),
+  args: z.array(SerializableInstructionArg),
 });
 
 export const SerializableTransactionError = z
@@ -201,10 +225,11 @@ function parseTokenBalances(
   );
 }
 
-function parseInstructions(
+async function parseInstructions(
   outer: Message["compiledInstructions"],
-  inner: NonNullable<ConfirmedTransactionMeta["innerInstructions"]>
-): Result<Instruction[], GetTransactionError> {
+  inner: NonNullable<ConfirmedTransactionMeta["innerInstructions"]>,
+  accounts: AccountMeta[]
+): Promise<Result<Instruction[], GetTransactionError>> {
   const innerInstructionMap: Record<number, CompiledInstruction[]> = {};
   for (let i = 0; i < inner.length; ++i) {
     const { index, instructions } = inner[i];
@@ -227,11 +252,35 @@ function parseInstructions(
         outerInstruction: curOuter,
       });
     }
+    const programAccount = accounts[curOuter.programIdIndex].pubkey;
+    const idl = await getIdlForProgram(programAccount);
+    const outerIxWithDisplay = getIxWithDisplay(
+      {
+        ...curOuter,
+        data: Buffer.from(curOuter.data),
+        accounts: curOuter.accountKeyIndexes,
+      },
+      idl,
+      accounts
+    );
+
+    const outerName = outerIxWithDisplay?.instruction.name ?? "unknown";
+    const outerArgs = outerIxWithDisplay?.instructionDisplay?.args ?? [];
+    const outerAccountsWithData =
+      outerIxWithDisplay?.instructionDisplay?.accounts ?? [];
     instructions.push({
       stackHeight: 1,
       programIdIndex: curOuter.programIdIndex,
       data: base58.encode(curOuter.data),
       accounts: curOuter.accountKeyIndexes,
+      name: outerName,
+      args: outerArgs,
+      // we do not have balances here
+      accountsWithData: outerAccountsWithData.map(({ isWritable, ...a }) => ({
+        ...a,
+        isWriteable: isWritable,
+        pubkey: a.pubkey.toBase58(),
+      })),
     });
     let curStackHeight = 1;
     const curInnerInstructions = innerInstructionMap[outerI] ?? [];
@@ -252,16 +301,136 @@ function parseInstructions(
           innerStackHeight,
         });
       }
+      const programAccount = accounts[curInner.programIdIndex].pubkey;
+      const idl = await getIdlForProgram(programAccount);
+      const innerIxWithDisplay = getIxWithDisplay(
+        {
+          ...curOuter,
+          data: Buffer.from(curOuter.data),
+          accounts: curOuter.accountKeyIndexes,
+        },
+        idl,
+        accounts
+      );
+
+      const innerName = innerIxWithDisplay?.instruction.name ?? "unknown";
+      const innerArgs = innerIxWithDisplay?.instructionDisplay?.args ?? [];
+      const innerAccountsWithData =
+        innerIxWithDisplay?.instructionDisplay?.accounts ?? [];
+
       instructions.push({
         stackHeight: innerStackHeight,
         programIdIndex: curInner.programIdIndex,
         data: curInner.data,
         accounts: curInner.accounts,
+        name: innerName,
+        args: innerArgs,
+        // we do not have balances here
+        accountsWithData: innerAccountsWithData.map(({ isWritable, ...a }) => ({
+          ...a,
+          isWriteable: isWritable,
+          pubkey: a.pubkey.toBase58(),
+        })),
       });
       curStackHeight = innerStackHeight;
     }
   }
   return Ok(instructions);
+}
+
+async function getIdlForProgram(
+  programAccount: PublicKey
+): Promise<Idl | null> {
+  try {
+    let idl: Idl | null = PROGRAM_ID_TO_IDL_MAP[programAccount.toBase58()];
+    if (!idl) {
+      idl = await Program.fetchIdl(programAccount, provider);
+    }
+    return idl;
+  } catch (e) {
+    return null;
+  }
+}
+
+export type IdlAccount = {
+  name: string;
+  isMut: boolean;
+  isSigner: boolean;
+};
+
+export type IdlAccounts = {
+  name: string;
+  accounts: IdlAccount[];
+};
+
+/**
+ * @private
+ */
+export type IdlAccountItem = IdlAccounts | IdlAccount;
+
+function getIxWithDisplay(
+  instruction: { accounts: number[]; data: Buffer },
+  idl: Idl | null,
+  accountMetas: AccountMeta[]
+): {
+  instruction: AnchorInstruction;
+  instructionDisplay: InstructionDisplay | null;
+} | null {
+  if (!idl) {
+    return null;
+  }
+  const coder = new BorshInstructionCoder(idl);
+  const decodedIx = coder.decode(Buffer.from(instruction.data));
+  if (!decodedIx) {
+    return null;
+  }
+
+  const ix = idl.instructions.find((instr) => instr.name === decodedIx.name);
+  const flatIdlAccounts = flattenIdlAccounts(<IdlAccountItem[]>ix?.accounts);
+  const accounts = instruction.accounts.map((number, idx) => {
+    const meta = accountMetas[number];
+    if (idx < flatIdlAccounts.length) {
+      return {
+        name: flatIdlAccounts[idx].name,
+        ...meta,
+      };
+    }
+    // "Remaining accounts" are unnamed in Anchor.
+    else {
+      return {
+        name: `Remaining ${idx - flatIdlAccounts.length}`,
+        ...meta,
+      };
+    }
+  });
+
+  const ixDisplay = coder.format(decodedIx, accounts);
+
+  return {
+    instruction: decodedIx,
+    instructionDisplay: ixDisplay,
+  };
+}
+
+function flattenIdlAccounts(
+  accounts: IdlAccountItem[],
+  prefix?: string
+): IdlAccount[] {
+  return accounts
+    .map((account) => {
+      const accName = account.name;
+      if (Object.prototype.hasOwnProperty.call(account, "accounts")) {
+        const newPrefix = prefix ? `${prefix} > ${accName}` : accName;
+
+        return flattenIdlAccounts((<IdlAccounts>account).accounts, newPrefix);
+      } else {
+        return {
+          ...(<IdlAccount>account),
+          name: prefix ? `${prefix} > ${accName}` : accName,
+        };
+      }
+    })
+    .flat();
 }
 
 export async function getTransaction(
@@ -312,6 +481,7 @@ export async function getTransaction(
     const cur = accountsRaw.get(i);
     const pubkey = cur!.toBase58();
     accounts.push({
+      name: "",
       pubkey,
       isSigner: txResponse.transaction.message.isAccountSigner(i),
       isWriteable: txResponse.transaction.message.isAccountWritable(i),
@@ -322,9 +492,16 @@ export async function getTransaction(
     });
   }
 
-  const instructionsResult = parseInstructions(
+  const accountMetas: AccountMeta[] = accounts.map((a) => ({
+    pubkey: new PublicKey(a.pubkey),
+    isWritable: a.isWriteable ?? false,
+    isSigner: a.isSigner ?? false,
+  }));
+
+  const instructionsResult = await parseInstructions(
     txResponse.transaction.message.compiledInstructions,
-    txResponse.meta?.innerInstructions!
+    txResponse.meta?.innerInstructions!,
+    accountMetas
   );
   if (!instructionsResult.success) {
     return instructionsResult;
@@ -352,6 +529,18 @@ export async function getTransaction(
       error: parseResult.error,
     });
   }
+}
+
+export function parseFormattedInstructionArgsData<T>(data: string) {
+  let jsonString = data.replace(/'/g, '"');
+
+  jsonString = jsonString.replace(/(\w+):/g, '"$1":');
+
+  jsonString = jsonString.replace(/:\s*(\w+)(?=,|})/g, (match, p1) => {
+    return isNaN(p1) ? `: "${p1}"` : `: ${p1}`;
+  });
+
+  return JSON.parse(jsonString) as T;
 }
 
 /*
