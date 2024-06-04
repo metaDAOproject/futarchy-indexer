@@ -6,7 +6,7 @@ import {
 } from "../../connection";
 import { usingDb, schema, eq, and, isNull } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import {
   ConditionalVaultRecord,
   DaoRecord,
@@ -24,7 +24,6 @@ import {
 } from "@solana/spl-token";
 import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
-import { SLOTS_TO_DAYS } from "../../constants";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -35,47 +34,21 @@ export enum AutocratDaoIndexerError {
   NothingToInsertError = "NothingToInsertError",
 }
 
-//TODO we want to make an RPC call for the block time and use that as the createdAt
-// then cascade that by using slots per proposal times 4000 ms
+let connection = new Connection(process.env.RPC_ENDPOINT!!, "confirmed");
+
 export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "30 * * * * *",
   index: async () => {
+
     try {
+      const currentSlot = await connection.getSlot()
+      const blockTime = await connection.getBlockTime(currentSlot)
+      const currentTime = blockTime ? new Date(blockTime) : new Date()
+
       console.log("Autocrat proposal indexer");
       const dbProposals: ProposalRecord[] = await usingDb((db) =>
         db.select().from(schema.proposals).execute()
       );
-
-      for (const dbProposal of dbProposals) {
-        const dao = (
-          await usingDb((db) =>
-            db
-              .select()
-              .from(schema.daos)
-              .where(eq(schema.daos.daoAcct, dbProposal.daoAcct))
-              .execute()
-          )
-        )[0];
-        if (
-          !dbProposal.endedAt &&
-          dbProposal.createdAt &&
-          dao.slotsPerProposal
-        ) {
-          // we can update endedAt since we don't have it yet
-          const endedAtDate = dbProposal.createdAt;
-          endedAtDate.setDate(
-            dbProposal.createdAt?.getDate() +
-              SLOTS_TO_DAYS[dao.slotsPerProposal.toString()]
-          );
-          await usingDb((db) =>
-            db
-              .update(schema.proposals)
-              .set({ endedAt: endedAtDate })
-              .where(eq(schema.proposals.proposalAcct, dbProposal.proposalAcct))
-              .execute()
-          );
-        }
-      }
 
       let protocolV0_3 = rpcReadClient.futarchyProtocols.find(
         (protocol) => protocol.deploymentVersion == "V0.3"
@@ -211,7 +184,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             mintAcct: token.toString(),
             supply: storedMint.supply,
             imageUrl: imageUrl ? imageUrl : "",
-            updatedAt: new Date(),
+            updatedAt: currentTime,
           };
           tokensToInsert.push(tokenToInsert);
         }
@@ -233,7 +206,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         ]) {
           let tokenAcct: TokenAcctRecord = {
             mintAcct: mint.toString(),
-            updatedAt: new Date(),
+            updatedAt: currentTime,
             tokenAcct: getAssociatedTokenAddressSync(
               mint,
               owner,
@@ -362,11 +335,37 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       console.log("inserted proposals");
 
       for (const onChainProposal of onChainProposals) {
+        if (onChainProposal.account.state.pending) {
+          const { slotsPerProposal } = (await usingDb((db) =>
+            db
+              .select({ slotsPerProposal: schema.daos.slotsPerProposal })
+              .from(schema.daos)
+              .where(eq(schema.daos.daoAcct, onChainProposal.account.dao.toBase58()))
+              .execute()
+          ))[0];
+          if (onChainProposal.account.slotEnqueued + slotsPerProposal >= currentSlot) {
+            await usingDb((db) =>
+              db
+                .update(schema.proposals)
+                .set({ endedAt: currentTime })
+                .where(
+                  and(
+                    eq(
+                      schema.proposals.proposalAcct,
+                      onChainProposal.publicKey.toString()
+                    ),
+                    isNull(schema.proposals.endedAt)
+                  )
+                )
+                .execute()
+            );
+          }
+        }
         if (onChainProposal.account.state.passed) {
           await usingDb((db) =>
             db
               .update(schema.proposals)
-              .set({ status: ProposalStatus.Passed, completedAt: new Date() })
+              .set({ status: ProposalStatus.Passed, completedAt: currentTime })
               .where(
                 and(
                   eq(
@@ -410,7 +409,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           await usingDb((db) =>
             db
               .update(schema.proposals)
-              .set({ status: ProposalStatus.Failed, completedAt: new Date() })
+              .set({ status: ProposalStatus.Failed, completedAt: currentTime })
               .where(
                 and(
                   eq(
