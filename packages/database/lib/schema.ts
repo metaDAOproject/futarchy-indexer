@@ -606,23 +606,24 @@ export const reactions = pgTable(
 );
 
 // Note: Before a user can generate a session they need to be insterted into the DB
-export const users = pgTable(
-  "users",
-  {
-    userAcct: pubkey("user_acct").primaryKey(),
-    createdAt: timestamp("created_at").notNull().default(sql`now()`),
-  }
-);
+export const users = pgTable("users", {
+  userAcct: pubkey("user_acct").primaryKey(),
+  createdAt: timestamp("created_at")
+    .notNull()
+    .default(sql`now()`),
+});
 
-export const sessions = pgTable(
-  "sessions",
-  {
-    id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
-    userAcct: pubkey("user_acct").references(() => users.userAcct, {onDelete: "restrict", onUpdate: "restrict"}),
-    created_at: timestamp("created_at").notNull().defaultNow(),
-    expires_at: timestamp("expires_at")
-  }
-)
+export const sessions = pgTable("sessions", {
+  id: uuid("id")
+    .default(sql`gen_random_uuid()`)
+    .primaryKey(),
+  userAcct: pubkey("user_acct").references(() => users.userAcct, {
+    onDelete: "restrict",
+    onUpdate: "restrict",
+  }),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  expires_at: timestamp("expires_at"),
+});
 export const programs = pgTable(
   "programs",
   {
@@ -740,6 +741,8 @@ export const conditionalVaults = pgTable("conditional_vaults", {
 // export const pricesChartData = pgView('prices_chart_data')
 
 export type IndexerRecord = typeof indexers._.inferInsert;
+export type IndexerAccountDependencyReadRecord =
+  typeof indexerAccountDependencies._.inferSelect;
 export type TwapRecord = typeof twaps._.inferInsert;
 export type PricesRecord = typeof prices._.inferInsert;
 export type MarketRecord = typeof markets._.inferInsert;
