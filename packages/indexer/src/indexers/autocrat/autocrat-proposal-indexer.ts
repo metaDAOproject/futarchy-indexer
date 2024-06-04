@@ -24,6 +24,7 @@ import {
 } from "@solana/spl-token";
 import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
+import { gte } from "drizzle-orm";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -336,30 +337,23 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
       for (const onChainProposal of onChainProposals) {
         if (onChainProposal.account.state.pending) {
-          const { slotsPerProposal } = (await usingDb((db) =>
+          await usingDb((db) =>
             db
-              .select({ slotsPerProposal: schema.daos.slotsPerProposal })
-              .from(schema.daos)
-              .where(eq(schema.daos.daoAcct, onChainProposal.account.dao.toBase58()))
-              .execute()
-          ))[0];
-          if (onChainProposal.account.slotEnqueued + slotsPerProposal >= currentSlot) {
-            await usingDb((db) =>
-              db
-                .update(schema.proposals)
-                .set({ endedAt: currentTime })
-                .where(
-                  and(
-                    eq(
-                      schema.proposals.proposalAcct,
-                      onChainProposal.publicKey.toString()
-                    ),
-                    isNull(schema.proposals.endedAt)
-                  )
+              .update(schema.proposals)
+              .set({ endedAt: currentTime })
+              .where(
+                and(
+                  eq(
+                    schema.proposals.proposalAcct,
+                    onChainProposal.publicKey.toString()
+                  ),
+                  gte(schema.proposals.endSlot, BigInt(currentSlot)),
+                  isNull(schema.proposals.endedAt)
                 )
-                .execute()
-            );
-          }
+              )
+              .execute()
+          );
+
         }
         if (onChainProposal.account.state.passed) {
           await usingDb((db) =>
@@ -404,7 +398,6 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .execute()
           );
         }
-
         if (onChainProposal.account.state.failed) {
           await usingDb((db) =>
             db
