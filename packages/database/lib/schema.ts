@@ -15,6 +15,7 @@ import {
   text,
   jsonb,
   uuid,
+  interval,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -735,61 +736,32 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
 
-// These are filled tables generated from triggering events in other tables
-// the notion here is it's timebucketed data which ensures set interval with
-// forward filled data for chart display.
-// NOTE: This is aggregated together for a proposal such that displaying and
-// updating the data creates a seamless experience.
-// TBD: Should we include twap, spot in here as well to just fill in the
-// data which at some point may be demanded?
-export const proposalPriceData = pgTable("proposal_conditional_price_data", {
-  createdAt: timestamp('created_at', { precision: 6, withTimezone: true }),
+// This is a temporary table, while we work to finalize candle generation, but in the mean time
+// this works. 
+// TODO: Extend this to grab TWAP, Spot and anything else we want to keep in sync.
+export const proposalBars = pgTable("proposal_bars", {
   proposalAcct: pubkey("proposal_acct").references(
     () => proposals.proposalAcct
   ),
+  barSize: interval('bar_size'),
+  barStartTime: timestamp('bar_start_time', { precision: 6, withTimezone: true }),
   passMarketAcct: pubkey("pass_market_acct").references(() => markets.marketAcct),
-  passMarketPrice: numeric("pass_market_price", {
+  passPrice: numeric("pass_price", {
     precision: 40,
     scale: 20,
-  }).notNull(),
+  }),
+  passBaseAmount: bigint('pass_base_amount', {mode: 'bigint'}),
+  passQuoteAmount: bigint('pass_quote_amount', {mode: 'bigint'}),
   failMarketAcct: pubkey("fail_market_acct").references(() => markets.marketAcct),
-  failMarketPrice: numeric("fail_market_price", {
+  failPrice: numeric("fail_price", {
     precision: 40,
     scale: 20,
-  }).notNull(),
-});
-
-// This is used for historical liquidity, but at current the WS would just
-// need to subscribe to the latest value here to get the proper makeup.
-export const proposalLiquidityData = pgTable("proposal_conditional_liquidity_data", {
-  createdAt: timestamp('created_at', { precision: 6, withTimezone: true }),
-  proposalAcct: pubkey("proposal_acct").references(
-    () => proposals.proposalAcct
-  ),
-  passMarketAcct: pubkey("pass_market_acct").references(() => markets.marketAcct),
-  passMarketBaseAmount: bigint("pass_market_base_amount", { mode: "bigint" }),
-  passMarketQuoteAmount: bigint("pass_market_quote_amount", { mode: "bigint" }),
-  failMarketAcct: pubkey("fail_market_acct").references(() => markets.marketAcct),
-  failMarketBaseAmount: bigint("fail_market_base_amount", { mode: "bigint" }),
-  failMarketQuoteAmount: bigint("fail_market_quote_amount", { mode: "bigint" }),
-});
-
-// This too is to be used in sparklines as well as chart data for spot price
-export const spotPriceData = pgTable("spot_price_data", {
-  createdAt: timestamp('created_at', { precision: 6, withTimezone: true }),
-  spotPrice: numeric("spot_price", {
-    precision: 40,
-    scale: 20,
-  }).notNull(),
-  mintAcct: pubkey("mint_acct").references(() => tokens.mintAcct)
-});
-
-// NOTICE: This is missing twaps and other things which may be of use for charting, but for now
-// we're not including it as it's not in the UI
-
-// TODO: This is commented out give these are timescale views, but I wanted to include them
-// export const twapChartData = pgView('twap_chart_data')
-// export const pricesChartData = pgView('prices_chart_data')
+  }),
+  failBaseAmount: bigint('fail_base_amount', {mode: 'bigint'}),
+  failQuoteAmount: bigint('fail_quote_amount', {mode: 'bigint'}),
+}, (table) => ({
+  pk: primaryKey({columns: [table.proposalAcct, table.barSize, table.barStartTime]})
+}));
 
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type TwapRecord = typeof twaps._.inferInsert;

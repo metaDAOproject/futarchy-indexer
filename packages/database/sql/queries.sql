@@ -114,7 +114,6 @@ JOIN forward_fill_fail ON forward_fill_pass.created_at = forward_fill_fail.creat
 ORDER BY created_at DESC;
 $$;
 
-
 CREATE TABLE proposal_bars
 (
   proposal_acct     VARCHAR,

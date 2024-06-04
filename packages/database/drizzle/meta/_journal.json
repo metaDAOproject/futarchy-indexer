@@ -337,6 +337,13 @@
       "when": 1717159625176,
       "tag": "0047_brave_leopardon",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1717472126501,
+      "tag": "0048_bored_king_cobra",
+      "breakpoints": true
     }
   ]
 }
