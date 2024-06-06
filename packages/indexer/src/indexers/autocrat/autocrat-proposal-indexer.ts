@@ -3,10 +3,11 @@ import {
   rpcReadClient,
   conditionalVaultClient,
   provider,
+  connection,
 } from "../../connection";
 import { usingDb, schema, eq, and, isNull } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import {
   ConditionalVaultRecord,
   DaoRecord,
@@ -25,6 +26,7 @@ import {
 import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
 import { gte } from "drizzle-orm";
+import { desc } from "drizzle-orm/sql";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -35,15 +37,22 @@ export enum AutocratDaoIndexerError {
   NothingToInsertError = "NothingToInsertError",
 }
 
-let connection = new Connection(process.env.RPC_ENDPOINT!!, "confirmed");
-
 export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "30 * * * * *",
   index: async () => {
 
     try {
-      const currentSlot = await connection.getSlot()
-      const blockTime = await connection.getBlockTime(currentSlot)
+      let currentSlot = (
+        await usingDb((db) =>
+          db
+            .select({updatedSlot: schema.prices.updatedSlot})
+            .from(schema.prices)
+            .orderBy(desc(schema.prices.updatedSlot))
+            .limit(1)
+            .execute()
+        )
+      )[0].updatedSlot;
+      const blockTime = await connection.getBlockTime(parseInt(currentSlot.toString()))
       const currentTime = blockTime ? new Date(blockTime) : new Date()
 
       console.log("Autocrat proposal indexer");
