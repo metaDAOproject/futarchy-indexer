@@ -15,6 +15,7 @@ import {
   text,
   jsonb,
   uuid,
+  interval,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -736,9 +737,32 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
 
-// TODO: This is commented out give these are timescale views, but I wanted to include them
-// export const twapChartData = pgView('twap_chart_data')
-// export const pricesChartData = pgView('prices_chart_data')
+// This is a temporary table, while we work to finalize candle generation, but in the mean time
+// this works. 
+// TODO: Extend this to grab TWAP, Spot and anything else we want to keep in sync.
+export const proposalBars = pgTable("proposal_bars", {
+  proposalAcct: pubkey("proposal_acct").references(
+    () => proposals.proposalAcct
+  ),
+  barSize: interval('bar_size'),
+  barStartTime: timestamp('bar_start_time', { precision: 6, withTimezone: true }),
+  passMarketAcct: pubkey("pass_market_acct").references(() => markets.marketAcct),
+  passPrice: numeric("pass_price", {
+    precision: 40,
+    scale: 20,
+  }),
+  passBaseAmount: bigint('pass_base_amount', {mode: 'bigint'}),
+  passQuoteAmount: bigint('pass_quote_amount', {mode: 'bigint'}),
+  failMarketAcct: pubkey("fail_market_acct").references(() => markets.marketAcct),
+  failPrice: numeric("fail_price", {
+    precision: 40,
+    scale: 20,
+  }),
+  failBaseAmount: bigint('fail_base_amount', {mode: 'bigint'}),
+  failQuoteAmount: bigint('fail_quote_amount', {mode: 'bigint'}),
+}, (table) => ({
+  pk: primaryKey({columns: [table.proposalAcct, table.barSize, table.barStartTime]})
+}));
 
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type IndexerAccountDependencyReadRecord =
