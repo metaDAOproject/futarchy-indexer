@@ -42,18 +42,16 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
   index: async () => {
 
     try {
-      let currentSlot = (
+      const { currentSlot, currentTime } = (
         await usingDb((db) =>
           db
-            .select({updatedSlot: schema.prices.updatedSlot})
+            .select({ currentSlot: schema.prices.updatedSlot, currentTime: schema.prices.createdAt })
             .from(schema.prices)
             .orderBy(desc(schema.prices.updatedSlot))
             .limit(1)
             .execute()
         )
-      )[0].updatedSlot;
-      const blockTime = await connection.getBlockTime(parseInt(currentSlot.toString()))
-      const currentTime = blockTime ? new Date(blockTime) : new Date()
+      )[0];
 
       console.log("Autocrat proposal indexer");
       const dbProposals: ProposalRecord[] = await usingDb((db) =>
