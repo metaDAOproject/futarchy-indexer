@@ -21,6 +21,7 @@ import {
   serialize,
 } from "../transaction/serializer";
 import { logger } from "../logger";
+import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 
 export class SwapPersistable {
   private ordersRecord: OrdersRecord;
@@ -299,6 +300,7 @@ export class SwapBuilder {
           failed: parsedTx.err !== undefined,
           payload: serialize(parsedTx),
           serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+          mainIxType: getMainIxTypeFromTransaction(parsedTx),
         };
 
         return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord));

@@ -1,0 +1,1 @@
+ALTER TABLE "transactions" ADD COLUMN "main_ix_type" varchar;

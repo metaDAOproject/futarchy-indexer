@@ -11,6 +11,7 @@ import { connection } from "../connection";
 import { logger } from "../logger";
 import { Err, Ok, Result, TaggedUnion } from "../match";
 import {
+  InstructionType,
   TransactionWatchStatus,
   TransactionWatcherTransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
@@ -419,6 +420,7 @@ async function handleNewTransaction(
     failed: parsedTx.err !== undefined,
     payload: serialize(parsedTx),
     serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+    mainIxType: getMainIxTypeFromTransaction(parsedTx),
   };
   const upsertResult = await usingDb((db) =>
     db
@@ -460,6 +462,36 @@ async function handleNewTransaction(
     transactions: transactionRecord,
     transaction_watcher_transactions: watcherTxRecord,
   });
+}
+
+export function getMainIxTypeFromTransaction(
+  tx: Transaction
+): InstructionType | null {
+  if (tx.instructions.some((ix) => ix.name === "swap")) {
+    return InstructionType.AmmSwap;
+  }
+  if (tx.instructions.some((ix) => ix.name === "addLiquidity")) {
+    return InstructionType.AmmDeposit;
+  }
+  if (tx.instructions.some((ix) => ix.name === "removeLiquidity")) {
+    return InstructionType.AmmWithdraw;
+  }
+  if (tx.instructions.some((ix) => ix.name === "placeOrder")) {
+    return InstructionType.OpenbookPlaceOrder;
+  }
+  if (tx.instructions.some((ix) => ix.name === "cancelOrder")) {
+    return InstructionType.OpenbookCancelOrder;
+  }
+  if (tx.instructions.some((ix) => ix.name === "mintConditionalTokens")) {
+    return InstructionType.VaultMintConditionalTokens;
+  }
+  if (tx.instructions.some((ix) => ix.name === "initializeProposal")) {
+    return InstructionType.AutocratInitializeProposal;
+  }
+  if (tx.instructions.some((ix) => ix.name === "finalizeProposal")) {
+    return InstructionType.AutocratFinalizeProposal;
+  }
+  return null;
 }
 
 export async function startTransactionWatchers() {

@@ -252,6 +252,17 @@ export const twaps = pgTable(
   })
 );
 
+export enum InstructionType {
+  VaultMintConditionalTokens = "vault_mint_conditional_tokens",
+  AmmSwap = "amm_swap",
+  AmmDeposit = "amm_deposit",
+  AmmWithdraw = "amm_withdraw",
+  OpenbookPlaceOrder = "openbook_place_order",
+  OpenbookCancelOrder = "openbook_cancel_order",
+  AutocratInitializeProposal = "autocrat_initialize_proposal",
+  AutocratFinalizeProposal = "autocrat_finalize_proposal",
+}
+
 export const transactions = pgTable(
   "transactions",
   {
@@ -261,6 +272,7 @@ export const transactions = pgTable(
     failed: boolean("failed").notNull(),
     payload: text("payload").notNull(),
     serializerLogicVersion: smallint("serializer_logic_version").notNull(),
+    mainIxType: pgEnum("main_ix_type", InstructionType),
   },
   (table) => ({
     slotIdx: index("txn_slot_index").on(table.slot),
