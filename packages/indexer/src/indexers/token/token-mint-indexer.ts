@@ -16,6 +16,7 @@ export enum TokenMintIndexerError {
 
 export const TokenMintIndexer: IntervalFetchIndexer = {
   cronExpression: "5 * * * * *",
+  retries: 10,
   index: async (mintStr: string) => {
     try {
       let mint = new PublicKey(mintStr);
