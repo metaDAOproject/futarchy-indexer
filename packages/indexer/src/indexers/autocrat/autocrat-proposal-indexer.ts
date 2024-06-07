@@ -354,7 +354,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
                     schema.proposals.proposalAcct,
                     onChainProposal.publicKey.toString()
                   ),
-                  gte(schema.proposals.endSlot, BigInt(currentSlot)),
+                  gte(schema.proposals.endSlot, currentSlot),
                   isNull(schema.proposals.endedAt)
                 )
               )
