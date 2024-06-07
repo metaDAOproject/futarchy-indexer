@@ -4,7 +4,6 @@ import {
   ConfirmedTransactionMeta,
   Message,
   MessageAccountKeys,
-  MessageCompiledInstruction,
   PublicKey,
   VersionedTransactionResponse,
 } from "@solana/web3.js";
@@ -19,7 +18,6 @@ import {
   InstructionDisplay,
   Instruction as AnchorInstruction,
 } from "@coral-xyz/anchor/dist/cjs/coder/borsh/instruction";
-import { InstructionFormatter } from "./instruction-formatter";
 
 /**
  * This version should be bumped every time we update this file.
