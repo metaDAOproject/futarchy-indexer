@@ -5,7 +5,7 @@ import {
   provider,
   connection,
 } from "../../connection";
-import { usingDb, schema, eq, and, isNull } from "@metadaoproject/indexer-db";
+import { usingDb, schema, eq, and, isNull, sql } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -176,8 +176,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             if (isQuote) {
               // Fail / Pass USDC
               imageUrl = isFail
-                ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/6b1ce817-861f-4980-40ca-b55f28f21400/public"
-                : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f236a0ca-5d7c-4f4a-ca8a-52eb9d72ef00/public";
+                ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f38677ab-8ec6-4706-6606-7d4e0a3cfc00/public"
+                : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/d9bfd8de-2937-419a-96f6-8d6a3a76d200/public";
             } else {
               // Base Token
               imageUrl = isFail
@@ -344,17 +344,23 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
       for (const onChainProposal of onChainProposals) {
         if (onChainProposal.account.state.pending) {
+          const slotDifference = onChainProposal.account.slotEnqueued
+            .add(new BN(dbDao.slotsPerProposal?.toString()))
+            .sub(new BN(currentSlot))
+          
+          const lowHoursEstimate = Math.floor(slotDifference.toNumber() * 400 / 1000 / 60 / 60)
+
           await usingDb((db) =>
             db
               .update(schema.proposals)
-              .set({ endedAt: currentTime })
+              .set({ endedAt: sql`${currentTime} + INTERVAL '${lowHoursEstimate} HOURS'` })
               .where(
                 and(
                   eq(
                     schema.proposals.proposalAcct,
                     onChainProposal.publicKey.toString()
                   ),
-                  gte(schema.proposals.endSlot, BigInt(currentSlot)),
+                  gte(schema.proposals.endSlot, currentSlot),
                   isNull(schema.proposals.endedAt)
                 )
               )
