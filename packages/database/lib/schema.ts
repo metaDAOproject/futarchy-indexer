@@ -15,6 +15,8 @@ import {
   text,
   jsonb,
   uuid,
+  pgView,
+  QueryBuilder,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -71,6 +73,8 @@ function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
   });
 }
 
+const qb = new QueryBuilder();
+
 export const daos = pgTable(
   "daos",
   {
@@ -92,10 +96,10 @@ export const daos = pgTable(
     // This is keyed for proposals and initialized when dao is created.
     slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }),
     passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
-    createdAt: timestamp("created_at")
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
-    updatedAt: timestamp("updated_at")
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
   },
@@ -128,16 +132,16 @@ export const proposals = pgTable("proposals", {
   quoteVault: pubkey("quote_vault").references(
     () => conditionalVaults.condVaultAcct
   ),
-  updatedAt: timestamp("updated_at")
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .default(sql`now()`)
     .notNull(),
-  createdAt: timestamp("created_at")
+  createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`now()`)
     .notNull(),
   // NOTE: This too like the end slot can be approximated, however we can update it
-  endedAt: timestamp("ended_at"),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
   // NOTE: Once the proposal is finalized / reverted this can be set for ease of access
-  completedAt: timestamp("completed_at"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
 });
 
 export const markets = pgTable("markets", {
@@ -183,7 +187,7 @@ export const markets = pgTable("markets", {
   // When market becomes active or inactive
   activeSlot: slot("active_slot"),
   inactiveSlot: slot("inactive_slot"),
-  createdAt: timestamp("created_at")
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
 });
@@ -206,7 +210,7 @@ export const prices = pgTable(
       precision: 40,
       scale: 20,
     }).notNull(),
-    createdAt: timestamp("created_at")
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
     createdBy: text("created_by"),
@@ -242,7 +246,7 @@ export const twaps = pgTable(
       scale: 0,
     }),
     curTwap: tokenAmount("token_amount").notNull(),
-    createdAt: timestamp("created_at")
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
   },
@@ -268,7 +272,7 @@ export const transactions = pgTable(
   {
     txSig: transaction("tx_sig").primaryKey(),
     slot: slot("slot").notNull(),
-    blockTime: timestamp("block_time").notNull(),
+    blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
     failed: boolean("failed").notNull(),
     payload: text("payload").notNull(),
     serializerLogicVersion: smallint("serializer_logic_version").notNull(),
@@ -310,7 +314,7 @@ export const transactionWatchers = pgTable("transaction_watchers", {
     .default(TransactionWatchStatus.Disabled)
     .notNull(),
   failureLog: text("failure_log"),
-  updatedAt: timestamp("updated_at"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 export const transactionWatcherTransactions = pgTable(
@@ -375,7 +379,7 @@ export const indexerAccountDependencies = pgTable(
     status: pgEnum("status", IndexerAccountDependencyStatus).default(
       IndexerAccountDependencyStatus.Active
     ),
-    updatedAt: timestamp("updated_at"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
   },
   (table) => ({
     pk: primaryKey(table.name, table.acct),
@@ -392,7 +396,7 @@ export const tokenAccts = pgTable("token_accts", {
     .notNull(),
   ownerAcct: pubkey("owner_acct").notNull(),
   amount: tokenAmount("amount").notNull(),
-  updatedAt: timestamp("updated_at"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 // By indexing specific ATAs, we can track things like market liquidity over time
@@ -409,7 +413,9 @@ export const tokenAcctBalances = pgTable(
       .notNull(),
     ownerAcct: pubkey("owner_acct").notNull(),
     amount: tokenAmount("amount").notNull(),
-    created_at: timestamp("created_at").notNull().defaultNow(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => ({
     pk: primaryKey(
@@ -432,7 +438,7 @@ export const tokens = pgTable("tokens", {
   symbol: varchar("symbol", { length: 10 }).notNull(),
   supply: tokenAmount("supply").notNull(),
   decimals: smallint("decimals").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   imageUrl: varchar("image_url"),
 });
 
@@ -453,7 +459,7 @@ export const orders = pgTable(
       .notNull(),
     actorAcct: pubkey("actor_acct").notNull(),
     side: pgEnum("side", OrderSide).notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     // Starts true, switches to false on cancellation or full fill
     isActive: boolean("is_active").notNull(),
 
@@ -465,12 +471,12 @@ export const orders = pgTable(
     }).notNull(),
 
     orderBlock: block("order_block").notNull(),
-    orderTime: timestamp("order_time").notNull(),
+    orderTime: timestamp("order_time", { withTimezone: true }).notNull(),
 
     // Only present on order cancel
     cancelTxSig: transaction("cancel_tx_sig"),
     cancelBlock: block("cancel_block"),
-    cancelTime: timestamp("cancel_time"),
+    cancelTime: timestamp("cancel_time", { withTimezone: true }),
   },
   (table) => ({
     // For displaying user trade history
@@ -498,7 +504,7 @@ export const makes = pgTable(
       precision: 40,
       scale: 20,
     }).notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
   (table) => ({
     // For displaying current order book
@@ -535,7 +541,7 @@ export const takes = pgTable(
       .references(() => markets.marketAcct)
       .notNull(),
     orderBlock: block("order_block").notNull(),
-    orderTime: timestamp("order_time").notNull(),
+    orderTime: timestamp("order_time", { withTimezone: true }).notNull(),
   },
   (table) => ({
     // For aggregating into candles and showing latest trades
@@ -555,7 +561,7 @@ export const candles = pgTable(
     // In seconds
     candleDuration: integer("candle_duration").notNull(),
     // Repeats every duration
-    timestamp: timestamp("timestamp").notNull(),
+    timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
     // (base token amount)
     volume: tokenAmount("volume").notNull(),
     // Nullable in case where there were no trades
@@ -592,7 +598,7 @@ export const comments = pgTable("comments", {
   respondingCommentId: bigint("responding_comment_id", {
     mode: "bigint",
   }).references(() => comments.commentId),
-  createdAt: timestamp("created_at")
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
 });
@@ -608,7 +614,7 @@ export const reactions = pgTable(
       () => proposals.proposalAcct
     ),
     reaction: pgEnum("reaction", Reactions).notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
   (table) => ({
     // Note: we maybe should do a unique reactorAcct + proposalAcct, but
@@ -620,7 +626,7 @@ export const reactions = pgTable(
 // Note: Before a user can generate a session they need to be insterted into the DB
 export const users = pgTable("users", {
   userAcct: pubkey("user_acct").primaryKey(),
-  createdAt: timestamp("created_at")
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
 });
@@ -633,7 +639,9 @@ export const sessions = pgTable("sessions", {
     onDelete: "restrict",
     onUpdate: "restrict",
   }),
-  created_at: timestamp("created_at").notNull().defaultNow(),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
   expires_at: timestamp("expires_at"),
 });
 export const programs = pgTable(
@@ -646,7 +654,7 @@ export const programs = pgTable(
     version: doublePrecision("version").notNull(),
     // For example: autocrat, openbook_twap, openbook, conditional_vault
     programName: varchar("program_name").notNull(),
-    createdAt: timestamp("created_at")
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
     deployedAt: timestamp("deployed_at"),
@@ -749,8 +757,100 @@ export const conditionalVaults = pgTable("conditional_vaults", {
 });
 
 // TODO: This is commented out give these are timescale views, but I wanted to include them
-// export const twapChartData = pgView('twap_chart_data')
-// export const pricesChartData = pgView('prices_chart_data')
+export const twapChartData = pgView("twap_chart_data", {
+  interv: timestamp("interv", { withTimezone: true }),
+  tokenAmount: tokenAmount("token_amount"),
+  marketAcct: pubkey("market_acct")
+    .notNull()
+    .references(() => markets.marketAcct),
+}).as(sql`
+  SELECT
+      TIME_BUCKET('30 SECONDS'::INTERVAL, ${twaps.createdAt}) AS interv,
+      last(token_amount, ${twaps.createdAt}) FILTER(WHERE ${twaps.createdAt} IS NOT NULL AND ${twaps.createdAt} <= ${markets.createdAt} + '5 DAYS'::INTERVAL) AS token_amount,
+      ${twaps.marketAcct} AS market_acct
+  FROM ${twaps}
+  JOIN ${markets} ON ${markets.marketAcct} = ${twaps.marketAcct}
+  WHERE ${twaps.createdAt} <= ${markets.createdAt} + '5 DAYS'::INTERVAL
+  GROUP BY interv, ${twaps.marketAcct}
+  `);
+
+export const pricesChartData = pgView("prices_chart_data", {
+  interv: timestamp("interv", { withTimezone: true }),
+  price: numeric("price", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  baseAmount: tokenAmount("base_amount"),
+  quoteAmount: tokenAmount("quote_amount"),
+  pricesType: pgEnum("prices_type", PricesType).notNull(),
+  marketAcct: pubkey("market_acct")
+    .notNull()
+    .references(() => markets.marketAcct),
+}).as(sql`
+  SELECT
+      TIME_BUCKET('30 SECONDS'::INTERVAL, prices.created_at) AS interv,
+      last(price, prices.created_at) FILTER(WHERE prices.created_at IS NOT NULL AND CASE WHEN prices_type = 'spot' THEN TRUE ELSE prices.created_at <= markets.created_at + '5 DAYS'::INTERVAL END) AS price,
+      last(base_amount, prices.created_at) FILTER(WHERE prices.created_at IS NOT NULL AND CASE WHEN prices_type = 'spot' THEN TRUE ELSE prices.created_at <= markets.created_at + '5 DAYS'::INTERVAL END) AS base_amount,
+      last(quote_amount, prices.created_at) FILTER(WHERE prices.created_at IS NOT NULL AND CASE WHEN prices_type = 'spot' THEN TRUE ELSE prices.created_at <= markets.created_at + '5 DAYS'::INTERVAL END) AS quote_amount,
+      prices_type,
+      prices.market_acct AS market_acct
+  FROM prices
+  JOIN markets ON markets.market_acct = prices.market_acct
+  WHERE CASE WHEN prices_type = 'spot' THEN TRUE ELSE prices.created_at <= markets.created_at + '5 DAYS'::INTERVAL END
+  GROUP BY interv, prices.market_acct, prices_type
+  `);
+
+export const proposalTotalTradeVolume = pgView("proposal_total_trade_volume", {
+  proposalAcct: pubkey("proposal_acct")
+    .notNull()
+    .references(() => proposals.proposalAcct),
+  passVolume: numeric("pass_volume", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  failVolume: numeric("fail_volume", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  passAcct: pubkey("pass_market_acct")
+    .notNull()
+    .references(() => markets.marketAcct),
+  failAcct: pubkey("fail_market_acct")
+    .notNull()
+    .references(() => markets.marketAcct),
+}).as(sql`
+  WITH pass_market AS (
+    SELECT
+    	  proposal_acct,
+    	  orders.market_acct AS pass_market_acct,
+          TIME_BUCKET('1 DAYS'::INTERVAL, orders.order_time) AS interv,
+          SUM(filled_base_amount * quote_price) FILTER(WHERE orders.order_time IS NOT NULL) AS pass_volume
+    FROM proposals
+    JOIN orders
+    ON proposals.pass_market_acct = orders.market_acct
+    GROUP BY proposal_acct, interv, orders.market_acct
+  ),
+  fail_market AS (
+    SELECT
+    	  proposal_acct,
+    	  orders.market_acct AS fail_market_acct,
+          TIME_BUCKET('1 DAYS'::INTERVAL, orders.order_time) AS interv,
+          SUM(filled_base_amount * quote_price) FILTER(WHERE orders.order_time IS NOT NULL) AS fail_volume
+    FROM proposals
+    JOIN orders
+    ON proposals.fail_market_acct = orders.market_acct
+    GROUP BY proposal_acct, interv, orders.market_acct
+  )
+  SELECT
+    pass_market.proposal_acct AS proposal_acct,
+    pass_market_acct,
+    fail_market_acct,
+    SUM(pass_volume) AS pass_volume,
+    SUM(fail_volume) AS fail_volume
+  FROM pass_market
+  JOIN fail_market ON fail_market.proposal_acct = pass_market.proposal_acct
+  GROUP BY pass_market.proposal_acct, pass_market_acct, fail_market_acct
+  `);
 
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type IndexerAccountDependencyReadRecord =
