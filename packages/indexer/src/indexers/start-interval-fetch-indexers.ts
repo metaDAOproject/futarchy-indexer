@@ -136,7 +136,7 @@ async function handleIntervalFetchFailure(
         `failed to update indexer_account_dependency on acct ${indexerWithAcct?.acct} to Active even though the job has been resumed`
       );
     }
-  }, 600_000);
+  }, 3600_000);
 }
 
 async function handleIntervalFetchFinalFailure(
