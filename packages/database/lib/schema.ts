@@ -364,6 +364,7 @@ export const indexers = pgTable("indexers", {
 export enum IndexerAccountDependencyStatus {
   Active = "active",
   Disabled = "disabled",
+  Paused = "paused",
 }
 
 export const indexerAccountDependencies = pgTable(

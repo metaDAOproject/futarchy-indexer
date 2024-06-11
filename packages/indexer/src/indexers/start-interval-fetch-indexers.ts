@@ -19,10 +19,13 @@ import { logger } from "../logger";
 // instantiates new croner and returns in function, which could be potentially useful
 // now we can stop the job if we have an error
 
+const maxResets = 5;
+
 export function startIntervalFetchIndexer(
   indexerQueryRes: IndexerWithAccountDeps
 ): Cron | null {
   let errorCount = 0;
+  let resets = 0;
   const { indexers: indexer, indexer_account_dependencies: dependentAccount } =
     indexerQueryRes;
   if (!indexer) return null;
@@ -43,8 +46,16 @@ export function startIntervalFetchIndexer(
             res.error
           );
           errorCount += 1;
+          if (resets === maxResets) {
+            // we have already paused/reset this indexer the max times, we are stopping the whole thing for good
+            handleIntervalFetchFinalFailure(dependentAccount, self);
+            return;
+          }
           if (errorCount > retries) {
             handleIntervalFetchFailure(dependentAccount, self);
+            // now that the job has been paused for 100 minutes, we reset the error count to 0
+            errorCount = 0;
+            resets += 1;
           }
         } else {
           errorCount = 0;
@@ -82,9 +93,57 @@ export function getIntervalFetchIndexerImplementation(
 
 async function handleIntervalFetchFailure(
   indexerWithAcct: IndexerWithAccountDeps["indexer_account_dependencies"],
-  croner: Cron
+  job: Cron
 ) {
-  croner.stop();
+  job.pause();
+  const updateResult = await usingDb((db) =>
+    db
+      .update(schema.indexerAccountDependencies)
+      .set({
+        status: IndexerAccountDependencyStatus.Paused,
+        updatedAt: new Date(),
+      })
+      .where(
+        eq(schema.indexerAccountDependencies.acct, indexerWithAcct?.acct ?? "")
+      )
+      .returning({ acct: schema.indexerAccountDependencies.acct })
+  );
+  if (updateResult.length !== 1) {
+    logger.error(
+      `final error with interval fetch indexer ${indexerWithAcct?.acct}. status set to disabled.`
+    );
+  }
+  // we resume job after 100 minutes to try again
+  setTimeout(async () => {
+    job.resume();
+    const updateResult = await usingDb((db) =>
+      db
+        .update(schema.indexerAccountDependencies)
+        .set({
+          status: IndexerAccountDependencyStatus.Active,
+          updatedAt: new Date(),
+        })
+        .where(
+          eq(
+            schema.indexerAccountDependencies.acct,
+            indexerWithAcct?.acct ?? ""
+          )
+        )
+        .returning({ acct: schema.indexerAccountDependencies.acct })
+    );
+    if (updateResult.length !== 1) {
+      logger.error(
+        `failed to update indexer_account_dependency on acct ${indexerWithAcct?.acct} to Active even though the job has been resumed`
+      );
+    }
+  }, 3600_000);
+}
+
+async function handleIntervalFetchFinalFailure(
+  indexerWithAcct: IndexerWithAccountDeps["indexer_account_dependencies"],
+  job: Cron
+) {
+  job.stop();
   const updateResult = await usingDb((db) =>
     db
       .update(schema.indexerAccountDependencies)
