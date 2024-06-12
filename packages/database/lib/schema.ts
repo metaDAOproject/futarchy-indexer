@@ -386,16 +386,23 @@ export const indexerAccountDependencies = pgTable(
   })
 );
 
+export enum TokenAcctStatus {
+  Watching = "watching",
+  Enabled = "enabled",
+  Disabled = "disabled",
+}
+
 // By indexing specific ATAs, we can track things like market liquidity over time
 // or META circulating supply by taking total META supply minus the treasury's account
 export const tokenAccts = pgTable("token_accts", {
   // ATA PGA
-  tokenAcct: pubkey("token_acct").primaryKey(),
+  amount: tokenAmount("amount").notNull(),
   mintAcct: pubkey("mint_acct")
     .references(() => tokens.mintAcct)
     .notNull(),
   ownerAcct: pubkey("owner_acct").notNull(),
-  amount: tokenAmount("amount").notNull(),
+  status: pgEnum("status", TokenAcctStatus).default(TokenAcctStatus.Enabled),
+  tokenAcct: pubkey("token_acct").primaryKey(),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 

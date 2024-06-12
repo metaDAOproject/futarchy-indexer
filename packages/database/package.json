@@ -4,7 +4,7 @@
   "private": "true",
   "main": "lib",
   "scripts": {
-    "migrate:create": "drizzle-kit generate:pg --schema=./lib/schema.ts --config=./lib/drizzle.config.ts",
+    "migrate:create": "drizzle-kit generate:pg --schema=./lib/schema.ts",
     "migrate": "pnpm migrate:create && bun src/index.ts",
     "sync": "pnpm bun src/index.ts",
     "sql": "bun src/run-sql.ts"
