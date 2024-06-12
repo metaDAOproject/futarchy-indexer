@@ -4,7 +4,14 @@ import {
   conditionalVaultClient,
   provider,
 } from "../../connection";
-import { usingDb, schema, eq, and, isNull } from "@metadaoproject/indexer-db";
+import {
+  usingDb,
+  schema,
+  eq,
+  and,
+  isNull,
+  sql,
+} from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -22,67 +29,53 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
+import {
+  ProposalAccountWithKey,
+  enrichTokenMetadata,
+} from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
-import { SLOTS_TO_DAYS } from "../../constants";
+import { gte } from "drizzle-orm";
+import { desc } from "drizzle-orm/sql";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
   DuplicateError = "DuplicateError",
   MissingParamError = "MissingParamError",
+  MissingProtocolError = "MissingProtocolError",
   NotFoundError = "NotFoundError",
   MissingChainResponseError = "MissingChainResponseError",
   NothingToInsertError = "NothingToInsertError",
 }
 
-//TODO we want to make an RPC call for the block time and use that as the createdAt
-// then cascade that by using slots per proposal times 4000 ms
 export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "30 * * * * *",
   index: async () => {
     try {
+      const { currentSlot, currentTime } = (
+        await usingDb((db) =>
+          db
+            .select({
+              currentSlot: schema.prices.updatedSlot,
+              currentTime: schema.prices.createdAt,
+            })
+            .from(schema.prices)
+            .orderBy(desc(schema.prices.updatedSlot))
+            .limit(1)
+            .execute()
+        )
+      )[0];
+
       console.log("Autocrat proposal indexer");
       const dbProposals: ProposalRecord[] = await usingDb((db) =>
         db.select().from(schema.proposals).execute()
       );
 
-      for (const dbProposal of dbProposals) {
-        const dao = (
-          await usingDb((db) =>
-            db
-              .select()
-              .from(schema.daos)
-              .where(eq(schema.daos.daoAcct, dbProposal.daoAcct))
-              .execute()
-          )
-        )[0];
-        if (
-          !dbProposal.endedAt &&
-          dbProposal.createdAt &&
-          dao.slotsPerProposal
-        ) {
-          // we can update endedAt since we don't have it yet
-          const endedAtDate = dbProposal.createdAt;
-          endedAtDate.setDate(
-            dbProposal.createdAt?.getDate() +
-              SLOTS_TO_DAYS[dao.slotsPerProposal.toString()]
-          );
-          await usingDb((db) =>
-            db
-              .update(schema.proposals)
-              .set({ endedAt: endedAtDate })
-              .where(eq(schema.proposals.proposalAcct, dbProposal.proposalAcct))
-              .execute()
-          );
-        }
-      }
-
-      let protocolV0_3 = rpcReadClient.futarchyProtocols.find(
+      const protocolV0_3 = rpcReadClient.futarchyProtocols.find(
         (protocol) => protocol.deploymentVersion == "V0.3"
       );
 
       const onChainProposals =
-        await protocolV0_3?.autocrat.account.proposal.all()!!;
+        (await protocolV0_3?.autocrat.account.proposal.all()!!) as ProposalAccountWithKey[];
 
       const proposalsToInsert = [];
       for (const proposal of onChainProposals) {
@@ -195,8 +188,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             if (isQuote) {
               // Fail / Pass USDC
               imageUrl = isFail
-                ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/6b1ce817-861f-4980-40ca-b55f28f21400/public"
-                : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f236a0ca-5d7c-4f4a-ca8a-52eb9d72ef00/public";
+                ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f38677ab-8ec6-4706-6606-7d4e0a3cfc00/public"
+                : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/d9bfd8de-2937-419a-96f6-8d6a3a76d200/public";
             } else {
               // Base Token
               imageUrl = isFail
@@ -211,7 +204,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             mintAcct: token.toString(),
             supply: storedMint.supply,
             imageUrl: imageUrl ? imageUrl : "",
-            updatedAt: new Date(),
+            updatedAt: currentTime,
           };
           tokensToInsert.push(tokenToInsert);
         }
@@ -233,7 +226,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         ]) {
           let tokenAcct: TokenAcctRecord = {
             mintAcct: mint.toString(),
-            updatedAt: new Date(),
+            updatedAt: currentTime,
             tokenAcct: getAssociatedTokenAddressSync(
               mint,
               owner,
@@ -257,7 +250,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         );
         console.log("inserted token accounts");
 
-        let dbDao: DaoRecord = (
+        const dbDao: DaoRecord = (
           await usingDb((db) =>
             db
               .select()
@@ -362,11 +355,58 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       console.log("inserted proposals");
 
       for (const onChainProposal of onChainProposals) {
+        if (onChainProposal.account.state.pending) {
+          const dbDao: DaoRecord = (
+            await usingDb((db) =>
+              db
+                .select()
+                .from(schema.daos)
+                .where(
+                  eq(
+                    schema.daos.daoAcct,
+                    onChainProposal.account.dao.toBase58()
+                  )
+                )
+                .execute()
+            )
+          )[0];
+
+          const slotDifference = onChainProposal.account.slotEnqueued
+            .add(new BN(dbDao.slotsPerProposal?.toString()))
+            .sub(new BN(currentSlot));
+
+          const lowHoursEstimate = Math.floor(
+            (slotDifference.toNumber() * 400) / 1000 / 60 / 60
+          );
+
+          const endedAt = new Date(currentTime.toLocaleString());
+          endedAt.setHours(endedAt.getHours() + lowHoursEstimate);
+
+          await usingDb((db) =>
+            db
+              .update(schema.proposals)
+              .set({
+                endedAt,
+                updatedAt: sql`NOW()`,
+              })
+              .where(
+                and(
+                  eq(
+                    schema.proposals.proposalAcct,
+                    onChainProposal.publicKey.toString()
+                  ),
+                  gte(schema.proposals.endSlot, currentSlot),
+                  isNull(schema.proposals.endedAt)
+                )
+              )
+              .execute()
+          );
+        }
         if (onChainProposal.account.state.passed) {
           await usingDb((db) =>
             db
               .update(schema.proposals)
-              .set({ status: ProposalStatus.Passed, completedAt: new Date() })
+              .set({ status: ProposalStatus.Passed, completedAt: currentTime })
               .where(
                 and(
                   eq(
@@ -405,12 +445,11 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .execute()
           );
         }
-
         if (onChainProposal.account.state.failed) {
           await usingDb((db) =>
             db
               .update(schema.proposals)
-              .set({ status: ProposalStatus.Failed, completedAt: new Date() })
+              .set({ status: ProposalStatus.Failed, completedAt: currentTime })
               .where(
                 and(
                   eq(
