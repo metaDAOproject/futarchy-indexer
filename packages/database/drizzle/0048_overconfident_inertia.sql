@@ -1,56 +1,57 @@
 DROP VIEW IF EXISTS twap_chart_data;
 DROP VIEW IF EXISTS prices_chart_data;
 DROP VIEW IF EXISTS proposal_total_trade_volume;
+DROP VIEW IF EXISTS proposal_prices_chart_data;
 
-ALTER TABLE "candles" ALTER COLUMN "timestamp" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "candles" ALTER COLUMN "timestamp" SET DATA TYPE timestamp with time zone
 USING "timestamp" AT TIME ZONE 'UTC';
-ALTER TABLE "comments" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "comments" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "daos" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "daos" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "daos" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "daos" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "indexer_account_dependencies" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "indexer_account_dependencies" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "makes" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "makes" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "markets" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "markets" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "orders" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "orders" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "orders" ALTER COLUMN "order_time" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "orders" ALTER COLUMN "order_time" SET DATA TYPE timestamp with time zone
 USING "order_time" AT TIME ZONE 'UTC';
-ALTER TABLE "orders" ALTER COLUMN "cancel_time" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "orders" ALTER COLUMN "cancel_time" SET DATA TYPE timestamp with time zone
 USING "cancel_time" AT TIME ZONE 'UTC';
-ALTER TABLE "prices" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "prices" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "programs" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "programs" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "proposals" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "proposals" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "proposals" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "proposals" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "proposals" ALTER COLUMN "ended_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "proposals" ALTER COLUMN "ended_at" SET DATA TYPE timestamp with time zone
 USING "ended_at" AT TIME ZONE 'UTC';
-ALTER TABLE "proposals" ALTER COLUMN "completed_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "proposals" ALTER COLUMN "completed_at" SET DATA TYPE timestamp with time zone
 USING "completed_at" AT TIME ZONE 'UTC';
-ALTER TABLE "reactions" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "reactions" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "sessions" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "sessions" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "takes" ALTER COLUMN "order_time" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "takes" ALTER COLUMN "order_time" SET DATA TYPE timestamp with time zone
 USING "order_time" AT TIME ZONE 'UTC';
-ALTER TABLE "token_acct_balances" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "token_acct_balances" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
-ALTER TABLE "token_accts" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "token_accts" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "tokens" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "tokens" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "transaction_watchers" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "transaction_watchers" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone
 USING "updated_at" AT TIME ZONE 'UTC';
-ALTER TABLE "transactions" ALTER COLUMN "block_time" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "transactions" ALTER COLUMN "block_time" SET DATA TYPE timestamp with time zone
 USING "block_time" AT TIME ZONE 'UTC';
-ALTER TABLE "twaps" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone--> statement-breakpoint
+ALTER TABLE "twaps" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
 ALTER TABLE "users" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone
 USING "created_at" AT TIME ZONE 'UTC';
