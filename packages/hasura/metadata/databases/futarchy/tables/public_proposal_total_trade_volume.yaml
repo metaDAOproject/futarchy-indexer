@@ -1,8 +1,17 @@
 table:
-  name: proposal_prices_chart_data
+  name: proposal_total_trade_volume
   schema: public
 object_relationships:
-  - name: proposalPriceFailMarket
+  - name: proposalTradeVolume
+    using:
+      manual_configuration:
+        column_mapping:
+          proposal_acct: proposal_acct
+        insertion_order: null
+        remote_table:
+          name: proposals
+          schema: public
+  - name: proposalTradeVolumeFailMarket
     using:
       manual_configuration:
         column_mapping:
@@ -11,7 +20,7 @@ object_relationships:
         remote_table:
           name: markets
           schema: public
-  - name: proposalPricePassMarket
+  - name: proposalTradeVolumePassMarket
     using:
       manual_configuration:
         column_mapping:
@@ -24,17 +33,10 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
-        - fail_market_base_amount
-        - fail_market_quote_amount
-        - pass_market_base_amount
-        - pass_market_quote_amount
-        - proposal_acct
-        - fail_market_price
-        - pass_market_price
         - fail_market_acct
-        - fail_market_prices_type
         - pass_market_acct
-        - pass_market_prices_type
-        - interv
+        - proposal_acct
+        - fail_volume
+        - pass_volume
       filter: {}
     comment: ""
