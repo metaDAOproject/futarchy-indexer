@@ -14,7 +14,6 @@
 - "!include public_programs.yaml"
 - "!include public_proposal_bars.yaml"
 - "!include public_proposal_details.yaml"
-- "!include public_proposal_prices_chart_data.yaml"
 - "!include public_proposal_total_trade_volume.yaml"
 - "!include public_proposals.yaml"
 - "!include public_reactions.yaml"
