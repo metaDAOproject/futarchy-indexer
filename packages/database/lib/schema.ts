@@ -706,7 +706,7 @@ export const daoDetails = pgTable(
   })
 );
 
-export const poposalDetails = pgTable("proposal_details", {
+export const proposalDetails = pgTable("proposal_details", {
   // This table holds details for proposals which are not part of the indexing service.
   proposalId: bigint("proposal_id", { mode: "bigint" }).primaryKey(),
   // Our reference to on-chain data

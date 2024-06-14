@@ -1,7 +1,7 @@
-name: Build and Apply Hasura Metadata
+name: Build and Apply Hasura Metadata [STAGING]
 on:
   push:
-    # branches: [staging]
+    branches: [staging]
     paths:
       - "/packages/hasura/**"
 jobs:
