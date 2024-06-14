@@ -40,12 +40,14 @@ export enum AutocratDaoIndexerError {
 export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "30 * * * * *",
   index: async () => {
-
     try {
       const { currentSlot, currentTime } = (
         await usingDb((db) =>
           db
-            .select({ currentSlot: schema.prices.updatedSlot, currentTime: schema.prices.createdAt })
+            .select({
+              currentSlot: schema.prices.updatedSlot,
+              currentTime: schema.prices.createdAt,
+            })
             .from(schema.prices)
             .orderBy(desc(schema.prices.updatedSlot))
             .limit(1)
@@ -186,8 +188,14 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             }
           }
           let tokenToInsert: TokenRecord = {
-            symbol: metadata.name ? metadata.symbol : defaultSymbol,
-            name: metadata.name ? metadata.name : defaultName,
+            symbol:
+              metadata.name && !metadata.isFallback
+                ? metadata.symbol
+                : defaultSymbol,
+            name:
+              metadata.name && !metadata.isFallback
+                ? metadata.name
+                : defaultName,
             decimals: metadata.decimals,
             mintAcct: token.toString(),
             supply: storedMint.supply,
@@ -360,7 +368,6 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               )
               .execute()
           );
-
         }
         if (onChainProposal.account.state.passed) {
           await usingDb((db) =>
