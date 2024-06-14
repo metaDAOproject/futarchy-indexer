@@ -20,3 +20,17 @@ array_relationships:
         table:
           name: proposals
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - cond_finalize_token_mint_acct
+        - cond_revert_token_mint_acct
+        - cond_vault_acct
+        - nonce
+        - settlement_authority
+        - status
+        - underlying_mint_acct
+        - underlying_token_acct
+      filter: {}
+    comment: ""

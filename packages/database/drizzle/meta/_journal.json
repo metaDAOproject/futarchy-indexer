@@ -344,6 +344,20 @@
       "when": 1717793441656,
       "tag": "0048_overconfident_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "5",
+      "when": 1718054320794,
+      "tag": "0049_chemical_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1718056413525,
+      "tag": "0050_clammy_fat_cobra",
+      "breakpoints": true
     }
   ]
 }

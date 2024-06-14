@@ -1,0 +1,39 @@
+table:
+  name: proposal_bars
+  schema: public
+object_relationships:
+  - name: fail_market
+    using:
+      manual_configuration:
+        column_mapping:
+          fail_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
+  - name: pass_market
+    using:
+      manual_configuration:
+        column_mapping:
+          pass_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - fail_base_amount
+        - fail_quote_amount
+        - pass_base_amount
+        - pass_quote_amount
+        - fail_market_acct
+        - pass_market_acct
+        - proposal_acct
+        - bar_size
+        - fail_price
+        - pass_price
+        - bar_start_time
+      filter: {}
+    comment: ""

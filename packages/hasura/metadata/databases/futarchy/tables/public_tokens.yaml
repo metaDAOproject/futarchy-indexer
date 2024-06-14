@@ -1,6 +1,25 @@
 table:
   name: tokens
   schema: public
+object_relationships:
+  - name: vault_by_finalize
+    using:
+      manual_configuration:
+        column_mapping:
+          mint_acct: cond_finalize_token_mint_acct
+        insertion_order: null
+        remote_table:
+          name: conditional_vaults
+          schema: public
+  - name: vault_by_revert
+    using:
+      manual_configuration:
+        column_mapping:
+          mint_acct: cond_revert_token_mint_acct
+        insertion_order: null
+        remote_table:
+          name: conditional_vaults
+          schema: public
 array_relationships:
   - name: conditional_vaults
     using:
