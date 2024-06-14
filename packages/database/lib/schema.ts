@@ -416,27 +416,24 @@ export const tokenAcctBalances = pgTable(
     tokenAcct: pubkey("token_acct")
       .notNull()
       .references(() => tokenAccts.tokenAcct),
-    amount: tokenAmount("amount").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    delta: tokenAmount("amount"),
     mintAcct: pubkey("mint_acct")
       .references(() => tokens.mintAcct)
       .notNull(),
     ownerAcct: pubkey("owner_acct").notNull(),
+    amount: tokenAmount("amount").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     slot: slot("slot"),
     txSig: transaction("tx_sig").references(() => transactions.txSig),
   },
   (table) => ({
-    pk: primaryKey({
-      columns: [
-        table.tokenAcct,
-        table.mintAcct,
-        table.amount,
-        table.created_at,
-      ],
-    }),
+    pk: primaryKey(
+      table.tokenAcct,
+      table.mintAcct,
+      table.amount,
+      table.created_at
+    ),
     acctAmountCreated: index("acct_amount_created").on(
       table.tokenAcct,
       table.created_at,
