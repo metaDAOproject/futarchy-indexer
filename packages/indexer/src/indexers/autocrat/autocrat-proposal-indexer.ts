@@ -198,8 +198,14 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             }
           }
           let tokenToInsert: TokenRecord = {
-            symbol: metadata.name ? metadata.symbol : defaultSymbol,
-            name: metadata.name ? metadata.name : defaultName,
+            symbol:
+              metadata.name && !metadata.isFallback
+                ? metadata.symbol
+                : defaultSymbol,
+            name:
+              metadata.name && !metadata.isFallback
+                ? metadata.name
+                : defaultName,
             decimals: metadata.decimals,
             mintAcct: token.toString(),
             supply: storedMint.supply,

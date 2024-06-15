@@ -387,16 +387,23 @@ export const indexerAccountDependencies = pgTable(
   })
 );
 
+export enum TokenAcctStatus {
+  Watching = "watching",
+  Enabled = "enabled",
+  Disabled = "disabled",
+}
+
 // By indexing specific ATAs, we can track things like market liquidity over time
 // or META circulating supply by taking total META supply minus the treasury's account
 export const tokenAccts = pgTable("token_accts", {
   // ATA PGA
-  tokenAcct: pubkey("token_acct").primaryKey(),
+  amount: tokenAmount("amount").notNull(),
   mintAcct: pubkey("mint_acct")
     .references(() => tokens.mintAcct)
     .notNull(),
   ownerAcct: pubkey("owner_acct").notNull(),
-  amount: tokenAmount("amount").notNull(),
+  status: pgEnum("status", TokenAcctStatus).default(TokenAcctStatus.Enabled),
+  tokenAcct: pubkey("token_acct").primaryKey(),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
@@ -417,6 +424,8 @@ export const tokenAcctBalances = pgTable(
     created_at: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    slot: slot("slot"),
+    txSig: transaction("tx_sig").references(() => transactions.txSig),
   },
   (table) => ({
     pk: primaryKey(
@@ -700,7 +709,7 @@ export const daoDetails = pgTable(
   })
 );
 
-export const poposalDetails = pgTable("proposal_details", {
+export const proposalDetails = pgTable("proposal_details", {
   // This table holds details for proposals which are not part of the indexing service.
   proposalId: bigint("proposal_id", { mode: "bigint" }).primaryKey(),
   // Our reference to on-chain data

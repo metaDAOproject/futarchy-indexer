@@ -37,3 +37,14 @@ array_relationships:
         table:
           name: program_system
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - program_acct
+        - program_name
+        - version
+        - created_at
+        - deployed_at
+      filter: {}
+    comment: ""
