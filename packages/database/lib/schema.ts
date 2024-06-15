@@ -424,6 +424,8 @@ export const tokenAcctBalances = pgTable(
     created_at: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    slot: slot("slot"),
+    txSig: transaction("tx_sig").references(() => transactions.txSig),
   },
   (table) => ({
     pk: primaryKey(
