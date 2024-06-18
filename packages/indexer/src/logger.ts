@@ -1,9 +1,14 @@
 import { Counter } from "@lukasdeco/prom-client";
+import { AlertChatBotInterface, TelegramBotAPI } from "./adapters/telegram-bot";
+
+const TELEGRAM_ALERT_CHAT_ID = process.env.TELEGRAM_ALERT_CHAT_ID ?? "";
+
 export class Logger {
   private errorCounter;
   private warnCounter;
+  private chatBotApi: AlertChatBotInterface;
 
-  constructor() {
+  constructor(chatBotApi: AlertChatBotInterface) {
     this.errorCounter = new Counter({
       name: "errors",
       help: "number of errors",
@@ -13,19 +18,24 @@ export class Logger {
       name: "warnings",
       help: "number of warnings",
     });
+    this.chatBotApi = chatBotApi;
   }
 
-  log(message: string): void {
-    console.log(message);
+  log(...data: any[]): void {
+    console.log(data);
   }
 
-  info(message: string): void {
-    console.info(message);
+  info(...data: any[]): void {
+    console.info(data);
   }
 
-  error(message: string): void {
-    console.error(message);
+  error(...data: any[]): void {
+    console.error(data);
     this.errorCounter.inc();
+    this.chatBotApi.sendMessage(
+      TELEGRAM_ALERT_CHAT_ID,
+      data.map((d) => d.toString()).join(" ")
+    );
   }
 
   warn(message: string): void {
@@ -35,4 +45,8 @@ export class Logger {
 }
 
 // TODO: add lint rule preventing default exports (default exports are antithetical to IDE auto refactors)
-export const logger = new Logger();
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const telegramBotAPI = new TelegramBotAPI({
+  token: TELEGRAM_BOT_TOKEN ?? "",
+});
+export const logger = new Logger(telegramBotAPI);

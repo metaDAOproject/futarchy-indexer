@@ -108,6 +108,6 @@ async function handleNewAccountToIndex(
     // Perform operations using Drizzle ORM
     // For example, you could log the new row or trigger other indexers
   } catch (e) {
-    console.error("error with starting of indexing new account dependency", e);
+    logger.error("error with starting of indexing new account dependency", e);
   }
 }
