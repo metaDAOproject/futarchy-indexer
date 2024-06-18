@@ -307,7 +307,7 @@ export class SwapBuilder {
       }
       return Err({ type: SwapPersistableError.NonSwapTransaction });
     } catch (e) {
-      console.error("swap peristable general error", e);
+      logger.error("swap peristable general error", e);
       return Err({ type: SwapPersistableError.GeneralError });
     }
   }

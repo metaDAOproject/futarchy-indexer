@@ -5,6 +5,7 @@ import { Err, Ok } from "../../match";
 import { PublicKey } from "@solana/web3.js";
 import { TokenRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { TokenAccountNotFoundError, getMint } from "@solana/spl-token";
+import { logger } from "../../logger";
 
 export enum TokenMintIndexerError {
   GeneralError = "GeneralError",
@@ -26,7 +27,7 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
         storedMint = await getMint(provider.connection, mint);
       } catch (err) {
         if (err instanceof TokenAccountNotFoundError) {
-          console.error(`Mint ${mint.toString()} not found`);
+          logger.error(`Mint ${mint.toString()} not found`);
           return Err({ type: TokenMintIndexerError.NotFoundError });
         } else {
           throw err;
@@ -60,7 +61,7 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
 
       return Ok({ acct: "urmom" });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       return Err({ type: TokenMintIndexerError.GeneralError });
     }
   },

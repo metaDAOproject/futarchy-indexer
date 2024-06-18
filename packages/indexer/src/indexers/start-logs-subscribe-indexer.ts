@@ -20,7 +20,7 @@ export async function startLogsSubscribeIndexer(
     connection.onLogs(accountPubKey, async (logs, context) => {
       const res = await implementation.index(logs, accountPubKey, context);
       if (!res.success) {
-        console.error("error indexing account logs", accountPubKey.toString());
+        logger.error("error indexing account logs", accountPubKey.toString());
       }
     });
   }

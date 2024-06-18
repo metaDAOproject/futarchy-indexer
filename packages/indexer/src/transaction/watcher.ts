@@ -170,7 +170,7 @@ class TransactionWatcher {
         numIndexed
       );
       if (!res.success) {
-        console.error(
+        logger.error(
           "error processing transaction",
           res.error,
           signatureInfo.signature,

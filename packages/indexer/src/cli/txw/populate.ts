@@ -46,7 +46,7 @@ async function populateIndexerAccountDependencies() {
     await populateOpenbookMarketIndexerAccountDependencies();
     await populateSpotPriceMarketIndexerAccountDependencies();
   } catch (e) {
-    console.error("error populating indexers", e);
+    logger.error("error populating indexers", e);
   }
 }
 async function populateTokenMintIndexerAccountDependencies() {
@@ -167,7 +167,7 @@ async function populateOpenbookMarketIndexerAccountDependencies() {
         openbookInsertResult[0].acct
       );
     } else {
-      console.error(
+      logger.error(
         "error with inserting indexer dependency for openbook market:",
         openbookMarket.marketAcct
       );
@@ -288,7 +288,7 @@ async function populateJupQuoteIndexerAndMarket(token: {
     }
     return Ok(null);
   } catch (error) {
-    console.error(
+    logger.error(
       `Error populating jupiter quote indexer and market for USDC/${token.symbol}: ${error}`
     );
     return Err({ type: PopulateSpotPriceMarketErrors.GeneralJupError });
@@ -367,7 +367,7 @@ async function populateBirdEyePricesIndexerAndMarket(token: {
       );
     }
   } catch (error) {
-    console.error(
+    logger.error(
       `Error populating birdeye quote indexer and market for USDC/${token.symbol}: ${error}`
     );
   }
@@ -447,7 +447,7 @@ async function populateOrcaWhirlpoolMarket(token: {
       );
     }
   } catch (error) {
-    console.error(
+    logger.error(
       `Error fetching market address for USDC/${token.symbol}: ${error}`
     );
   }

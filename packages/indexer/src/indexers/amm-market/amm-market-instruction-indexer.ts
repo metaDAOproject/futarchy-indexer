@@ -4,8 +4,9 @@ import { TransactionRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { AMM_PROGRAM_ID } from "@metadaoproject/futarchy";
 import { InstructionIndexer } from "../instruction-indexer";
 import { AmmInstructionIndexerError } from "../../types/errors";
-import { ammClient, ammParser, IDL } from "../common";
+import { ammClient, IDL } from "../common";
 import { SwapBuilder } from "../../builders/swaps";
+import { logger } from "../../logger";
 
 export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
   PROGRAM_ID: AMM_PROGRAM_ID.toString(),
@@ -20,7 +21,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
     try {
       return Ok({ txSig: "" });
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       return Err({ type: AmmInstructionIndexerError.GeneralError });
     }
   },
@@ -32,12 +33,12 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
       TaggedUnion
     >
   > {
-    const builder = new SwapBuilder(ammParser);
+    const builder = new SwapBuilder();
     const buildRes = await builder.withSignatureAndCtx(transaction.txSig, {
       slot: Number(transaction.slot),
     });
     if (!buildRes.success) {
-      console.error(
+      logger.error(
         `error with indexing amm on logs instruction tx ${transaction.txSig}`,
         buildRes.error
       );

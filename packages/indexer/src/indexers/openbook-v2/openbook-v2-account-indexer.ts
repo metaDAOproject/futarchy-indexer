@@ -31,7 +31,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
       );
 
       if (!market) {
-        console.error("Failed to fetch market");
+        logger.error("Failed to fetch market");
         return Err({
           type: OpenbookV2MarketAccountIndexerError.MarketNotFound,
         });
@@ -41,7 +41,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
         market
       );
       if (!orderbook) {
-        console.error("Failed to fetch order book");
+        logger.error("Failed to fetch order book");
         return Err({
           type: OpenbookV2MarketAccountIndexerError.OrderbookNotFound,
         });
@@ -49,7 +49,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
 
       const midPrice = getMidPrice(orderbook);
       if (!midPrice) {
-        console.error("Failed to calculate mid price");
+        logger.error("Failed to calculate mid price");
         return Err({
           type: OpenbookV2MarketAccountIndexerError.MidPriceNotFound,
         });
@@ -83,7 +83,7 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
 
       return Ok({ acct: pricesInsertResult[0].marketAcct });
     } catch (error) {
-      console.error(
+      logger.error(
         "Unexpected error in openbook v2 market info index function:",
         error
       );

@@ -10,6 +10,7 @@ import {
 import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
 import { provider, rpcReadClient } from "../../connection";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
+import { logger } from "../../logger";
 
 export enum AmmMarketAccountIndexingErrors {
   AmmTwapIndexError = "AmmTwapIndexError",
@@ -74,7 +75,7 @@ export async function indexAmmMarketAccountWithContext(
     );
 
     if (twapUpsertResult.length === 0) {
-      console.error("failed to upsert twap");
+      logger.error("failed to upsert twap");
       return Err({ type: "AmmTwapIndexError" });
     }
   }
@@ -111,10 +112,7 @@ export async function indexAmmMarketAccountWithContext(
       .returning({ marketAcct: schema.prices.marketAcct })
   );
   if (pricesInsertResult.length === 0) {
-    console.error(
-      "failed to index amm price",
-      newAmmConditionaPrice.marketAcct
-    );
+    logger.error("failed to index amm price", newAmmConditionaPrice.marketAcct);
     return Err({ type: "AmmIndexPriceError" });
   }
 
