@@ -9,7 +9,7 @@ const PORT = 8080;
 export function startServer() {
   const app = express();
   app.use(express.json());
-  app.use(cors());
+  app.use(cors({ origin: "*" }));
   app.get("/metrics", getMetrics);
   app.post("/auth", authPost);
   app.put("/auth", authPut);
