@@ -18,12 +18,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
     instructionIndex: number,
     decodedInstruction: IDL["instructions"][number]
   ) => {
-    try {
-      return Ok({ txSig: "" });
-    } catch (e) {
-      logger.error(e);
-      return Err({ type: AmmInstructionIndexerError.GeneralError });
-    }
+    return Ok({ txSig: "" });
   },
   async indexTransactionSig(transaction: TransactionRecord): Promise<
     Result<
@@ -38,8 +33,8 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
       slot: Number(transaction.slot),
     });
     if (!buildRes.success) {
-      logger.error(
-        `error with indexing amm on logs instruction tx ${transaction.txSig}`,
+      logger.errorWithChatBotAlert(
+        `error with indexing amm transaction ${transaction.txSig}`,
         buildRes.error
       );
       return Err({ type: AmmInstructionIndexerError.GeneralError });

@@ -93,7 +93,7 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
 
       return Ok({ acct: "urmom" });
     } catch (err) {
-      logger.error(err);
+      logger.errorWithChatBotAlert(err);
       return Err({ type: AutocratDaoIndexerError.GeneralError });
     }
   },

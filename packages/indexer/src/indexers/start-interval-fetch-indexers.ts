@@ -109,8 +109,8 @@ async function handleIntervalFetchFailure(
       .returning({ acct: schema.indexerAccountDependencies.acct })
   );
   if (updateResult.length !== 1) {
-    logger.error(
-      `final error with interval fetch indexer ${indexerWithAcct?.acct}. status set to disabled.`
+    logger.errorWithChatBotAlert(
+      `error with pausing interval fetch indexer ${indexerWithAcct?.acct}.`
     );
   }
   // we resume job after 100 minutes to try again
@@ -132,7 +132,7 @@ async function handleIntervalFetchFailure(
         .returning({ acct: schema.indexerAccountDependencies.acct })
     );
     if (updateResult.length !== 1) {
-      logger.error(
+      logger.errorWithChatBotAlert(
         `failed to update indexer_account_dependency on acct ${indexerWithAcct?.acct} to Active even though the job has been resumed`
       );
     }
@@ -157,7 +157,7 @@ async function handleIntervalFetchFinalFailure(
       .returning({ acct: schema.indexerAccountDependencies.acct })
   );
   if (updateResult.length !== 1) {
-    logger.error(
+    logger.errorWithChatBotAlert(
       `final error with interval fetch indexer ${indexerWithAcct?.acct}. status set to disabled.`
     );
   }

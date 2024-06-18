@@ -145,6 +145,7 @@ class TransactionWatcher {
     if (!historyRes.success) {
       this.errorCount += 1;
       if (this.errorCount > MAX_RETRIES) {
+        logger.errorWithChatBotAlert("marking transaction watcher as failed");
         // update tx watcher status to failed and exit, but other tx watchers continue
         const markFailedResult = await this.markTransactionWatcherAsFailed(
           historyRes.error.type
@@ -385,7 +386,9 @@ class TransactionWatcher {
         .returning({ acct: schema.transactionWatchers.acct })
     );
     if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
-      logger.error(`Failed to mark tx watcher for acct ${acct} as failed`);
+      logger.errorWithChatBotAlert(
+        `Failed to mark tx watcher for acct ${acct} as failed`
+      );
       return Err({ type: WatcherBackfillError.WatcherUpdateFailure });
     }
     return Ok("successfully marked transaction watcher as failed");

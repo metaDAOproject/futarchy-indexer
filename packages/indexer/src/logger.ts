@@ -32,6 +32,11 @@ export class Logger {
   error(...data: any[]): void {
     console.error(data);
     this.errorCounter.inc();
+  }
+
+  errorWithChatBotAlert(...data: any[]): void {
+    console.error(data);
+    this.errorCounter.inc();
     this.chatBotApi.sendMessage(
       TELEGRAM_ALERT_CHAT_ID,
       data.map((d) => d.toString()).join(" ")
