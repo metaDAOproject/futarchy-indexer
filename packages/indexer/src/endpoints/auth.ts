@@ -29,6 +29,7 @@ async function checkExistingSession(pubkey: string) {
 
 export async function authPost(req: Request, res: Response) {
   try {
+    console.log("auth post: ", req.body);
     const { pubKey } = req.body;
     if (!pubKey) return res.status(400).json(WRONG_REQUEST_BODY_ERROR);
 
