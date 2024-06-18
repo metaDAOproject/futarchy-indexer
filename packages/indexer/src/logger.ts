@@ -21,27 +21,40 @@ export class Logger {
     this.chatBotApi = chatBotApi;
   }
 
+  private formatData(data: any[]): string {
+    return data
+      .map((item) => {
+        if (typeof item === "object") {
+          try {
+            return JSON.stringify(item);
+          } catch (error) {
+            return "[Circular]";
+          }
+        }
+        return item.toString();
+      })
+      .join(" ");
+  }
+
   log(...data: any[]): void {
-    console.log(data.join(" "));
+    console.log(this.formatData(data));
   }
 
   info(...data: any[]): void {
-    console.info(data.join(" "));
+    console.info(this.formatData(data));
   }
 
   error(...data: any[]): void {
-    console.error(data.join(" "));
+    console.error(this.formatData(data));
     this.errorCounter.inc();
   }
 
   errorWithChatBotAlert(...data: any[]): void {
-    console.error(data.join(" "));
+    const formattedData = this.formatData(data);
+    console.error(formattedData);
     this.errorCounter.inc();
     if (TELEGRAM_ALERT_CHAT_ID) {
-      this.chatBotApi.sendMessage(
-        TELEGRAM_ALERT_CHAT_ID,
-        data.map((d) => d.toString()).join(" ")
-      );
+      this.chatBotApi.sendMessage(TELEGRAM_ALERT_CHAT_ID, formattedData);
     }
   }
 
