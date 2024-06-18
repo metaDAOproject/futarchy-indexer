@@ -15,7 +15,7 @@ function throwInvariantViolation(
   const error = new Error(
     `Invariant violated. account ${account.toBase58()}, after ${after}, before ${before}: ${violation}`
   );
-  logger.error(error.message);
+  logger.errorWithChatBotAlert(error.message);
   throw error;
 }
 

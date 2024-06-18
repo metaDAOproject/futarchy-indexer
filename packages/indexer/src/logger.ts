@@ -32,10 +32,17 @@ export class Logger {
   error(...data: any[]): void {
     console.error(data);
     this.errorCounter.inc();
-    this.chatBotApi.sendMessage(
-      TELEGRAM_ALERT_CHAT_ID,
-      data.map((d) => d.toString()).join(" ")
-    );
+  }
+
+  errorWithChatBotAlert(...data: any[]): void {
+    console.error(data);
+    this.errorCounter.inc();
+    if (TELEGRAM_ALERT_CHAT_ID) {
+      this.chatBotApi.sendMessage(
+        TELEGRAM_ALERT_CHAT_ID,
+        data.map((d) => d.toString()).join(" ")
+      );
+    }
   }
 
   warn(message: string): void {

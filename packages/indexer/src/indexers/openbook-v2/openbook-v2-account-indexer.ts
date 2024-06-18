@@ -11,6 +11,7 @@ import {
   PricesRecord,
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
+import { logger } from "../../logger";
 
 export enum OpenbookV2MarketAccountIndexerError {
   MarketNotFound = "MarketNotFound",

@@ -27,7 +27,10 @@ export const AmmMarketAccountUpdateIndexer: AccountInfoIndexer = {
       }
       return res;
     } catch (e) {
-      logger.error("general error with indexing amm market account info:", e);
+      logger.errorWithChatBotAlert(
+        "general error with indexing amm market account info:",
+        e
+      );
       return Err({ type: AmmAccountIndexerError.GeneralError });
     }
   },

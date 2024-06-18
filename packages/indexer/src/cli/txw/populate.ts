@@ -27,6 +27,7 @@ import {
 } from "../../indexers/jupiter/jupiter-quotes-indexer";
 
 import Cron from "croner";
+import { logger } from "../../logger";
 
 type IndexerAccountDependency =
   typeof schema.indexerAccountDependencies._.inferInsert;
@@ -162,7 +163,7 @@ async function populateOpenbookMarketIndexerAccountDependencies() {
         .returning({ acct: schema.indexerAccountDependencies.acct })
     );
     if (openbookInsertResult.length > 0) {
-      console.log(
+      logger.log(
         "successfully populated indexer dependency for openbook market account:",
         openbookInsertResult[0].acct
       );
@@ -174,7 +175,7 @@ async function populateOpenbookMarketIndexerAccountDependencies() {
     }
   }
 
-  console.log("Successfully populated openbook market indexers");
+  logger.log("Successfully populated openbook market indexers");
 }
 
 enum PopulateSpotPriceMarketErrors {
@@ -288,7 +289,7 @@ async function populateJupQuoteIndexerAndMarket(token: {
     }
     return Ok(null);
   } catch (error) {
-    logger.error(
+    logger.warn(
       `Error populating jupiter quote indexer and market for USDC/${token.symbol}: ${error}`
     );
     return Err({ type: PopulateSpotPriceMarketErrors.GeneralJupError });

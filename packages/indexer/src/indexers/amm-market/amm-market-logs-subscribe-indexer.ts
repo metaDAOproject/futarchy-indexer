@@ -13,7 +13,7 @@ export const AmmMarketLogsSubscribeIndexer: AccountLogsIndexer = {
     const builder = new SwapBuilder();
     const buildRes = await builder.withSignatureAndCtx(logs.signature, context);
     if (!buildRes.success) {
-      logger.error(
+      logger.errorWithChatBotAlert(
         `error with indexing amm on logs subscriber tx ${logs.signature}`,
         buildRes.error
       );
