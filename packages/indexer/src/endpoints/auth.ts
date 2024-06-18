@@ -4,6 +4,7 @@ import { eq, and, gt } from "drizzle-orm";
 import { usingDb } from "@metadaoproject/indexer-db";
 import { sessions, users } from "@metadaoproject/indexer-db/lib/schema";
 import { AUTHENTICATION_TIME, verifySignature } from "../usecases/auth";
+import { logger } from "../logger";
 
 //TODO: These endpoints need to be changed so that you must send signature as part of the auth header.
 // Sending just the pubkey in the body would mean an inflight session can be easily hijacked
@@ -28,9 +29,10 @@ async function checkExistingSession(pubkey: string) {
 }
 
 export async function authPost(req: Request, res: Response) {
+  logger.log("auth post: ", req.body);
   try {
-    console.log("auth post: ", req.body);
     const { pubKey } = req.body;
+    logger.log("auth pubkey: ", pubKey);
     if (!pubKey) return res.status(400).json(WRONG_REQUEST_BODY_ERROR);
 
     const existingSession = await checkExistingSession(pubKey);
