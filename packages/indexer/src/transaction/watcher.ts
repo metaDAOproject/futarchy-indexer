@@ -491,6 +491,20 @@ export function getMainIxTypeFromTransaction(
   if (tx.instructions.some((ix) => ix.name === "finalizeProposal")) {
     return InstructionType.AutocratFinalizeProposal;
   }
+  if (
+    tx.instructions.some(
+      (ix) => ix.name === "mergeConditionalTokensForUnderlyingTokens"
+    )
+  ) {
+    return InstructionType.VaultMergeConditionalTokens;
+  }
+  if (
+    tx.instructions.some(
+      (ix) => ix.name === "redeemConditionalTokensForUnderlyingTokens"
+    )
+  ) {
+    return InstructionType.VaultRedeemConditionalTokensForUnderlyingTokens;
+  }
   return null;
 }
 

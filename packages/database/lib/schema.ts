@@ -265,6 +265,8 @@ export enum InstructionType {
   OpenbookCancelOrder = "openbook_cancel_order",
   AutocratInitializeProposal = "autocrat_initialize_proposal",
   AutocratFinalizeProposal = "autocrat_finalize_proposal",
+  VaultMergeConditionalTokens = "vault_merge_conditional_tokens",
+  VaultRedeemConditionalTokensForUnderlyingTokens = "vault_redeem_conditional_tokens_for_underlying_tokens",
 }
 
 export const transactions = pgTable(
