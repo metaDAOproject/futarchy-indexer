@@ -1,9 +1,9 @@
 import { startIndexers } from "./indexers";
-import { startMetricsServer } from "./metrics";
 import { startIndexerAccountDependencyPopulation } from "./cli/txw/populate";
 import { startTransactionWatchers } from "./transaction/watcher";
+import { startServer } from "./server";
 
 startIndexerAccountDependencyPopulation();
-startMetricsServer();
+startServer();
 await startTransactionWatchers();
 await startIndexers();
