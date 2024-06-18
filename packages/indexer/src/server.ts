@@ -4,7 +4,7 @@ import { logger } from "./logger";
 import cors from "cors";
 import express from "express";
 
-const PORT = 8080;
+const PORT = process.env.PORT ?? 8080;
 
 export function startServer() {
   console.log("starting server");
