@@ -22,20 +22,20 @@ export class Logger {
   }
 
   log(...data: any[]): void {
-    console.log(data);
+    console.log(data.join(" "));
   }
 
   info(...data: any[]): void {
-    console.info(data);
+    console.info(data.join(" "));
   }
 
   error(...data: any[]): void {
-    console.error(data);
+    console.error(data.join(" "));
     this.errorCounter.inc();
   }
 
   errorWithChatBotAlert(...data: any[]): void {
-    console.error(data);
+    console.error(data.join(" "));
     this.errorCounter.inc();
     if (TELEGRAM_ALERT_CHAT_ID) {
       this.chatBotApi.sendMessage(
