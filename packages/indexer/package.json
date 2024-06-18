@@ -21,6 +21,7 @@
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.90.0",
     "ansicolor": "^2.0.1",
+    "axios": "^1.7.2",
     "bs58": "^4.0.1",
     "commander": "^12.0.0",
     "croner": "^8.0.2",
@@ -29,6 +30,7 @@
     "fastq": "^1.17.1",
     "inquirer": "^9.2.14",
     "match-discriminated-union": "^1.0.0",
+    "tweetnacl": "^1.0.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {

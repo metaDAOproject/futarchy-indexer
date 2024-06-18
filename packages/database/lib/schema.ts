@@ -654,10 +654,10 @@ export const sessions = pgTable("sessions", {
     onDelete: "restrict",
     onUpdate: "restrict",
   }),
-  created_at: timestamp("created_at", { withTimezone: true })
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-  expires_at: timestamp("expires_at"),
+  expiresAt: timestamp("expires_at"),
 });
 export const programs = pgTable(
   "programs",
