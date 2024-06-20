@@ -16,7 +16,6 @@ export function startServer() {
   app.put("/auth", authPut);
   app.get("/auth", authGet);
 
-  logger.log("before express app starts listening");
   app.listen(PORT, () => {
     logger.log(`Server listening on Port ${PORT}`);
   });

@@ -29,10 +29,8 @@ async function checkExistingSession(pubkey: string) {
 }
 
 export async function authPost(req: Request, res: Response) {
-  logger.log("auth post: ", req.body);
   try {
     const { pubKey } = req.body;
-    logger.log("auth pubkey: ", pubKey);
     if (!pubKey) return res.status(400).json(WRONG_REQUEST_BODY_ERROR);
 
     const existingSession = await checkExistingSession(pubKey);
