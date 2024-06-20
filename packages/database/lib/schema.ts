@@ -140,6 +140,80 @@ export const proposals = pgTable("proposals", {
   completedAt: timestamp("completed_at"),
 });
 
+
+export enum DisplayName {
+  Memo = "Memo",
+  Transfer = "Transfer",
+  // used in migrator contract
+  MultiTransfer = "Multi Transfer",
+  Burn = "Burn",
+  Unkown = "Unkown",
+  // not decodable
+  Raw = "Raw",
+}
+
+export const finalizeInstructions = pgTable("finalize_instructions", {
+  instructionId: uuid("instruction_id")
+    .default(sql`gen_random_uuid()`)
+    .primaryKey()
+    ,
+  proposalAcct: pubkey("proposal_acct").references(() => proposals.proposalAcct),
+  programId: pubkey("program_id").notNull(),
+  // can be null if the ix is raw
+  name: varchar("name", { length: 50 }),
+  displayName: pgEnum("display_name", DisplayName).notNull(),
+  rawData: text("raw_data").notNull(),
+  signature: text("signature")
+})
+
+export const finalizeMemoInstructionData = pgTable("finalize_memo_instruction_data", {
+  instructionId: uuid("instruction_id")
+    .references(() => finalizeInstructions.instructionId)
+    .notNull(),
+  message: varchar("message", { length: 566 })
+})
+
+export const finalizeTokenInstructionData = pgTable("finalize_token_instruction_data", {
+  instructionId: uuid("instruction_id")
+    .references(() => finalizeInstructions.instructionId)
+    .notNull(),
+  source: pubkey("source").notNull(),
+  // no destination when it's a burn ix
+  destination: pubkey("destination"),
+  mint: pubkey("mint").notNull(),
+  // could be null if transfer is a multi transfer with all funds transfered
+  amount: bigint("amount", { mode: "bigint" })
+})
+
+export const finalizeInstructionAccounts = pgTable("finalize_instruction_accounts", {
+  instructionId: uuid("instruction_id")
+    .references(() => finalizeInstructions.instructionId)
+    .notNull(),
+  pubkey: pubkey("pubkey").notNull(),
+  isSigner: boolean("is_signer").notNull(),
+  isWritable: boolean("is_writable").notNull(),
+});
+
+export const finalizeInstructionArgs = pgTable("finalize_instruction_args", {
+  instructionId: uuid("instruction_id")
+    .references(() => finalizeInstructions.instructionId)
+    .notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  data: text("data").notNull(),
+})
+
+// NOT USED
+
+// export const instructionAccounts = pgTable("instruction_accounts", {
+//   proposalAcct: pubkey("proposal_acct")
+//     .references(() => proposals.proposalAcct)
+//     .notNull(),
+//   pubkey: pubkey("pubkey").notNull(),
+//   isSigner: boolean("is_signer").notNull(),
+//   isWritable: boolean("is_writable").notNull(),
+// });
+
 export const markets = pgTable("markets", {
   marketAcct: pubkey("market_acct").primaryKey(),
   marketType: pgEnum("market_type", MarketType).notNull(),

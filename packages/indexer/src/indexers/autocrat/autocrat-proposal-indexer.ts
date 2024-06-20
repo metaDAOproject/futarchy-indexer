@@ -7,7 +7,7 @@ import {
 } from "../../connection";
 import { usingDb, schema, eq, and, isNull } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import {
   ConditionalVaultRecord,
   DaoRecord,
@@ -18,12 +18,13 @@ import {
   TokenAcctRecord,
   TokenRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
+
 import {
   getAccount,
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
+import { InstructionDecoder, enrichTokenMetadata, findFinalizeProposalTransaction, getDisplayName } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
 import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm/sql";
@@ -276,6 +277,154 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .execute()
         );
 
+        const formattedIx: TransactionInstruction = {
+          ...proposal.account.instruction,
+          keys: proposal.account.instruction.accounts,
+        };
+        const decoder = new InstructionDecoder(formattedIx, provider);
+        const ix = await decoder.decodeInstruction();
+
+        const dbFinalizeInstruction = {
+          proposalAcct: proposal.publicKey.toString(),
+          programId: proposal.account.instruction.programId.toString(),
+          name: ix?.name,
+          displayName: getDisplayName(ix?.name),
+          rawData: formattedIx.data.toString('hex')
+        };
+
+        const ret = await usingDb((db) =>
+          db.insert(schema.finalizeInstructions)
+            .values([dbFinalizeInstruction])
+            .onConflictDoNothing()
+            .returning({ instructionId: schema.finalizeInstructions.instructionId })
+            .execute()
+        )
+        const instructionId = ret[0].instructionId;
+        const accounts = formattedIx.keys.map((account) => ({
+          ...account,
+          pubkey: account.pubkey.toString(),
+          instructionId: instructionId
+        }));
+
+        await usingDb((db) =>
+          db.insert(schema.finalizeInstructionAccounts)
+            .values(accounts)
+            .onConflictDoNothing()
+            .execute()
+        )
+
+        if (ix?.args) {
+          const args = ix.args.map((arg) => ({
+            ...arg,
+            instructionId: instructionId
+          }))
+
+          await usingDb((db) =>
+            db.insert(schema.finalizeInstructionArgs)
+              .values(args)
+              .onConflictDoNothing()
+              .execute()
+          )
+        }
+
+        if (dbFinalizeInstruction.displayName == "Memo") {
+          await usingDb((db) => db
+            .insert(schema.finalizeMemoInstructionData)
+            .values([{
+              instructionId: instructionId,
+              message: ix!!.args[0].data
+            }])
+            .onConflictDoNothing()
+            .execute())
+        }
+        else if (ix?.name == "burn") {
+          const account = await getAccount(connection, ix!!.accounts.find(a => a.name == "Account")?.pubkey!!)
+
+          await usingDb((db) => db
+            .insert(schema.finalizeTokenInstructionData)
+            .values([{
+              instructionId: instructionId,
+              source: account.owner.toString(),
+              mint: account.mint.toString(),
+              amount: BigInt(ix.args[0].data)
+            }])
+            .onConflictDoNothing()
+            .execute()
+          )
+        }
+        else if (ix?.name == "transfer" || ix?.name == "transferChecked") {
+          const fromAccount = await getAccount(connection, ix.accounts.find(a => a.name == "Source")?.pubkey!!)
+          const toAccount = await getAccount(connection, ix.accounts.find(a => a.name == "Destination")?.pubkey!!)
+
+          const mint = ix.accounts.find((a) => a.name == "Mint")?.pubkey.toString() || fromAccount.mint.toString()
+
+          await usingDb((db) => db
+            .insert(schema.finalizeTokenInstructionData)
+            .values([{
+              instructionId: instructionId,
+              source: fromAccount.owner.toString(),
+              destination: toAccount.owner.toString(),
+              mint: mint,
+              amount: BigInt(ix.args[0].data)
+            }])
+            .onConflictDoNothing()
+            .execute()
+          )
+        }
+        else if (ix?.name == "multiTransfer4" || ix?.name == "multiTransfer2") {
+          const fromAccount0 = await getAccount(connection, ix.accounts.find(a => a.name == "From0")?.pubkey!!)
+          const toAccount0 = await getAccount(connection, ix.accounts.find(a => a.name == "To0")?.pubkey!!)
+
+          const fromAccount1 = await getAccount(connection, ix.accounts.find(a => a.name == "From1")?.pubkey!!)
+          const toAccount1 = await getAccount(connection, ix.accounts.find(a => a.name == "To1")?.pubkey!!)
+
+          await usingDb((db) => db
+            .insert(schema.finalizeTokenInstructionData)
+            .values([{
+              instructionId: instructionId,
+              source: fromAccount0.owner.toString(),
+              destination: toAccount0.owner.toString(),
+              mint: fromAccount0.mint.toString(),
+            },
+            {
+              instructionId: instructionId,
+              source: fromAccount1.owner.toString(),
+              destination: toAccount1.owner.toString(),
+              mint: fromAccount1.mint.toString(),
+            },
+            ])
+            .onConflictDoNothing()
+            .execute()
+          )
+
+          if (ix.name == "multiTransfer4") {
+            const fromAccount2 = await getAccount(connection, ix.accounts.find(a => a.name == "From2")?.pubkey!!)
+            const toAccount2 = await getAccount(connection, ix.accounts.find(a => a.name == "To2")?.pubkey!!)
+
+            const fromAccount3 = await getAccount(connection, ix.accounts.find(a => a.name == "From3")?.pubkey!!)
+            const toAccount3 = await getAccount(connection, ix.accounts.find(a => a.name == "To3")?.pubkey!!)
+
+            await usingDb((db) => db
+              .insert(schema.finalizeTokenInstructionData)
+              .values([{
+                instructionId: instructionId,
+                source: fromAccount2.owner.toString(),
+                destination: toAccount2.owner.toString(),
+                mint: fromAccount2.mint.toString(),
+              },
+              {
+                instructionId: instructionId,
+                source: fromAccount3.owner.toString(),
+                destination: toAccount3.owner.toString(),
+                mint: fromAccount3.mint.toString(),
+              },
+              ])
+              .onConflictDoNothing()
+              .execute()
+            )
+          }
+        }
+
         let passMarket: MarketRecord = {
           marketAcct: proposal.account.passAmm.toString(),
           proposalAcct: proposal.publicKey.toString(),
@@ -404,6 +553,34 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               )
               .execute()
           );
+
+          const instructionHasSig = (await usingDb((db) =>
+            db
+              .select()
+              .from(schema.finalizeInstructions)
+              .where(
+                and(
+                  eq(schema.finalizeInstructions.proposalAcct, onChainProposal.publicKey.toString()),
+                  isNull(schema.finalizeInstructions.signature)
+                )
+              )
+              .execute()
+          )).length > 0;
+          
+          if (!instructionHasSig) {
+            const signature = await findFinalizeProposalTransaction({ connection, proposal: onChainProposal.publicKey })
+            await usingDb((db) =>
+              db.update(schema.finalizeInstructions)
+                .set({ signature: signature })
+                .where(
+                  and(
+                    eq(schema.finalizeInstructions.proposalAcct, onChainProposal.publicKey.toString()),
+                    isNull(schema.finalizeInstructions.signature)
+                  )
+                )
+                .execute()
+            )
+          }
         }
         if (onChainProposal.account.state.failed) {
           await usingDb((db) =>
