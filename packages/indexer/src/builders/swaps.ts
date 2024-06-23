@@ -53,7 +53,7 @@ export class SwapPersistable {
         upsertResult.length !== 1 ||
         upsertResult[0].txSig !== this.transactionRecord.txSig
       ) {
-        logger.error(
+        logger.warn(
           `Failed to upsert ${this.transactionRecord.txSig}. ${JSON.stringify(
             this.transactionRecord
           )}`
@@ -96,7 +96,7 @@ export class SwapPersistable {
         );
       }
     } catch (e) {
-      logger.error(`error with persisting swap: ${e}`);
+      logger.errorWithChatBotAlert(`error with persisting swap: ${e}`);
     }
   }
 }
@@ -307,7 +307,7 @@ export class SwapBuilder {
       }
       return Err({ type: SwapPersistableError.NonSwapTransaction });
     } catch (e) {
-      console.error("swap peristable general error", e);
+      logger.errorWithChatBotAlert("swap peristable general error", e);
       return Err({ type: SwapPersistableError.GeneralError });
     }
   }

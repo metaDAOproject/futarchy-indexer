@@ -5,6 +5,7 @@ import {
   PricesRecord,
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
+import { logger } from "../../logger";
 
 export enum JupiterQuoteIndexingError {
   JupiterFetchError = "JupiterFetchError",
@@ -44,7 +45,7 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
       }
       return Ok({ acct });
     } catch (e) {
-      console.error("general error indexing jupiter quote: ", e);
+      logger.error("general error indexing jupiter quote: ", e);
       return Err({
         type: JupiterQuoteIndexingError.GeneralJupiterQuoteIndexError,
       });
@@ -110,7 +111,7 @@ export const fetchQuoteFromJupe = async (
     const tokenPriceRes = await fetch(url);
 
     if (tokenPriceRes.status !== 200) {
-      console.error(
+      logger.error(
         "non-200 response from jupiter quotes:",
         tokenPriceRes.status,
         tokenPriceRes.statusText
@@ -124,7 +125,7 @@ export const fetchQuoteFromJupe = async (
     }
 
     if (!tokenPriceJson.outAmount || !tokenPriceJson.inAmount) {
-      console.error("token price output or input is 0 value");
+      logger.error("token price output or input is 0 value");
       return null;
     }
     return [
@@ -136,7 +137,7 @@ export const fetchQuoteFromJupe = async (
       tokenPriceJson.contextSlot,
     ];
   } catch (e) {
-    console.error("error getting price number from jupiter: ", e);
+    logger.error("error getting price number from jupiter: ", e);
     return null;
   }
 };

@@ -9,6 +9,7 @@ import { startAccountInfoIndexer } from "./start-account-info-indexers";
 import { startTransactionHistoryIndexer } from "./start-transaction-history-indexers";
 import { startLogsSubscribeIndexer } from "./start-logs-subscribe-indexer";
 import { IndexerWithAccountDeps } from "../types";
+import { logger } from "../logger";
 
 export async function startIndexers() {
   await startAllIndexers();
@@ -108,6 +109,9 @@ async function handleNewAccountToIndex(
     // Perform operations using Drizzle ORM
     // For example, you could log the new row or trigger other indexers
   } catch (e) {
-    console.error("error with starting of indexing new account dependency", e);
+    logger.errorWithChatBotAlert(
+      "error with starting of indexing new account dependency",
+      e
+    );
   }
 }

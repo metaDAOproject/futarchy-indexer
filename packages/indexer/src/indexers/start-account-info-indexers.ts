@@ -5,6 +5,7 @@ import { IndexerWithAccountDeps } from "../types";
 import { AccountInfoIndexer } from "./account-info-indexer";
 import { AmmMarketAccountUpdateIndexer } from "./amm-market/amm-market-account-indexer";
 import { OpenbookV2MarketAccountUpdateIndexer } from "./openbook-v2/openbook-v2-account-indexer";
+import { logger } from "../logger";
 
 export async function startAccountInfoIndexer(
   indexerQueryRes: IndexerWithAccountDeps
@@ -30,7 +31,7 @@ export async function startAccountInfoIndexer(
         accountInfo.context
       );
       if (!res.success) {
-        console.error(
+        logger.error(
           "error indexing account initial fetch",
           accountPubKey.toString()
         );
@@ -44,10 +45,7 @@ export async function startAccountInfoIndexer(
         context
       );
       if (!res.success) {
-        console.error(
-          "error indexing account update",
-          accountPubKey.toString()
-        );
+        logger.error("error indexing account update", accountPubKey.toString());
       }
     });
   }

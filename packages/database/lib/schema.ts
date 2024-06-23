@@ -265,6 +265,8 @@ export enum InstructionType {
   OpenbookCancelOrder = "openbook_cancel_order",
   AutocratInitializeProposal = "autocrat_initialize_proposal",
   AutocratFinalizeProposal = "autocrat_finalize_proposal",
+  VaultMergeConditionalTokens = "vault_merge_conditional_tokens",
+  VaultRedeemConditionalTokensForUnderlyingTokens = "vault_redeem_conditional_tokens_for_underlying_tokens",
 }
 
 export const transactions = pgTable(
@@ -424,6 +426,9 @@ export const tokenAcctBalances = pgTable(
     created_at: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    delta: tokenAmount("delta")
+      .notNull()
+      .default(sql`0`),
     slot: slot("slot"),
     txSig: transaction("tx_sig").references(() => transactions.txSig),
   },
@@ -649,10 +654,10 @@ export const sessions = pgTable("sessions", {
     onDelete: "restrict",
     onUpdate: "restrict",
   }),
-  created_at: timestamp("created_at", { withTimezone: true })
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-  expires_at: timestamp("expires_at"),
+  expiresAt: timestamp("expires_at"),
 });
 export const programs = pgTable(
   "programs",

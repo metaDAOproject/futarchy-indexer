@@ -4,6 +4,7 @@ import { connection } from "../connection";
 import { IndexerWithAccountDeps } from "../types";
 import { AccountLogsIndexer } from "./account-logs-indexer";
 import { AmmMarketLogsSubscribeIndexer } from "./amm-market/amm-market-logs-subscribe-indexer";
+import { logger } from "../logger";
 
 export async function startLogsSubscribeIndexer(
   indexerQueryRes: IndexerWithAccountDeps
@@ -20,7 +21,10 @@ export async function startLogsSubscribeIndexer(
     connection.onLogs(accountPubKey, async (logs, context) => {
       const res = await implementation.index(logs, accountPubKey, context);
       if (!res.success) {
-        console.error("error indexing account logs", accountPubKey.toString());
+        logger.errorWithChatBotAlert(
+          "error indexing account logs",
+          accountPubKey.toString()
+        );
       }
     });
   }

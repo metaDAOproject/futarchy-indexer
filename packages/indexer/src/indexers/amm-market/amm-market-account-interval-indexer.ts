@@ -3,6 +3,7 @@ import { Err, Ok } from "../../match";
 import { indexAmmMarketAccountWithContext } from "./utils";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
 import { connection } from "../../connection";
+import { logger } from "../../logger";
 
 export enum AmmAccountIntervalIndexerError {
   General = "General",
@@ -35,12 +36,12 @@ export const AmmMarketAccountIntervalFetchIndexer: IntervalFetchIndexer = {
       );
 
       if (res.success) {
-        console.log(res.ok);
+        logger.log(res.ok);
         return Ok({ acct: account.toBase58() });
       }
       return res;
     } catch (e) {
-      console.error("general error with indexing amm market account info:", e);
+      logger.error("general error with indexing amm market account info:", e);
       return Err({ type: AmmAccountIntervalIndexerError.General });
     }
   },

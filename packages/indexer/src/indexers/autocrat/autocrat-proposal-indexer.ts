@@ -36,6 +36,7 @@ import {
 import { BN } from "@coral-xyz/anchor";
 import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm/sql";
+import { logger } from "../../logger";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -65,7 +66,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         )
       )[0];
 
-      console.log("Autocrat proposal indexer");
+      logger.log("Autocrat proposal indexer");
       const dbProposals: ProposalRecord[] = await usingDb((db) =>
         db.select().from(schema.proposals).execute()
       );
@@ -88,8 +89,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         }
       }
 
-      console.log("Proposals to insert");
-      console.log(
+      logger.log("Proposals to insert");
+      logger.log(
         proposalsToInsert.map((proposal) => proposal.publicKey.toString())
       );
 
@@ -254,7 +255,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .onConflictDoNothing()
             .execute()
         );
-        console.log("inserted token accounts");
+        logger.log("inserted token accounts");
 
         const dbDao: DaoRecord = (
           await usingDb((db) =>
@@ -358,7 +359,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         );
       });
 
-      console.log("inserted proposals");
+      logger.log("inserted proposals");
 
       for (const onChainProposal of onChainProposals) {
         if (onChainProposal.account.state.pending) {
@@ -496,11 +497,11 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         }
       }
 
-      console.log("updated proposal and vault states");
+      logger.log("updated proposal and vault states");
 
       return Ok({ acct: "urmom" });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       return Err({ type: AutocratDaoIndexerError.GeneralError });
     }
   },

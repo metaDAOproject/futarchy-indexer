@@ -34,14 +34,14 @@ export function startIntervalFetchIndexer(
   );
   if (implementation && dependentAccount && dependentAccount.acct) {
     const retries = implementation.retries ?? 3; // default 3 interval fetch retries
-    console.log("setting interval fetch for:", dependentAccount.acct);
+    logger.log("setting interval fetch for:", dependentAccount.acct);
     const job = new Cron(
       implementation.cronExpression,
       {},
       async (self: Cron) => {
         const res = await implementation.index(dependentAccount.acct);
         if (!res.success) {
-          console.log(
+          logger.log(
             `error with interval fetch indexer ${dependentAccount.acct}:`,
             res.error
           );
@@ -59,7 +59,7 @@ export function startIntervalFetchIndexer(
           }
         } else {
           errorCount = 0;
-          console.log(
+          logger.log(
             `next run for ${dependentAccount.acct} with ${
               indexer.implementation
             } at ${self.nextRun()}`
@@ -109,8 +109,8 @@ async function handleIntervalFetchFailure(
       .returning({ acct: schema.indexerAccountDependencies.acct })
   );
   if (updateResult.length !== 1) {
-    logger.error(
-      `final error with interval fetch indexer ${indexerWithAcct?.acct}. status set to disabled.`
+    logger.errorWithChatBotAlert(
+      `error with pausing interval fetch indexer ${indexerWithAcct?.acct}.`
     );
   }
   // we resume job after 100 minutes to try again
@@ -132,7 +132,7 @@ async function handleIntervalFetchFailure(
         .returning({ acct: schema.indexerAccountDependencies.acct })
     );
     if (updateResult.length !== 1) {
-      logger.error(
+      logger.errorWithChatBotAlert(
         `failed to update indexer_account_dependency on acct ${indexerWithAcct?.acct} to Active even though the job has been resumed`
       );
     }
@@ -157,7 +157,7 @@ async function handleIntervalFetchFinalFailure(
       .returning({ acct: schema.indexerAccountDependencies.acct })
   );
   if (updateResult.length !== 1) {
-    logger.error(
+    logger.errorWithChatBotAlert(
       `final error with interval fetch indexer ${indexerWithAcct?.acct}. status set to disabled.`
     );
   }

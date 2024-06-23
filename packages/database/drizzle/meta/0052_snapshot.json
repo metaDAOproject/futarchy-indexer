@@ -1,6 +1,6 @@
 {
-  "id": "a7dd8c54-8416-477b-ade5-a6f022896494",
-  "prevId": "44444d1d-2e69-4305-991d-853cd086aa64",
+  "id": "9d764676-f27a-4541-9726-03c33f77d00e",
+  "prevId": "c27c8dd6-5948-4310-bb44-e6e3275a0a96",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -22,7 +22,7 @@
         },
         "timestamp": {
           "name": "timestamp",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
@@ -133,7 +133,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -444,14 +444,14 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -562,7 +562,7 @@
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -683,7 +683,7 @@
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         }
@@ -836,7 +836,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -943,7 +943,7 @@
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
@@ -979,7 +979,7 @@
         },
         "order_time": {
           "name": "order_time",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
@@ -997,7 +997,7 @@
         },
         "cancel_time": {
           "name": "cancel_time",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -1043,110 +1043,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "proposal_details": {
-      "name": "proposal_details",
-      "schema": "",
-      "columns": {
-        "proposal_id": {
-          "name": "proposal_id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "proposal_acct": {
-          "name": "proposal_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "title": {
-          "name": "title",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "slug": {
-          "name": "slug",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "categories": {
-          "name": "categories",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "proposer_acct": {
-          "name": "proposer_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "base_cond_vault_acct": {
-          "name": "base_cond_vault_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "quote_cond_vault_acct": {
-          "name": "quote_cond_vault_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pass_market_acct": {
-          "name": "pass_market_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "fail_market_acct": {
-          "name": "fail_market_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "proposal_details_proposal_acct_proposals_proposal_acct_fk": {
-          "name": "proposal_details_proposal_acct_proposals_proposal_acct_fk",
-          "tableFrom": "proposal_details",
-          "tableTo": "proposals",
-          "columnsFrom": [
-            "proposal_acct"
-          ],
-          "columnsTo": [
-            "proposal_acct"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "proposal_details_slug_unique": {
-          "name": "proposal_details_slug_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
-        }
-      }
-    },
     "prices": {
       "name": "prices",
       "schema": "",
@@ -1183,7 +1079,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -1345,7 +1241,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -1367,6 +1263,110 @@
           "columns": [
             "program_acct",
             "version"
+          ]
+        }
+      }
+    },
+    "proposal_details": {
+      "name": "proposal_details",
+      "schema": "",
+      "columns": {
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "proposal_acct": {
+          "name": "proposal_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "categories": {
+          "name": "categories",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "proposer_acct": {
+          "name": "proposer_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "base_cond_vault_acct": {
+          "name": "base_cond_vault_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote_cond_vault_acct": {
+          "name": "quote_cond_vault_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pass_market_acct": {
+          "name": "pass_market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fail_market_acct": {
+          "name": "fail_market_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposal_details_proposal_acct_proposals_proposal_acct_fk": {
+          "name": "proposal_details_proposal_acct_proposals_proposal_acct_fk",
+          "tableFrom": "proposal_details",
+          "tableTo": "proposals",
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "proposal_details_slug_unique": {
+          "name": "proposal_details_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
           ]
         }
       }
@@ -1467,27 +1467,27 @@
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
         "ended_at": {
           "name": "ended_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
         "completed_at": {
           "name": "completed_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -1567,7 +1567,7 @@
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         }
@@ -1632,7 +1632,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -1730,7 +1730,7 @@
         },
         "order_time": {
           "name": "order_time",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         }
@@ -1834,10 +1834,29 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "delta": {
+          "name": "delta",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "0"
+        },
+        "slot": {
+          "name": "slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tx_sig": {
+          "name": "tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1877,6 +1896,19 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "token_acct_balances_tx_sig_transactions_tx_sig_fk": {
+          "name": "token_acct_balances_tx_sig_transactions_tx_sig_fk",
+          "tableFrom": "token_acct_balances",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1896,10 +1928,10 @@
       "name": "token_accts",
       "schema": "",
       "columns": {
-        "token_acct": {
-          "name": "token_acct",
-          "type": "varchar(44)",
-          "primaryKey": true,
+        "amount": {
+          "name": "amount",
+          "type": "bigint",
+          "primaryKey": false,
           "notNull": true
         },
         "mint_acct": {
@@ -1914,15 +1946,22 @@
           "primaryKey": false,
           "notNull": true
         },
-        "amount": {
-          "name": "amount",
-          "type": "bigint",
+        "status": {
+          "name": "status",
+          "type": "varchar",
           "primaryKey": false,
+          "notNull": false,
+          "default": "'enabled'"
+        },
+        "token_acct": {
+          "name": "token_acct",
+          "type": "varchar(44)",
+          "primaryKey": true,
           "notNull": true
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -1982,7 +2021,7 @@
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
@@ -2125,7 +2164,7 @@
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -2180,7 +2219,7 @@
         },
         "block_time": {
           "name": "block_time",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
@@ -2201,6 +2240,12 @@
           "type": "smallint",
           "primaryKey": false,
           "notNull": true
+        },
+        "main_ix_type": {
+          "name": "main_ix_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2264,7 +2309,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -2322,7 +2367,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"

@@ -1,9 +1,14 @@
 import { Counter } from "@lukasdeco/prom-client";
+import { AlertChatBotInterface, TelegramBotAPI } from "./adapters/telegram-bot";
+
+const TELEGRAM_ALERT_CHAT_ID = process.env.TELEGRAM_ALERT_CHAT_ID ?? "";
+
 export class Logger {
   private errorCounter;
   private warnCounter;
+  private chatBotApi: AlertChatBotInterface;
 
-  constructor() {
+  constructor(chatBotApi: AlertChatBotInterface) {
     this.errorCounter = new Counter({
       name: "errors",
       help: "number of errors",
@@ -13,19 +18,44 @@ export class Logger {
       name: "warnings",
       help: "number of warnings",
     });
+    this.chatBotApi = chatBotApi;
   }
 
-  log(message: string): void {
-    console.log(message);
+  private formatData(data: any[]): string {
+    return data
+      .map((item) => {
+        if (typeof item === "object") {
+          try {
+            return JSON.stringify(item);
+          } catch (error) {
+            return "[Circular]";
+          }
+        }
+        return item.toString();
+      })
+      .join(" ");
   }
 
-  info(message: string): void {
-    console.info(message);
+  log(...data: any[]): void {
+    console.log(this.formatData(data));
   }
 
-  error(message: string): void {
-    console.error(message);
+  info(...data: any[]): void {
+    console.info(this.formatData(data));
+  }
+
+  error(...data: any[]): void {
+    console.error(this.formatData(data));
     this.errorCounter.inc();
+  }
+
+  errorWithChatBotAlert(...data: any[]): void {
+    const formattedData = this.formatData(data);
+    console.error(formattedData);
+    this.errorCounter.inc();
+    if (TELEGRAM_ALERT_CHAT_ID) {
+      this.chatBotApi.sendMessage(TELEGRAM_ALERT_CHAT_ID, formattedData);
+    }
   }
 
   warn(message: string): void {
@@ -35,4 +65,8 @@ export class Logger {
 }
 
 // TODO: add lint rule preventing default exports (default exports are antithetical to IDE auto refactors)
-export const logger = new Logger();
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const telegramBotAPI = new TelegramBotAPI({
+  token: TELEGRAM_BOT_TOKEN ?? "",
+});
+export const logger = new Logger(telegramBotAPI);

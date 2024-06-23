@@ -6,6 +6,7 @@ import { Err, Ok } from "../../match";
 import { PublicKey } from "@solana/web3.js";
 import { DaoRecord, TokenRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { getMint } from "@solana/spl-token";
+import { logger } from "../../logger";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -47,7 +48,7 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
           dao.baseToken.publicKey == null ||
           dao.quoteToken.publicKey == null
         ) {
-          console.error("Unable to determine public key for dao tokens");
+          logger.error("Unable to determine public key for dao tokens");
           return Err({ type: AutocratDaoIndexerError.MissingParamError });
         }
         // const baseTokenData = await enrichTokenMetadata(
@@ -92,7 +93,7 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
 
       return Ok({ acct: "urmom" });
     } catch (err) {
-      console.error(err);
+      logger.errorWithChatBotAlert(err);
       return Err({ type: AutocratDaoIndexerError.GeneralError });
     }
   },

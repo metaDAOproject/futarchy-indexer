@@ -5,6 +5,7 @@ import {
   PricesRecord,
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
+import { logger } from "../../logger";
 
 const apiKey = process.env.BIRDEYE_API_KEY ?? "";
 
@@ -27,7 +28,7 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
       });
 
       if (tokenPriceRes.status !== 200) {
-        console.error(
+        logger.error(
           "non-200 response from birdeye:",
           tokenPriceRes.status,
           tokenPriceRes.statusText
@@ -37,7 +38,7 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
       const tokenPriceJson = (await tokenPriceRes.json()) as BirdeyePricesRes;
 
       if (!tokenPriceJson.success) {
-        console.error(
+        logger.error(
           "error fetching from birdeye tokenPriceJson:",
           tokenPriceJson
         );
@@ -45,7 +46,7 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
       }
 
       if (!tokenPriceJson.data) {
-        console.error("bird eye prices fetch missing data");
+        logger.error("bird eye prices fetch missing data");
         return Err({
           type: BirdeyePricesIndexingError.BirdeyeFetchMissingResponse,
         });
@@ -72,7 +73,7 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
       }
       return Ok({ acct });
     } catch (e) {
-      console.error("general error with birdeye prices indexer:", e);
+      logger.error("general error with birdeye prices indexer:", e);
       return Err({
         type: BirdeyePricesIndexingError.GeneralBirdeyePricesIndexError,
       });
