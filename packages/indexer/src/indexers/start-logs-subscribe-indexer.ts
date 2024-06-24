@@ -23,7 +23,9 @@ export async function startLogsSubscribeIndexer(
       if (!res.success) {
         logger.errorWithChatBotAlert(
           "error indexing account logs",
-          accountPubKey.toString()
+          accountPubKey.toString(),
+          res.error.type,
+          res.error.value
         );
       }
     });
