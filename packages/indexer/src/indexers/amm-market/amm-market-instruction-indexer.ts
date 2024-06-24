@@ -3,7 +3,10 @@ import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { TransactionRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { AMM_PROGRAM_ID } from "@metadaoproject/futarchy";
 import { InstructionIndexer } from "../instruction-indexer";
-import { AmmInstructionIndexerError } from "../../types/errors";
+import {
+  AmmInstructionIndexerError,
+  SwapPersistableError,
+} from "../../types/errors";
 import { ammClient, IDL } from "../common";
 import { SwapBuilder } from "../../builders/swaps";
 import { logger } from "../../logger";
@@ -33,10 +36,20 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
       slot: Number(transaction.slot),
     });
     if (!buildRes.success) {
-      logger.errorWithChatBotAlert(
-        `error with indexing amm transaction ${transaction.txSig}`,
-        buildRes.error
-      );
+      if (
+        buildRes.error.type === SwapPersistableError.NonSwapTransaction ||
+        buildRes.error.type === SwapPersistableError.AlreadyPersistedSwap
+      ) {
+        logger.error(
+          `error with indexing amm transaction ${transaction.txSig}`,
+          buildRes.error
+        );
+      } else {
+        logger.errorWithChatBotAlert(
+          `error with indexing amm transaction ${transaction.txSig}`,
+          buildRes.error
+        );
+      }
       return Err({ type: AmmInstructionIndexerError.GeneralError });
     }
     const persistable = buildRes.ok;
