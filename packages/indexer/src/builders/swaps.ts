@@ -124,7 +124,10 @@ export class SwapBuilder {
 
       const txRes = await getTransaction(signature);
       if (!txRes.success) {
-        return Err({ type: SwapPersistableError.TransactionParseError });
+        return Err({
+          type: SwapPersistableError.TransactionParseError,
+          value: txRes.error,
+        });
       }
 
       const tx = txRes.ok;
@@ -290,7 +293,10 @@ export class SwapBuilder {
             `Failed to parse tx ${signature}\n` +
               JSON.stringify(parseTxResult.error)
           );
-          return Err({ type: SwapPersistableError.TransactionParseError });
+          return Err({
+            type: SwapPersistableError.TransactionParseError,
+            value: parseTxResult.error,
+          });
         }
         const { ok: parsedTx } = parseTxResult;
         const transactionRecord: TransactionRecord = {

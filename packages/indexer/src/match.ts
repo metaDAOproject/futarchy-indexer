@@ -3,6 +3,7 @@
  */
 export type TaggedUnion = {
   type: string;
+  value?: any;
 };
 
 export type Result<Ok, Err extends TaggedUnion> =
