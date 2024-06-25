@@ -96,6 +96,15 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       );
 
       proposalsToInsert.map(async (proposal) => {
+        const dbDao: DaoRecord = (
+          await usingDb((db) =>
+            db
+              .select()
+              .from(schema.daos)
+              .where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58()))
+              .execute()
+          )
+        )[0];
         const dbProposal: ProposalRecord = {
           proposalAcct: proposal.publicKey.toString(),
           proposalNum: BigInt(proposal.account.number.toString()),
