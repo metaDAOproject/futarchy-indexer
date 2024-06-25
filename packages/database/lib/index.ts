@@ -49,6 +49,7 @@ export {
   notInArray,
   not,
   and,
+  or,
   notIlike,
   like,
   ilike,

@@ -708,6 +708,7 @@ export const daoDetails = pgTable(
     pass_token_image_url: varchar("pass_token_image_url"),
     fail_token_image_url: varchar("fail_token_image_url"),
     lp_token_image_url: varchar("lp_token_image_url"),
+    isHide: boolean("is_hide"),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),
