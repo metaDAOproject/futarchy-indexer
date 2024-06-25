@@ -96,6 +96,33 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       );
 
       proposalsToInsert.map(async (proposal) => {
+        const dbProposal: ProposalRecord = {
+          proposalAcct: proposal.publicKey.toString(),
+          proposalNum: BigInt(proposal.account.number.toString()),
+          autocratVersion: 0.3,
+          daoAcct: proposal.account.dao.toString(),
+          proposerAcct: proposal.account.proposer.toString(),
+          status: ProposalStatus.Pending,
+          descriptionURL: proposal.account.descriptionUrl,
+          initialSlot: BigInt(proposal.account.slotEnqueued.toString()),
+          passMarketAcct: proposal.account.passAmm.toString(),
+          failMarketAcct: proposal.account.failAmm.toString(),
+          baseVault: proposal.account.baseVault.toString(),
+          quoteVault: proposal.account.quoteVault.toString(),
+          endSlot: BigInt(
+            proposal.account.slotEnqueued
+              .add(new BN(dbDao.slotsPerProposal?.toString()))
+              .toString()
+          ),
+        };
+
+        await usingDb((db) =>
+          db
+            .insert(schema.proposals)
+            .values([dbProposal])
+            .onConflictDoNothing()
+            .execute()
+        );
         await insertAssociatedAccountsDataForProposal(proposal, currentTime);
       });
 
