@@ -394,6 +394,19 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .update(schema.proposals)
               .set({
                 endedAt,
+                proposalAcct: onChainProposal.publicKey.toString(),
+                proposalNum: BigInt(onChainProposal.account.number.toString()),
+                autocratVersion: 0.3,
+                status: ProposalStatus.Pending,
+                descriptionURL: onChainProposal.account.descriptionUrl,
+                initialSlot: BigInt(
+                  onChainProposal.account.slotEnqueued.toString()
+                ),
+                endSlot: BigInt(
+                  onChainProposal.account.slotEnqueued
+                    .add(new BN(dbDao.slotsPerProposal?.toString()))
+                    .toString()
+                ),
                 updatedAt: sql`NOW()`,
               })
               .where(
