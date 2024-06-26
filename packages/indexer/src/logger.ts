@@ -31,7 +31,14 @@ export class Logger {
             return "[Circular]";
           }
         }
-        return item.toString();
+        if (typeof item === "undefined") {
+          return "undefined";
+        }
+        try {
+          return item.toString();
+        } catch (e) {
+          return "";
+        }
       })
       .join(" ");
   }
