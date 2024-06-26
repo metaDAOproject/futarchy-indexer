@@ -14,7 +14,7 @@ const pool = new Pool({
   // since the connection is never idle for more than 5 seconds and yet we still get a connection error.
   min: 0,
   idleTimeoutMillis: 20 * 1000,
-  max: 100,
+  max: 1000,
 });
 
 export async function getClient() {
@@ -49,6 +49,7 @@ export {
   notInArray,
   not,
   and,
+  or,
   notIlike,
   like,
   ilike,

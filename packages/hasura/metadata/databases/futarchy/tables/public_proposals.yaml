@@ -47,6 +47,21 @@ array_relationships:
         table:
           name: twaps
           schema: public
+insert_permissions:
+  - role: anonymous
+    permission:
+      check: {}
+      columns:
+        - dao_acct
+        - proposal_acct
+        - proposal_num
+        - proposer_acct
+        - status
+        - pass_market_acct
+        - fail_market_acct
+        - base_vault
+        - quote_vault
+    comment: ""
 select_permissions:
   - role: anonymous
     permission:
