@@ -3,6 +3,7 @@ import { Err, Ok } from "../../match";
 import { AccountLogsIndexer } from "../account-logs-indexer";
 import { SwapBuilder } from "../../builders/swaps";
 import { logger } from "../../logger";
+import { SwapPersistableError } from "../../types/errors";
 
 export enum AmmAccountLogsIndexerError {
   GeneralError = "GeneralError",
@@ -13,11 +14,24 @@ export const AmmMarketLogsSubscribeIndexer: AccountLogsIndexer = {
     const builder = new SwapBuilder();
     const buildRes = await builder.withSignatureAndCtx(logs.signature, context);
     if (!buildRes.success) {
-      logger.errorWithChatBotAlert(
-        `error with indexing amm on logs subscriber tx ${logs.signature}`,
-        buildRes.error
-      );
-      return Err({ type: AmmAccountLogsIndexerError.GeneralError });
+      if (
+        buildRes.error.type === SwapPersistableError.NonSwapTransaction ||
+        buildRes.error.type === SwapPersistableError.AlreadyPersistedSwap
+      ) {
+        logger.error(
+          `error with indexing amm logs, signature: ${logs.signature}`,
+          buildRes.error
+        );
+      } else {
+        logger.errorWithChatBotAlert(
+          `error with indexing amm logs, signature: ${logs.signature}`,
+          buildRes.error
+        );
+      }
+      return Err({
+        type: AmmAccountLogsIndexerError.GeneralError,
+        value: buildRes.error.type + " " + buildRes.error.value,
+      });
     }
     const persistable = buildRes.ok;
     await persistable.persist();
