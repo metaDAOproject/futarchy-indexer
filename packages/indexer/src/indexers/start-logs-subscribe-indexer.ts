@@ -21,11 +21,12 @@ export async function startLogsSubscribeIndexer(
     connection.onLogs(accountPubKey, async (logs, context) => {
       const res = await implementation.index(logs, accountPubKey, context);
       if (!res.success) {
-        logger.errorWithChatBotAlert(
+        logger.error(
           "error indexing account logs",
           accountPubKey.toString(),
           res.error.type,
-          res.error.value
+          res.error.value,
+          "logs: " + logs.signature
         );
       }
     });
