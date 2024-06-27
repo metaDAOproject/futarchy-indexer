@@ -19,13 +19,16 @@ export async function startLogsSubscribeIndexer(
     const accountPubKey = new PublicKey(dependentAccount.acct);
 
     connection.onLogs(accountPubKey, async (logs, context) => {
+      // wait here because we need to fetch the txn from RPC
+      // and often we get no response if we try right after recieving the logs notification
+      await new Promise((resolve) => setTimeout(resolve, 500));
       const res = await implementation.index(logs, accountPubKey, context);
       if (!res.success) {
         logger.error(
           "error indexing account logs",
           accountPubKey.toString(),
           res.error.type,
-          res.error.value,
+          JSON.stringify(res.error.value),
           "logs: " + logs.signature
         );
       }
