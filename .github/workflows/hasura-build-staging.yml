@@ -21,6 +21,6 @@ jobs:
           args: metadata apply
           workdir:
         env:
-          HASURA_ENDPOINT: ${{ secrets.HASURA_ENDPOINT_STAGING }}
+          HASURA_ENDPOINT: ${{ secrets.HASURA_ADMIN_ENDPOINT_STAGING }}
           HASURA_ADMIN_SECRET: ${{ secrets.HASURA_ADMIN_SECRET_STAGING }}
           HASURA_WORKDIR: packages/hasura # replace this by your own path if needed
