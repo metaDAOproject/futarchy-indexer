@@ -1,9 +1,10 @@
 name: Build and Apply Hasura Metadata [STAGING]
 on:
-  push:
-    branches: [staging]
-    paths:
-      - "/packages/hasura/**"
+  pull_request:
+  # push:
+  #   branches: [staging]
+  #   paths:
+  #     - "/packages/hasura/**"
 jobs:
   update_hasura:
     name: Update Hasura Configuration based on any metadata changes
