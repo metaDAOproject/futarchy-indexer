@@ -21,7 +21,7 @@ export async function startLogsSubscribeIndexer(
     connection.onLogs(accountPubKey, async (logs, context) => {
       // wait here because we need to fetch the txn from RPC
       // and often we get no response if we try right after recieving the logs notification
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       const res = await implementation.index(logs, accountPubKey, context);
       if (!res.success) {
         logger.error(

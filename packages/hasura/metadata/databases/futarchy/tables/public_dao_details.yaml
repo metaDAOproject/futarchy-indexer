@@ -32,6 +32,7 @@ select_permissions:
         - fail_token_image_url
         - github
         - image_url
+        - is_hide
         - lp_token_image_url
         - name
         - pass_token_image_url
