@@ -4,6 +4,7 @@ import { AccountLogsIndexer } from "../account-logs-indexer";
 import { SwapBuilder } from "../../builders/swaps";
 import { logger } from "../../logger";
 import { SwapPersistableError } from "../../types/errors";
+import { GetTransactionErrorType } from "../../transaction/serializer";
 
 export enum AmmAccountLogsIndexerError {
   GeneralError = "GeneralError",
@@ -16,7 +17,10 @@ export const AmmMarketLogsSubscribeIndexer: AccountLogsIndexer = {
     if (!buildRes.success) {
       if (
         buildRes.error.type === SwapPersistableError.NonSwapTransaction ||
-        buildRes.error.type === SwapPersistableError.AlreadyPersistedSwap
+        buildRes.error.type === SwapPersistableError.AlreadyPersistedSwap ||
+        (buildRes.error.type === SwapPersistableError.TransactionParseError &&
+          buildRes.error.value?.type ===
+            GetTransactionErrorType.NullGetTransactionResponse)
       ) {
         logger.error(
           `error with indexing amm logs, signature: ${logs.signature}`,
