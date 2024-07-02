@@ -96,6 +96,52 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       );
 
       proposalsToInsert.map(async (proposal) => {
+        const storedBaseVault = await conditionalVaultClient.getVault(
+          proposal.account.baseVault
+        );
+        const storedQuoteVault = await conditionalVaultClient.getVault(
+          proposal.account.quoteVault
+        );
+
+        const basePass: PublicKey =
+          storedBaseVault.conditionalOnFinalizeTokenMint;
+        const baseFail: PublicKey =
+          storedBaseVault.conditionalOnRevertTokenMint;
+        const quotePass: PublicKey =
+          storedQuoteVault.conditionalOnFinalizeTokenMint;
+        const quoteFail: PublicKey =
+          storedQuoteVault.conditionalOnRevertTokenMint;
+
+        let baseVault: ConditionalVaultRecord = {
+          condVaultAcct: proposal.account.baseVault.toString(),
+          settlementAuthority: storedBaseVault.settlementAuthority.toString(),
+          underlyingMintAcct: storedBaseVault.underlyingTokenMint.toString(),
+          underlyingTokenAcct:
+            storedBaseVault.underlyingTokenAccount.toString(),
+          condFinalizeTokenMintAcct: basePass.toString(),
+          condRevertTokenMintAcct: baseFail.toString(),
+          status: "active",
+        };
+
+        let quoteVault: ConditionalVaultRecord = {
+          condVaultAcct: proposal.account.quoteVault.toString(),
+          settlementAuthority: storedQuoteVault.settlementAuthority.toString(),
+          underlyingMintAcct: storedQuoteVault.underlyingTokenMint.toString(),
+          underlyingTokenAcct:
+            storedQuoteVault.underlyingTokenAccount.toString(),
+          condFinalizeTokenMintAcct: quotePass.toString(),
+          condRevertTokenMintAcct: quoteFail.toString(),
+          status: "active",
+        };
+
+        await usingDb((db) =>
+          db
+            .insert(schema.conditionalVaults)
+            .values([baseVault, quoteVault])
+            .onConflictDoNothing()
+            .execute()
+        );
+
         const dbDao: DaoRecord = (
           await usingDb((db) =>
             db
