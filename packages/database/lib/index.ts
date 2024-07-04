@@ -55,4 +55,5 @@ export {
   ilike,
   isNotNull,
   isNull,
+  inArray,
 } from "drizzle-orm";
