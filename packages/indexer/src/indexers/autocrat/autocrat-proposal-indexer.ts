@@ -289,55 +289,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .execute()
           );
 
-          // calculate performance
-          const [ proposal ] = await usingDb(db => {
-            return db
-              .select()
-              .from(schema.proposals)
-              .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
-              .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
-              .leftJoin(schema.tokens, eq(schema.daos.baseAcct, schema.tokens.mintAcct))
-              .limit(1)
-              .execute()
-          })
-
-          const { proposals, tokens } = proposal
-
-          const orders = await usingDb(db => {
-            return db
-              .select()
-              .from(schema.orders)
-              .where(inArray(schema.orders.marketAcct, [proposals.passMarketAcct, proposals.failMarketAcct]))
-              .execute()
-          })
-
-          let actors = {}
-          
-          orders.forEach(o => {
-            const actor = o.actorAcct
-            if (!actors[actor]) {
-              actors[actor] = {
-                tokensBought: 0,
-                tokensSold: 0,
-                volumeBought: 0,
-                volumeSold: 0
-              }
-            }
-
-            const totals = actors[actor]
-            const orderAmount = PriceMath.getHumanAmount(new BN(o.filledBaseAmount), tokens?.decimals)
-            const price = o.quotePrice * orderAmount
-
-            if (o.side === "BID") {
-              totals.tokensBought += orderAmount
-              totals.volumeBought += price
-            } else if (o.side === "ASK") {
-              totals.tokensSold += orderAmount;
-              totals.volumeSold += price;
-            }
-          })
-
-          console.log("actors", actors)
+          await calculateUserPerformance(onChainProposal)
         }
         if (onChainProposal.account.state.failed) {
           await usingDb((db) =>
@@ -666,4 +618,83 @@ async function insertAssociatedAccountsDataForProposal(
       .onConflictDoNothing()
       .execute()
   );
+}
+
+async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey) {
+    // calculate performance
+    const [ proposal ] = await usingDb(db => {
+      return db
+        .select()
+        .from(schema.proposals)
+        .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
+        .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
+        .leftJoin(schema.tokens, eq(schema.daos.baseAcct, schema.tokens.mintAcct))
+        .limit(1)
+        .execute()
+    })
+
+    const { proposals, tokens } = proposal
+
+    const orders = await usingDb(db => {
+      return db
+        .select()
+        .from(schema.orders)
+        .where(inArray(schema.orders.marketAcct, [proposals.passMarketAcct, proposals.failMarketAcct]))
+        .execute()
+    })
+
+    let actors = <any>{}
+    
+    orders.forEach(o => {
+      const actor = o.actorAcct
+      if (!actors[actor]) {
+        actors[actor] = {
+          tokensBought: 0,
+          tokensSold: 0,
+          volumeBought: 0,
+          volumeSold: 0
+        }
+      }
+
+      const totals = actors[actor]
+      const orderAmount = PriceMath.getHumanAmount(new BN(o.filledBaseAmount), tokens?.decimals)
+      const price = o.quotePrice * orderAmount
+
+      if (o.side === "BID") {
+        totals.tokensBought += orderAmount
+        totals.volumeBought += price
+      } else if (o.side === "ASK") {
+        totals.tokensSold += orderAmount;
+        totals.volumeSold += price;
+      }
+    })
+
+    Object.keys(actors).forEach(k => {
+       const actor = actors[k]
+
+       toInsert.push({
+        proposalAcct: onChainProposal.publicKey.toString(),
+        userAcct: k,
+        ...actor,
+       })
+    })
+
+     await usingDb(db => {
+      return db.transaction(async (tx) => {
+        await tx.insert(schema.users).values(toInsert.map(i => {
+          return {
+            userAcct: i.userAcct,
+          }
+        })).onConflictDoNothing();
+
+        await tx.insert(schema.userPerformance)
+        .values(toInsert)
+        .onConflictDoNothing(
+          {
+            target: [schema.userPerformance.proposalAcct, schema.userPerformance.userAcct]
+          }
+        )
+      })
+        
+    })
 }
