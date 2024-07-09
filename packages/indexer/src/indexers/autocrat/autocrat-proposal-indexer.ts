@@ -40,6 +40,7 @@ import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm/sql";
 import { logger } from "../../logger";
 import { PriceMath } from "@metadaoproject/futarchy";
+import { PgInteger } from "drizzle-orm/pg-core";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -643,40 +644,51 @@ async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey)
         .execute()
     })
 
-    let actors = <any>{}
-    
-    orders.forEach(o => {
-      const actor = o.actorAcct
-      if (!actors[actor]) {
-        actors[actor] = {
+    let actors = orders.reduce((current, next) => {
+      const actor = next.actorAcct
+      if (!current.get(actor)) {
+        current.set(actor, {
           tokensBought: 0,
           tokensSold: 0,
           volumeBought: 0,
           volumeSold: 0
-        }
+        })
       }
 
-      const totals = actors[actor]
-      const orderAmount = PriceMath.getHumanAmount(new BN(o.filledBaseAmount), tokens?.decimals)
-      const price = o.quotePrice * orderAmount
+      
+      const tokenDecimals = tokens?.decimals
+      if (!tokenDecimals) {
+        // do we want to throw different type of error here?
+        // do we want to throw error at all?
+        throw new Error("invalid token decimals")
+      }
 
-      if (o.side === "BID") {
+      const totals = current.get(actor)
+      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokens?.decimals)
+      const price = next.quotePrice * orderAmount
+
+      if (next.side === "BID") {
         totals.tokensBought += orderAmount
         totals.volumeBought += price
-      } else if (o.side === "ASK") {
+      } else if (next.side === "ASK") {
         totals.tokensSold += orderAmount;
         totals.volumeSold += price;
       }
-    })
 
-    Object.keys(actors).forEach(k => {
-       const actor = actors[k]
+      current.set(actor, totals)
 
-       toInsert.push({
+      return current
+
+    }, new Map <String, any>())
+
+    const toInsert = Array.from(actors.entries()).map(k => {
+       const [ actor, values ] = k
+
+       return {
         proposalAcct: onChainProposal.publicKey.toString(),
-        userAcct: k,
-        ...actor,
-       })
+        userAcct: actor,
+        ...values,
+       }
     })
 
      await usingDb(db => {
