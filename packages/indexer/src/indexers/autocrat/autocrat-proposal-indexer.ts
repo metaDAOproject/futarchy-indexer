@@ -40,7 +40,7 @@ import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm/sql";
 import { logger } from "../../logger";
 import { PriceMath } from "@metadaoproject/futarchy";
-import { PgInteger } from "drizzle-orm/pg-core";
+import { UserPerformance, UserPerformanceTotals } from "../../types";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -646,48 +646,49 @@ async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey)
 
     let actors = orders.reduce((current, next) => {
       const actor = next.actorAcct
-      if (!current.get(actor)) {
-        current.set(actor, {
-          tokensBought: 0,
-          tokensSold: 0,
-          volumeBought: 0,
-          volumeSold: 0
-        })
+      let totals = current.get(actor)
+
+      if (!totals) {
+        totals = <UserPerformanceTotals>{
+          tokensBought: new BN(0),
+          tokensSold: new BN(0),
+          volumeBought: new BN(0),
+          volumeSold: new BN(0)
+        }
       }
 
-      
       const tokenDecimals = tokens?.decimals
       if (!tokenDecimals) {
-        // do we want to throw different type of error here?
-        // do we want to throw error at all?
-        throw new Error("invalid token decimals")
+        return current
       }
 
-      const totals = current.get(actor)
-      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokens?.decimals)
-      const price = next.quotePrice * orderAmount
+      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokens?.decimals);
+      const price = Number(next.quotePrice).valueOf() * orderAmount
 
       if (next.side === "BID") {
-        totals.tokensBought += orderAmount
-        totals.volumeBought += price
+        totals.tokensBought = new BN(totals.tokensBought).add(new BN(orderAmount))
+        totals.volumeBought = new BN(totals.volumeBought).add(new BN(price))
       } else if (next.side === "ASK") {
-        totals.tokensSold += orderAmount;
-        totals.volumeSold += price;
+        totals.tokensSold = new BN(totals.tokensSold).add(new BN(orderAmount));
+        totals.volumeSold = new BN(totals.volumeSold).add(new BN(price));
       }
 
       current.set(actor, totals)
 
       return current
 
-    }, new Map <String, any>())
+    }, new Map <String, UserPerformanceTotals>())
 
-    const toInsert = Array.from(actors.entries()).map(k => {
+    const toInsert: Array<UserPerformance> = Array.from(actors.entries()).map(k => {
        const [ actor, values ] = k
 
-       return {
+       return <UserPerformance>{
         proposalAcct: onChainProposal.publicKey.toString(),
         userAcct: actor,
-        ...values,
+        tokensBought: values.tokensBought.toString(),
+        tokensSold: values.tokensSold.toString(),
+        volumeBought: values.volumeBought.toString(),
+        volumeSold: values.volumeSold.toString(),
        }
     })
 

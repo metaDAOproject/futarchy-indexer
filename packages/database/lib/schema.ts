@@ -783,19 +783,19 @@ export const userPerformance = pgTable("user_performance", {
   tokensBought: numeric("tokens_bought", {
     precision: 40,
     scale: 20,
-  }),
+  }).notNull(),
   tokensSold: numeric("tokens_sold", {
     precision: 40,
     scale: 20,
-  }),
+  }).notNull(),
   volumeBought: numeric("volume_bought", {
     precision: 40,
     scale: 20,
-  }),
+  }).notNull(),
   volumeSold: numeric("volume_sold", {
     precision: 40,
     scale: 20,
-  }),
+  }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
