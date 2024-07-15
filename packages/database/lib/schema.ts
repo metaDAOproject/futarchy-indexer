@@ -772,6 +772,40 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
 
+export const userPerformance = pgTable("user_performance", {
+  // These make up off of a proposal
+  proposalAcct: pubkey("proposal_acct")
+    .notNull()
+    .references(() => proposals.proposalAcct),
+  userAcct: pubkey("user_acct")
+    .notNull()
+    .references(() => users.userAcct),
+  tokensBought: numeric("tokens_bought", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  tokensSold: numeric("tokens_sold", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  volumeBought: numeric("volume_bought", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  volumeSold: numeric("volume_sold", {
+    precision: 40,
+    scale: 20,
+  }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.proposalAcct, table.userAcct] }),
+  };
+});
+
 // TODO: This is commented out give these are timescale views, but I wanted to include them
 export const twapChartData = pgView("twap_chart_data", {
   interv: timestamp("interv", { withTimezone: true }),

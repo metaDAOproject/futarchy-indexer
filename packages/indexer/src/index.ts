@@ -5,5 +5,6 @@ import { startServer } from "./server";
 
 startServer();
 startIndexerAccountDependencyPopulation();
+
 await startTransactionWatchers();
 await startIndexers();
