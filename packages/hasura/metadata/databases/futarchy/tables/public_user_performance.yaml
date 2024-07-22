@@ -1,0 +1,23 @@
+table:
+  name: user_performance
+  schema: public
+object_relationships:
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
+  - name: user
+    using:
+      foreign_key_constraint_on: user_acct
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - proposal_acct
+        - user_acct
+        - tokens_bought
+        - tokens_sold
+        - volume_bought
+        - volume_sold
+        - created_at
+      filter: {}
+    comment: ""

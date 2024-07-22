@@ -26,6 +26,20 @@ array_relationships:
         table:
           name: markets
           schema: public
+  - name: proposal_conditional_liquidity_data
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: proposal_conditional_liquidity_data
+          schema: public
+  - name: proposal_conditional_price_data
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: proposal_conditional_price_data
+          schema: public
   - name: proposal_details
     using:
       foreign_key_constraint_on:
@@ -46,6 +60,13 @@ array_relationships:
         column: proposal_acct
         table:
           name: twaps
+          schema: public
+  - name: user_performances
+    using:
+      foreign_key_constraint_on:
+        column: proposal_acct
+        table:
+          name: user_performance
           schema: public
 insert_permissions:
   - role: anonymous

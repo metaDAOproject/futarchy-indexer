@@ -1,0 +1,13 @@
+table:
+  name: proposal_conditional_price_data
+  schema: public
+object_relationships:
+  - name: market
+    using:
+      foreign_key_constraint_on: fail_market_acct
+  - name: marketByPassMarketAcct
+    using:
+      foreign_key_constraint_on: pass_market_acct
+  - name: proposal
+    using:
+      foreign_key_constraint_on: proposal_acct
