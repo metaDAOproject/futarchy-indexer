@@ -56,6 +56,13 @@ array_relationships:
         table:
           name: markets
           schema: public
+  - name: spot_price_data
+    using:
+      foreign_key_constraint_on:
+        column: mint_acct
+        table:
+          name: spot_price_data
+          schema: public
   - name: token_acct_balances
     using:
       foreign_key_constraint_on:

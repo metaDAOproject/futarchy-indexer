@@ -8,3 +8,6 @@ object_relationships:
   - name: tokenAcctByTokenAcct
     using:
       foreign_key_constraint_on: token_acct
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_sig
