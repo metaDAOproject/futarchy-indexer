@@ -12,7 +12,7 @@ import { AutocratDaoIndexer } from "./autocrat/autocrat-dao-indexer";
 import { AutocratProposalIndexer } from "./autocrat/autocrat-proposal-indexer";
 import { TokenMintIndexer } from "./token/token-mint-indexer";
 import { Cron } from "croner";
-import { eq, schema, usingDb } from "@metadaoproject/indexer-db";
+import { and, eq, schema, usingDb } from "@metadaoproject/indexer-db";
 import { logger } from "../logger";
 
 // add croner for this
@@ -104,7 +104,16 @@ async function handleIntervalFetchFailure(
         updatedAt: new Date(),
       })
       .where(
-        eq(schema.indexerAccountDependencies.acct, indexerWithAcct?.acct ?? "")
+        and(
+          eq(
+            schema.indexerAccountDependencies.acct,
+            indexerWithAcct?.acct ?? ""
+          ),
+          eq(
+            schema.indexerAccountDependencies.name,
+            indexerWithAcct?.name ?? ""
+          )
+        )
       )
       .returning({ acct: schema.indexerAccountDependencies.acct })
   );
@@ -124,9 +133,15 @@ async function handleIntervalFetchFailure(
           updatedAt: new Date(),
         })
         .where(
-          eq(
-            schema.indexerAccountDependencies.acct,
-            indexerWithAcct?.acct ?? ""
+          and(
+            eq(
+              schema.indexerAccountDependencies.acct,
+              indexerWithAcct?.acct ?? ""
+            ),
+            eq(
+              schema.indexerAccountDependencies.name,
+              indexerWithAcct?.name ?? ""
+            )
           )
         )
         .returning({ acct: schema.indexerAccountDependencies.acct })
