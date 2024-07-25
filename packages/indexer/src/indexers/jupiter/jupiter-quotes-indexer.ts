@@ -99,11 +99,13 @@ export const fetchQuoteFromJupe = async (
         .execute()
     );
 
+    const amountVal = 1 * 10 ** inputToken[0].decimals;
+
     const url =
-      `https://quote-api.jup.ag/v6/quote?inputMint=${acct}&` +
+      `https://public.jupiterapi.com/quote?inputMint=${acct}&` +
       `outputMint=${outputMint}&` +
-      `amount=${(100_000).toString()}&` +
-      "slippageBps=50&" +
+      `amount=${amountVal.toString()}&` +
+      "slippageBps=30&" +
       "swapMode=ExactIn&" +
       "onlyDirectRoutes=false&" +
       "maxAccounts=64&" +
@@ -121,6 +123,7 @@ export const fetchQuoteFromJupe = async (
     const tokenPriceJson = (await tokenPriceRes.json()) as JupTokenQuoteRes;
 
     if (tokenPriceJson.error) {
+      logger.error("jupiter response error found:", tokenPriceJson);
       return null;
     }
 

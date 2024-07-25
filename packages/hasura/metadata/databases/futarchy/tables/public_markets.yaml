@@ -64,6 +64,34 @@ array_relationships:
         table:
           name: prices
           schema: public
+  - name: proposalConditionalLiquidityDataByPassMarketAcct
+    using:
+      foreign_key_constraint_on:
+        column: pass_market_acct
+        table:
+          name: proposal_conditional_liquidity_data
+          schema: public
+  - name: proposalConditionalPriceDataByPassMarketAcct
+    using:
+      foreign_key_constraint_on:
+        column: pass_market_acct
+        table:
+          name: proposal_conditional_price_data
+          schema: public
+  - name: proposal_conditional_liquidity_data
+    using:
+      foreign_key_constraint_on:
+        column: fail_market_acct
+        table:
+          name: proposal_conditional_liquidity_data
+          schema: public
+  - name: proposal_conditional_price_data
+    using:
+      foreign_key_constraint_on:
+        column: fail_market_acct
+        table:
+          name: proposal_conditional_price_data
+          schema: public
   - name: takes
     using:
       foreign_key_constraint_on:

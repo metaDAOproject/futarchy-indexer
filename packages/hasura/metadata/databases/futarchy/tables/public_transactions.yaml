@@ -17,6 +17,13 @@ array_relationships:
         table:
           name: indexer_account_dependencies
           schema: public
+  - name: token_acct_balances
+    using:
+      foreign_key_constraint_on:
+        column: tx_sig
+        table:
+          name: token_acct_balances
+          schema: public
   - name: transactionWatchersByLatestTxSig
     using:
       foreign_key_constraint_on:

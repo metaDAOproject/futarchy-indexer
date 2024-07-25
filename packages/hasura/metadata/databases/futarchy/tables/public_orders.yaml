@@ -47,6 +47,7 @@ select_permissions:
         - order_time
         - updated_at
       filter: {}
+      allow_aggregations: true
     comment: ""
   - role: creator
     permission:
@@ -66,6 +67,7 @@ select_permissions:
         - order_time
         - updated_at
       filter: {}
+      allow_aggregations: true
     comment: ""
   - role: proposer
     permission:

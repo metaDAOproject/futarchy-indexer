@@ -16,3 +16,18 @@ export type IndexerWithAccountDeps = {
     latestTxSigProcessed: string | null;
   } | null;
 };
+
+export type User = {
+  userAcct: string;
+}
+
+export type UserPerformanceTotals = {
+  tokensBought: string
+  tokensSold: string;
+  volumeBought: string;
+  volumeSold: string;
+}
+
+export type UserPerformance = {
+  proposalAcct: string;
+} & User & UserPerformanceTotals

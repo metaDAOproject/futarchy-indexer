@@ -12,6 +12,7 @@ import {
   and,
   isNull,
   sql,
+  inArray,
 } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../match";
 import { PublicKey } from "@solana/web3.js";
@@ -38,6 +39,9 @@ import { BN } from "@coral-xyz/anchor";
 import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm/sql";
 import { logger } from "../../logger";
+import { PriceMath } from "@metadaoproject/futarchy";
+import { UserPerformance, UserPerformanceTotals } from "../../types";
+import { alias } from "drizzle-orm/pg-core";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -96,6 +100,52 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       );
 
       proposalsToInsert.map(async (proposal) => {
+        const storedBaseVault = await conditionalVaultClient.getVault(
+          proposal.account.baseVault
+        );
+        const storedQuoteVault = await conditionalVaultClient.getVault(
+          proposal.account.quoteVault
+        );
+
+        const basePass: PublicKey =
+          storedBaseVault.conditionalOnFinalizeTokenMint;
+        const baseFail: PublicKey =
+          storedBaseVault.conditionalOnRevertTokenMint;
+        const quotePass: PublicKey =
+          storedQuoteVault.conditionalOnFinalizeTokenMint;
+        const quoteFail: PublicKey =
+          storedQuoteVault.conditionalOnRevertTokenMint;
+
+        let baseVault: ConditionalVaultRecord = {
+          condVaultAcct: proposal.account.baseVault.toString(),
+          settlementAuthority: storedBaseVault.settlementAuthority.toString(),
+          underlyingMintAcct: storedBaseVault.underlyingTokenMint.toString(),
+          underlyingTokenAcct:
+            storedBaseVault.underlyingTokenAccount.toString(),
+          condFinalizeTokenMintAcct: basePass.toString(),
+          condRevertTokenMintAcct: baseFail.toString(),
+          status: "active",
+        };
+
+        let quoteVault: ConditionalVaultRecord = {
+          condVaultAcct: proposal.account.quoteVault.toString(),
+          settlementAuthority: storedQuoteVault.settlementAuthority.toString(),
+          underlyingMintAcct: storedQuoteVault.underlyingTokenMint.toString(),
+          underlyingTokenAcct:
+            storedQuoteVault.underlyingTokenAccount.toString(),
+          condFinalizeTokenMintAcct: quotePass.toString(),
+          condRevertTokenMintAcct: quoteFail.toString(),
+          status: "active",
+        };
+
+        await usingDb((db) =>
+          db
+            .insert(schema.conditionalVaults)
+            .values([baseVault, quoteVault])
+            .onConflictDoNothing()
+            .execute()
+        );
+
         const dbDao: DaoRecord = (
           await usingDb((db) =>
             db
@@ -240,6 +290,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               )
               .execute()
           );
+
+          await calculateUserPerformance(onChainProposal)
         }
         if (onChainProposal.account.state.failed) {
           await usingDb((db) =>
@@ -568,4 +620,104 @@ async function insertAssociatedAccountsDataForProposal(
       .onConflictDoNothing()
       .execute()
   );
+}
+
+async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey) {
+
+    const baseTokens = alias(schema.tokens, 'base_tokens')
+    const daoTokens = alias(schema.tokens, "dao_tokens")
+    // calculate performance
+    const [ proposal ] = await usingDb(db => {
+      return db
+        .select()
+        .from(schema.proposals)
+        .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
+        .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
+        .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
+        .leftJoin(daoTokens, eq(schema.daos.quoteAcct, daoTokens.mintAcct))
+        .limit(1)
+        .execute()
+    })
+
+    const { proposals, base_tokens, dao_tokens } = proposal
+
+    const orders = await usingDb(db => {
+      return db
+        .select()
+        .from(schema.orders)
+        .where(inArray(schema.orders.marketAcct, [proposals.passMarketAcct, proposals.failMarketAcct]))
+        .execute()
+    })
+
+    let actors = orders.reduce((current, next) => {
+      const actor = next.actorAcct
+      let totals = current.get(actor)
+
+      if (!totals) {
+        totals = <UserPerformanceTotals>{
+          tokensBought: new BN(0),
+          tokensSold: new BN(0),
+          volumeBought: new BN(0),
+          volumeSold: new BN(0)
+        }
+      }
+
+      const tokenDecimals = base_tokens?.decimals ?? -1
+      const daoDecimals = dao_tokens?.decimals ?? -1
+      if (!tokenDecimals && !daoDecimals) {
+        return current
+      }
+
+      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokenDecimals);
+      const price = PriceMath.getChainAmount(
+        Number(next.quotePrice).valueOf() * orderAmount,
+        daoDecimals,
+      );
+        
+
+      if (next.side === "BID") {
+        totals.tokensBought = new BN(totals.tokensBought).add(new BN(next.filledBaseAmount))
+        totals.volumeBought = new BN(totals.volumeBought).add(new BN(price))
+      } else if (next.side === "ASK") {
+        totals.tokensSold = new BN(totals.tokensSold).add(new BN(next.filledBaseAmount));
+        totals.volumeSold = new BN(totals.volumeSold).add(new BN(price));
+      }
+
+      current.set(actor, totals)
+
+      return current
+
+    }, new Map <String, UserPerformanceTotals>())
+
+    const toInsert: Array<UserPerformance> = Array.from(actors.entries()).map(k => {
+       const [ actor, values ] = k
+
+       return <UserPerformance>{
+        proposalAcct: onChainProposal.publicKey.toString(),
+        userAcct: actor,
+        tokensBought: values.tokensBought.toString(),
+        tokensSold: values.tokensSold.toString(),
+        volumeBought: values.volumeBought.toString(),
+        volumeSold: values.volumeSold.toString(),
+       }
+    })
+
+     await usingDb(db => {
+      return db.transaction(async (tx) => {
+        await tx.insert(schema.users).values(toInsert.map(i => {
+          return {
+            userAcct: i.userAcct,
+          }
+        })).onConflictDoNothing();
+
+        await tx.insert(schema.userPerformance)
+        .values(toInsert)
+        .onConflictDoNothing(
+          {
+            target: [schema.userPerformance.proposalAcct, schema.userPerformance.userAcct]
+          }
+        )
+      })
+        
+    })
 }
