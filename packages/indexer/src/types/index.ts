@@ -22,10 +22,10 @@ export type User = {
 }
 
 export type UserPerformanceTotals = {
-  tokensBought: string
-  tokensSold: string;
-  volumeBought: string;
-  volumeSold: string;
+  tokensBought: bigint
+  tokensSold: bigint;
+  volumeBought: bigint;
+  volumeSold: bigint;
 }
 
 export type UserPerformance = {
