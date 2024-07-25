@@ -1,7 +1,7 @@
 name: STAGING -- Build & Push Docker Image
 on:
   push:
-    branches: [fix/staging-build]
+    branches: [staging]
     paths:
       - "**"
 
