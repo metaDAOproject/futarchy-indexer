@@ -41,6 +41,7 @@ import { desc } from "drizzle-orm/sql";
 import { logger } from "../../logger";
 import { PriceMath } from "@metadaoproject/futarchy";
 import { UserPerformance, UserPerformanceTotals } from "../../types";
+import { alias } from "drizzle-orm/pg-core";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -622,6 +623,9 @@ async function insertAssociatedAccountsDataForProposal(
 }
 
 async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey) {
+
+    const baseTokens = alias(schema.tokens, 'base_tokens')
+    const daoTokens = alias(schema.tokens, "dao_tokens")
     // calculate performance
     const [ proposal ] = await usingDb(db => {
       return db
@@ -629,12 +633,13 @@ async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey)
         .from(schema.proposals)
         .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
         .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
-        .leftJoin(schema.tokens, eq(schema.daos.baseAcct, schema.tokens.mintAcct))
+        .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
+        .leftJoin(daoTokens, eq(schema.daos.quoteAcct, daoTokens.mintAcct))
         .limit(1)
         .execute()
     })
 
-    const { proposals, tokens } = proposal
+    const { proposals, base_tokens, dao_tokens } = proposal
 
     const orders = await usingDb(db => {
       return db
@@ -657,13 +662,18 @@ async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey)
         }
       }
 
-      const tokenDecimals = tokens?.decimals
-      if (!tokenDecimals) {
+      const tokenDecimals = base_tokens?.decimals ?? -1
+      const daoDecimals = dao_tokens?.decimals ?? -1
+      if (!tokenDecimals && !daoDecimals) {
         return current
       }
 
-      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokens?.decimals);
-      const price = Number(next.quotePrice).valueOf() * orderAmount
+      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokenDecimals);
+      const price = PriceMath.getChainAmount(
+        Number(next.quotePrice).valueOf() * orderAmount,
+        daoDecimals,
+      );
+        
 
       if (next.side === "BID") {
         totals.tokensBought = new BN(totals.tokensBought).add(new BN(orderAmount))
