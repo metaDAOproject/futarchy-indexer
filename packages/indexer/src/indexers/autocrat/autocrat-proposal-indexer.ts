@@ -668,13 +668,12 @@ async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey)
         return current
       }
 
-      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokenDecimals);
+      const orderAmount = Number(next.filledBaseAmount)
       const price = PriceMath.getChainAmount(
         Number(next.quotePrice).valueOf() * orderAmount,
         daoDecimals,
       );
         
-
       if (next.side === "BID") {
         totals.tokensBought = new BN(totals.tokensBought).add(new BN(orderAmount))
         totals.volumeBought = new BN(totals.volumeBought).add(new BN(price))
