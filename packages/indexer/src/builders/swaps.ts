@@ -11,9 +11,7 @@ import {
   TakesRecord,
   TransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
-import { PriceMath } from "@metadaoproject/futarchy";
 import { BN } from "@coral-xyz/anchor";
-import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
 import {
   SERIALIZED_TRANSACTION_LOGIC_VERSION,
   getTransaction,
@@ -22,6 +20,7 @@ import {
 } from "../transaction/serializer";
 import { logger } from "../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
+import { getHumanPrice } from "../usecases/math";
 
 export class SwapPersistable {
   private ordersRecord: OrdersRecord;
@@ -248,7 +247,7 @@ export class SwapBuilder {
         const ammPrice = quoteAmount
           .mul(new BN(10).pow(new BN(12)))
           .div(baseAmount);
-        const price = PriceMath.getHumanPrice(
+        const price = getHumanPrice(
           ammPrice,
           baseToken[0].decimals,
           quoteToken[0].decimals
@@ -287,6 +286,7 @@ export class SwapBuilder {
         };
 
         // TODO: consider co-locating this logic so it can be shared
+        // TODO doing this twice... also doing this above
         const parseTxResult = await getTransaction(signature);
         if (!parseTxResult.success) {
           logger.error(
@@ -312,8 +312,11 @@ export class SwapBuilder {
         return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord));
       }
       return Err({ type: SwapPersistableError.NonSwapTransaction });
-    } catch (e) {
-      logger.errorWithChatBotAlert("swap peristable general error", e);
+    } catch (e: any) {
+      logger.errorWithChatBotAlert(
+        "swap peristable general error",
+        e.message ? e.message : e
+      );
       return Err({ type: SwapPersistableError.GeneralError });
     }
   }
