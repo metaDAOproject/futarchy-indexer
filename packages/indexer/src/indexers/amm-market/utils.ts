@@ -11,6 +11,7 @@ import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
 import { provider, rpcReadClient } from "../../connection";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { logger } from "../../logger";
+import { getHumanPrice } from "../../usecases/math";
 
 export enum AmmMarketAccountIndexingErrors {
   AmmTwapIndexError = "AmmTwapIndexError",
@@ -81,7 +82,7 @@ export async function indexAmmMarketAccountWithContext(
   }
 
   // indexing the conditional market price
-  const conditionalMarketSpotPrice = PriceMath.getHumanPrice(
+  const conditionalMarketSpotPrice = getHumanPrice(
     PriceMath.getAmmPriceFromReserves(
       ammMarketAccount?.baseAmount,
       ammMarketAccount?.quoteAmount
