@@ -48,7 +48,6 @@ export async function authPost(req: Request, res: Response) {
         .insert(sessions)
         .values({
           userAcct: pubKey,
-          expiresAt: new Date(Date.now() + AUTHENTICATION_TIME * 60000),
         })
         .returning()
     );
