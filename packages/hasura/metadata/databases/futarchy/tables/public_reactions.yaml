@@ -19,3 +19,27 @@ select_permissions:
         - updated_at
       filter: {}
     comment: ""
+insert_permissions:
+  - role: anonymous
+    permission:
+      filter: {}
+      check: {}
+      columns:
+        - comment_id
+        - proposal_acct
+        - reaction
+        - reactor_acct
+        - updated_at
+    comment: ""
+delete_permissions:
+  - role: anonymous
+    permission:
+      filter: {}
+      check: {}
+      columns:
+        - comment_id
+        - proposal_acct
+        - reaction
+        - reactor_acct
+        - updated_at
+    comment: ""
