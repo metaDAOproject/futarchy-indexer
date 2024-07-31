@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { SQL, sql } from "drizzle-orm";
 import {
   bigint,
   doublePrecision,
@@ -472,7 +472,9 @@ export const orders = pgTable(
     marketAcct: pubkey("market_acct")
       .references(() => markets.marketAcct)
       .notNull(),
-    actorAcct: pubkey("actor_acct").notNull(),
+    actorAcct: pubkey("actor_acct")
+      .references(() => users.userAcct)
+      .notNull(),
     side: pgEnum("side", OrderSide).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     // Starts true, switches to false on cancellation or full fill
@@ -772,39 +774,49 @@ export const conditionalVaults = pgTable("conditional_vaults", {
   condRevertTokenMintAcct: pubkey("cond_revert_token_mint_acct").notNull(),
 });
 
-export const userPerformance = pgTable("user_performance", {
-  // These make up off of a proposal
-  proposalAcct: pubkey("proposal_acct")
-    .notNull()
-    .references(() => proposals.proposalAcct),
-  userAcct: pubkey("user_acct")
-    .notNull()
-    .references(() => users.userAcct),
-  tokensBought: numeric("tokens_bought", {
-    precision: 40,
-    scale: 20,
-  }).notNull(),
-  tokensSold: numeric("tokens_sold", {
-    precision: 40,
-    scale: 20,
-  }).notNull(),
-  volumeBought: numeric("volume_bought", {
-    precision: 40,
-    scale: 20,
-  }).notNull(),
-  volumeSold: numeric("volume_sold", {
-    precision: 40,
-    scale: 20,
-  }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
+export const userPerformance = pgTable(
+  "user_performance",
+  {
+    // These make up off of a proposal
+    proposalAcct: pubkey("proposal_acct")
+      .notNull()
+      .references(() => proposals.proposalAcct),
+    userAcct: pubkey("user_acct")
+      .notNull()
+      .references(() => users.userAcct),
+    tokensBought: numeric("tokens_bought", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
+    tokensSold: numeric("tokens_sold", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
+    volumeBought: numeric("volume_bought", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
+    volumeSold: numeric("volume_sold", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
+    totalVolume: numeric("total_volume", {
+      precision: 40,
+      scale: 20,
+    }).generatedAlwaysAs(
+      (): SQL =>
+        sql`${userPerformance.volumeBought} + ${userPerformance.volumeSold}`
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
-  
-}, (table) => {
-  return {
-    pk: primaryKey({ columns: [table.proposalAcct, table.userAcct] }),
-  };
-});
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.proposalAcct, table.userAcct] }),
+    };
+  }
+);
 
 // TODO: This is commented out give these are timescale views, but I wanted to include them
 export const twapChartData = pgView("twap_chart_data", {

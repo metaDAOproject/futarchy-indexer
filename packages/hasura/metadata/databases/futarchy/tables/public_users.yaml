@@ -16,3 +16,11 @@ array_relationships:
         table:
           name: user_performance
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - user_acct
+        - created_at
+      filter: {}
+    comment: ""

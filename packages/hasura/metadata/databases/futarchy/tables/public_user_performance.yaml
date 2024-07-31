@@ -18,6 +18,7 @@ select_permissions:
         - tokens_sold
         - volume_bought
         - volume_sold
+        - total_volume
         - created_at
       filter: {}
     comment: ""

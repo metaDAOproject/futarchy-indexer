@@ -28,6 +28,15 @@ object_relationships:
         remote_table:
           name: transactions
           schema: public
+  - name: user
+    using:
+      manual_configuration:
+        column_mapping:
+          actor_acct: user_acct
+        insertion_order: null
+        remote_table:
+          name: users
+          schema: public
 select_permissions:
   - role: anonymous
     permission:
