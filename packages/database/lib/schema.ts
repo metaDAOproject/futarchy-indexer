@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { SQL, sql } from "drizzle-orm";
 import {
   bigint,
   doublePrecision,
@@ -800,6 +800,13 @@ export const userPerformance = pgTable(
       precision: 40,
       scale: 20,
     }).notNull(),
+    totalVolume: numeric("total_volume", {
+      precision: 40,
+      scale: 20,
+    }).generatedAlwaysAs(
+      (): SQL =>
+        sql`${userPerformance.volumeBought} + ${userPerformance.volumeSold}`
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
