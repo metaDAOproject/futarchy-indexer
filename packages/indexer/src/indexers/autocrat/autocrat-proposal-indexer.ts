@@ -291,7 +291,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .execute()
           );
 
-          await calculateUserPerformance(onChainProposal)
+          await calculateUserPerformance(onChainProposal);
         }
         if (onChainProposal.account.state.failed) {
           await usingDb((db) =>
@@ -335,6 +335,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               )
               .execute()
           );
+          await calculateUserPerformance(onChainProposal);
         }
 
         // check if markets are there, if they aren't insert them
@@ -622,102 +623,139 @@ async function insertAssociatedAccountsDataForProposal(
   );
 }
 
-async function calculateUserPerformance(onChainProposal: ProposalAccountWithKey) {
+async function calculateUserPerformance(
+  onChainProposal: ProposalAccountWithKey
+) {
+  const baseTokens = alias(schema.tokens, "base_tokens");
+  const daoTokens = alias(schema.tokens, "dao_tokens");
+  // calculate performance
+  const [proposal] = await usingDb((db) => {
+    return db
+      .select()
+      .from(schema.proposals)
+      .where(
+        eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString())
+      )
+      .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
+      .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
+      .leftJoin(daoTokens, eq(schema.daos.quoteAcct, daoTokens.mintAcct))
+      .limit(1)
+      .execute();
+  });
 
-    const baseTokens = alias(schema.tokens, 'base_tokens')
-    const daoTokens = alias(schema.tokens, "dao_tokens")
-    // calculate performance
-    const [ proposal ] = await usingDb(db => {
-      return db
-        .select()
-        .from(schema.proposals)
-        .where(eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString()))
-        .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
-        .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
-        .leftJoin(daoTokens, eq(schema.daos.quoteAcct, daoTokens.mintAcct))
-        .limit(1)
-        .execute()
-    })
+  const { proposals, base_tokens, dao_tokens } = proposal;
 
-    const { proposals, base_tokens, dao_tokens } = proposal
+  const orders = await usingDb((db) => {
+    return db
+      .select()
+      .from(schema.orders)
+      .where(
+        inArray(schema.orders.marketAcct, [
+          proposals.passMarketAcct,
+          proposals.failMarketAcct,
+        ])
+      )
+      .execute();
+  });
 
-    const orders = await usingDb(db => {
-      return db
-        .select()
-        .from(schema.orders)
-        .where(inArray(schema.orders.marketAcct, [proposals.passMarketAcct, proposals.failMarketAcct]))
-        .execute()
-    })
+  let actors = orders.reduce((current, next) => {
+    const actor = next.actorAcct;
+    let totals = current.get(actor);
 
-    let actors = orders.reduce((current, next) => {
-      const actor = next.actorAcct
-      let totals = current.get(actor)
+    if (!totals) {
+      totals = <UserPerformanceTotals>{
+        tokensBought: new BN(0),
+        tokensSold: new BN(0),
+        volumeBought: new BN(0),
+        volumeSold: new BN(0),
+      };
+    }
 
-      if (!totals) {
-        totals = <UserPerformanceTotals>{
-          tokensBought: new BN(0),
-          tokensSold: new BN(0),
-          volumeBought: new BN(0),
-          volumeSold: new BN(0)
-        }
-      }
+    const tokenDecimals = base_tokens?.decimals ?? -1;
+    const daoDecimals = dao_tokens?.decimals ?? -1;
+    if (!tokenDecimals && !daoDecimals) {
+      return current;
+    }
 
-      const tokenDecimals = base_tokens?.decimals ?? -1
-      const daoDecimals = dao_tokens?.decimals ?? -1
-      if (!tokenDecimals && !daoDecimals) {
-        return current
-      }
+    const orderAmount = PriceMath.getHumanAmount(
+      new BN(next.filledBaseAmount),
+      tokenDecimals
+    );
+    const price = PriceMath.getChainAmount(
+      Number(next.quotePrice).valueOf() * orderAmount,
+      daoDecimals
+    );
 
-      const orderAmount = PriceMath.getHumanAmount(new BN(next.filledBaseAmount), tokenDecimals);
-      const price = PriceMath.getChainAmount(
-        Number(next.quotePrice).valueOf() * orderAmount,
-        daoDecimals,
+    if (next.side === "BID") {
+      totals.tokensBought = new BN(totals.tokensBought).add(
+        new BN(next.filledBaseAmount)
       );
-        
+      totals.volumeBought = new BN(totals.volumeBought).add(new BN(price));
+    } else if (next.side === "ASK") {
+      totals.tokensSold = new BN(totals.tokensSold).add(
+        new BN(next.filledBaseAmount)
+      );
+      totals.volumeSold = new BN(totals.volumeSold).add(new BN(price));
+    }
 
-      if (next.side === "BID") {
-        totals.tokensBought = new BN(totals.tokensBought).add(new BN(next.filledBaseAmount))
-        totals.volumeBought = new BN(totals.volumeBought).add(new BN(price))
-      } else if (next.side === "ASK") {
-        totals.tokensSold = new BN(totals.tokensSold).add(new BN(next.filledBaseAmount));
-        totals.volumeSold = new BN(totals.volumeSold).add(new BN(price));
-      }
+    current.set(actor, totals);
 
-      current.set(actor, totals)
+    return current;
+  }, new Map<String, UserPerformanceTotals>());
 
-      return current
+  const toInsert: Array<UserPerformance> = Array.from(actors.entries()).map(
+    (k) => {
+      const [actor, values] = k;
 
-    }, new Map <String, UserPerformanceTotals>())
-
-    const toInsert: Array<UserPerformance> = Array.from(actors.entries()).map(k => {
-       const [ actor, values ] = k
-
-       return <UserPerformance>{
+      return <UserPerformance>{
         proposalAcct: onChainProposal.publicKey.toString(),
         userAcct: actor,
         tokensBought: values.tokensBought.toString(),
         tokensSold: values.tokensSold.toString(),
         volumeBought: values.volumeBought.toString(),
         volumeSold: values.volumeSold.toString(),
-       }
-    })
+      };
+    }
+  );
 
-     await usingDb(db => {
+  if (toInsert.length > 0) {
+    await usingDb((db) => {
       return db.transaction(async (tx) => {
-        await tx.insert(schema.users).values(toInsert.map(i => {
-          return {
-            userAcct: i.userAcct,
-          }
-        })).onConflictDoNothing();
+        await tx
+          .insert(schema.users)
+          .values(
+            toInsert.map((i) => {
+              return {
+                userAcct: i.userAcct,
+              };
+            })
+          )
+          .onConflictDoNothing();
 
-        await tx.insert(schema.userPerformance)
-        .values(toInsert)
-        .onConflictDoNothing(
-          {
-            target: [schema.userPerformance.proposalAcct, schema.userPerformance.userAcct]
-          }
-        )
-      })
-        
-    })
+        await Promise.all(
+          toInsert.map(async (insert) => {
+            try {
+              await tx
+                .insert(schema.userPerformance)
+                .values(insert)
+                .onConflictDoUpdate({
+                  target: [
+                    schema.userPerformance.proposalAcct,
+                    schema.userPerformance.userAcct,
+                  ],
+                  set: {
+                    tokensBought: insert.tokensBought,
+                    tokensSold: insert.tokensSold,
+                    volumeBought: insert.volumeBought,
+                    volumeSold: insert.volumeSold,
+                  },
+                });
+            } catch (e) {
+              logger.error("error inserting user_performance record", e);
+            }
+          })
+        );
+      });
+    });
+  }
 }

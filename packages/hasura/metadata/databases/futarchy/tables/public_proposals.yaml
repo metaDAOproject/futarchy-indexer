@@ -26,20 +26,6 @@ array_relationships:
         table:
           name: markets
           schema: public
-  - name: proposal_conditional_liquidity_data
-    using:
-      foreign_key_constraint_on:
-        column: proposal_acct
-        table:
-          name: proposal_conditional_liquidity_data
-          schema: public
-  - name: proposal_conditional_price_data
-    using:
-      foreign_key_constraint_on:
-        column: proposal_acct
-        table:
-          name: proposal_conditional_price_data
-          schema: public
   - name: proposal_details
     using:
       foreign_key_constraint_on:

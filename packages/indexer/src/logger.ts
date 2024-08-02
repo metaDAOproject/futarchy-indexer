@@ -26,7 +26,11 @@ export class Logger {
       .map((item) => {
         if (typeof item === "object") {
           try {
-            return JSON.stringify(item);
+            const jsonItem = JSON.stringify(item);
+            if (item.message && !jsonItem.includes(item.message)) {
+              return jsonItem + " " + item.message;
+            }
+            return jsonItem;
           } catch (error) {
             return "[Circular]";
           }
