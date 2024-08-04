@@ -710,10 +710,10 @@ async function calculateUserPerformance(
       return <UserPerformance>{
         proposalAcct: onChainProposal.publicKey.toString(),
         userAcct: actor,
-        tokensBought: values.tokensBought.toString(),
-        tokensSold: values.tokensSold.toString(),
-        volumeBought: values.volumeBought.toString(),
-        volumeSold: values.volumeSold.toString(),
+        tokensBought: values.tokensBought,
+        tokensSold: values.tokensSold,
+        volumeBought: values.volumeBought,
+        volumeSold: values.volumeSold,
       };
     }
   );

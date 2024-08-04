@@ -784,29 +784,14 @@ export const userPerformance = pgTable(
     userAcct: pubkey("user_acct")
       .notNull()
       .references(() => users.userAcct),
-    tokensBought: numeric("tokens_bought", {
-      precision: 40,
-      scale: 20,
-    }).notNull(),
-    tokensSold: numeric("tokens_sold", {
-      precision: 40,
-      scale: 20,
-    }).notNull(),
-    volumeBought: numeric("volume_bought", {
-      precision: 40,
-      scale: 20,
-    }).notNull(),
-    volumeSold: numeric("volume_sold", {
-      precision: 40,
-      scale: 20,
-    }).notNull(),
-    totalVolume: numeric("total_volume", {
-      precision: 40,
-      scale: 20,
-    }).generatedAlwaysAs(
-      (): SQL =>
-        sql`${userPerformance.volumeBought} + ${userPerformance.volumeSold}`
-    ),
+    tokensBought: tokenAmount("tokens_bought").notNull(),
+    tokensSold: tokenAmount("tokens_sold").notNull(),
+    volumeBought: tokenAmount("volume_bought").notNull(),
+    volumeSold: tokenAmount("volume_sold").notNull(),
+    // totalVolume: tokenAmount("total_volume").generatedAlwaysAs(
+    //   (): SQL =>
+    //     sql`${userPerformance.volumeBought} + ${userPerformance.volumeSold}`
+    // ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
