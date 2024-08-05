@@ -788,10 +788,6 @@ export const userPerformance = pgTable(
     tokensSold: tokenAmount("tokens_sold").notNull(),
     volumeBought: tokenAmount("volume_bought").notNull(),
     volumeSold: tokenAmount("volume_sold").notNull(),
-    // totalVolume: tokenAmount("total_volume").generatedAlwaysAs(
-    //   (): SQL =>
-    //     sql`${userPerformance.volumeBought} + ${userPerformance.volumeSold}`
-    // ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
