@@ -1,19 +1,22 @@
-// handlers.ts
+import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
-import { eq, and, gt } from "drizzle-orm";
-import { usingDb } from "@metadaoproject/indexer-db";
+import { usingDb, eq, gt, and } from "@metadaoproject/indexer-db";
 import { sessions, users } from "@metadaoproject/indexer-db/lib/schema";
 import { AUTHENTICATION_TIME, verifySignature } from "../usecases/auth";
-import { logger } from "../logger";
-
-//TODO: These endpoints need to be changed so that you must send signature as part of the auth header.
-// Sending just the pubkey in the body would mean an inflight session can be easily hijacked
 
 const SESSION_NOT_FOUND_ERROR = {
   error: "Session doesn't exist or has expired",
 };
+
 const WRONG_REQUEST_BODY_ERROR = { error: "Wrong request body." };
 
+const PRIVATE_KEY =
+  process.env.RSA_PRIVATE_KEY ||
+  `-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----`;
+
+// Function to check for an existing session
 async function checkExistingSession(pubkey: string) {
   const currentTime = new Date();
   const resp = await usingDb((db) =>
@@ -61,6 +64,7 @@ export async function authPost(req: Request, res: Response) {
   }
 }
 
+// PUT endpoint for authentication
 export async function authPut(req: Request, res: Response) {
   try {
     const { id, signature, pubKey } = req.body;
@@ -93,9 +97,27 @@ export async function authPut(req: Request, res: Response) {
         .returning()
     );
 
+    const token = jwt.sign(
+      {
+        sub: updatedSession.id,
+        pubKey,
+        iat: Math.floor(currentTime.getTime() / 1000), // Issued at
+        exp: Math.floor(expiryTime.getTime() / 1000), // Expiry time
+        "https://hasura.io/jwt/claims": {
+          "x-hasura-default-role": "user",
+          "x-hasura-allowed-roles": ["user"],
+          "x-hasura-user-id": pubKey,
+        },
+      },
+      PRIVATE_KEY, // Use the RSA private key to sign the JWT
+      { algorithm: "RS256" } // Specify the RS256 algorithm
+    );
+
     return res.status(200).json({
       sessionId: updatedSession.id,
       message: "Message signed successfully.",
+      expiryTime,
+      token, // Include the JWT in the response
     });
   } catch (e: any) {
     console.error(e);

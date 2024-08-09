@@ -46,6 +46,7 @@ export {
   count,
   lte,
   gte,
+  gt,
   notInArray,
   not,
   and,
