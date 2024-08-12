@@ -620,25 +620,18 @@ export const comments = pgTable("comments", {
     .default(sql`now()`),
 });
 
-export const reactions = pgTable(
-  "reactions",
-  {
-    reactorAcct: pubkey("reactor_acct").notNull(),
-    commentId: bigint("comment_id", { mode: "bigint" }).references(
-      () => comments.commentId
-    ),
-    proposalAcct: pubkey("proposal_acct").references(
-      () => proposals.proposalAcct
-    ),
-    reaction: pgEnum("reaction", Reactions).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
-  },
-  (table) => ({
-    // Note: we maybe should do a unique reactorAcct + proposalAcct, but
-    // at the very least should unique reactorAcct + proposalAcct + reaction
-    pk: primaryKey(table.proposalAcct, table.reaction, table.reactorAcct),
-  })
-);
+export const reactions = pgTable("reactions", {
+  reactionId: uuid("reaction_id").notNull().defaultRandom().primaryKey(),
+  reactorAcct: pubkey("reactor_acct").notNull(),
+  commentId: bigint("comment_id", { mode: "bigint" }).references(
+    () => comments.commentId
+  ),
+  proposalAcct: pubkey("proposal_acct").references(
+    () => proposals.proposalAcct
+  ),
+  reaction: pgEnum("reaction", Reactions).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
 
 // Note: Before a user can generate a session they need to be insterted into the DB
 export const users = pgTable("users", {
