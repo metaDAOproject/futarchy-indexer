@@ -1,6 +1,6 @@
 {
-  "id": "fb6a4a64-3597-4b8c-933b-0feb57c233d8",
-  "prevId": "c8459ecb-595e-426f-b3e6-602a300e13e7",
+  "id": "51aae3d7-4053-4060-b366-9c813b88669c",
+  "prevId": "cc1901de-30c2-4121-9485-e5a1b7f5af76",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -75,8 +75,12 @@
           "name": "candles_market_acct_markets_market_acct_fk",
           "tableFrom": "candles",
           "tableTo": "markets",
-          "columnsFrom": ["market_acct"],
-          "columnsTo": ["market_acct"],
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -84,7 +88,11 @@
       "compositePrimaryKeys": {
         "candles_market_acct_candle_duration_timestamp_pk": {
           "name": "candles_market_acct_candle_duration_timestamp_pk",
-          "columns": ["market_acct", "candle_duration", "timestamp"]
+          "columns": [
+            "market_acct",
+            "candle_duration",
+            "timestamp"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -137,8 +145,12 @@
           "name": "comments_proposal_acct_proposals_proposal_acct_fk",
           "tableFrom": "comments",
           "tableTo": "proposals",
-          "columnsFrom": ["proposal_acct"],
-          "columnsTo": ["proposal_acct"],
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -146,8 +158,12 @@
           "name": "comments_responding_comment_id_comments_comment_id_fk",
           "tableFrom": "comments",
           "tableTo": "comments",
-          "columnsFrom": ["responding_comment_id"],
-          "columnsTo": ["comment_id"],
+          "columnsFrom": [
+            "responding_comment_id"
+          ],
+          "columnsTo": [
+            "comment_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -157,7 +173,9 @@
         "comments_comment_id_unique": {
           "name": "comments_comment_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["comment_id"]
+          "columns": [
+            "comment_id"
+          ]
         }
       }
     },
@@ -220,8 +238,12 @@
           "name": "conditional_vaults_underlying_mint_acct_tokens_mint_acct_fk",
           "tableFrom": "conditional_vaults",
           "tableTo": "tokens",
-          "columnsFrom": ["underlying_mint_acct"],
-          "columnsTo": ["mint_acct"],
+          "columnsFrom": [
+            "underlying_mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -337,32 +359,46 @@
         "dao_details_name_unique": {
           "name": "dao_details_name_unique",
           "nullsNotDistinct": false,
-          "columns": ["name"]
+          "columns": [
+            "name"
+          ]
         },
         "dao_details_slug_unique": {
           "name": "dao_details_slug_unique",
           "nullsNotDistinct": false,
-          "columns": ["slug"]
+          "columns": [
+            "slug"
+          ]
         },
         "dao_details_url_unique": {
           "name": "dao_details_url_unique",
           "nullsNotDistinct": false,
-          "columns": ["url"]
+          "columns": [
+            "url"
+          ]
         },
         "dao_details_x_account_unique": {
           "name": "dao_details_x_account_unique",
           "nullsNotDistinct": false,
-          "columns": ["x_account"]
+          "columns": [
+            "x_account"
+          ]
         },
         "dao_details_github_unique": {
           "name": "dao_details_github_unique",
           "nullsNotDistinct": false,
-          "columns": ["github"]
+          "columns": [
+            "github"
+          ]
         },
         "id_name_url": {
           "name": "id_name_url",
           "nullsNotDistinct": false,
-          "columns": ["dao_id", "url", "name"]
+          "columns": [
+            "dao_id",
+            "url",
+            "name"
+          ]
         }
       }
     },
@@ -439,8 +475,12 @@
           "name": "daos_program_acct_programs_program_acct_fk",
           "tableFrom": "daos",
           "tableTo": "programs",
-          "columnsFrom": ["program_acct"],
-          "columnsTo": ["program_acct"],
+          "columnsFrom": [
+            "program_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -448,8 +488,12 @@
           "name": "daos_dao_id_dao_details_dao_id_fk",
           "tableFrom": "daos",
           "tableTo": "dao_details",
-          "columnsFrom": ["dao_id"],
-          "columnsTo": ["dao_id"],
+          "columnsFrom": [
+            "dao_id"
+          ],
+          "columnsTo": [
+            "dao_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -457,8 +501,12 @@
           "name": "daos_base_acct_tokens_mint_acct_fk",
           "tableFrom": "daos",
           "tableTo": "tokens",
-          "columnsFrom": ["base_acct"],
-          "columnsTo": ["mint_acct"],
+          "columnsFrom": [
+            "base_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -466,8 +514,12 @@
           "name": "daos_quote_acct_tokens_mint_acct_fk",
           "tableFrom": "daos",
           "tableTo": "tokens",
-          "columnsFrom": ["quote_acct"],
-          "columnsTo": ["mint_acct"],
+          "columnsFrom": [
+            "quote_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -477,12 +529,17 @@
         "daos_treasury_acct_unique": {
           "name": "daos_treasury_acct_unique",
           "nullsNotDistinct": false,
-          "columns": ["treasury_acct"]
+          "columns": [
+            "treasury_acct"
+          ]
         },
         "dao_acct_program": {
           "name": "dao_acct_program",
           "nullsNotDistinct": false,
-          "columns": ["dao_acct", "program_acct"]
+          "columns": [
+            "dao_acct",
+            "program_acct"
+          ]
         }
       }
     },
@@ -528,8 +585,12 @@
           "name": "indexer_account_dependencies_name_indexers_name_fk",
           "tableFrom": "indexer_account_dependencies",
           "tableTo": "indexers",
-          "columnsFrom": ["name"],
-          "columnsTo": ["name"],
+          "columnsFrom": [
+            "name"
+          ],
+          "columnsTo": [
+            "name"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -537,8 +598,12 @@
           "name": "indexer_account_dependencies_latest_tx_sig_processed_transactions_tx_sig_fk",
           "tableFrom": "indexer_account_dependencies",
           "tableTo": "transactions",
-          "columnsFrom": ["latest_tx_sig_processed"],
-          "columnsTo": ["tx_sig"],
+          "columnsFrom": [
+            "latest_tx_sig_processed"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -546,7 +611,10 @@
       "compositePrimaryKeys": {
         "indexer_account_dependencies_name_acct_pk": {
           "name": "indexer_account_dependencies_name_acct_pk",
-          "columns": ["name", "acct"]
+          "columns": [
+            "name",
+            "acct"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -635,7 +703,9 @@
       "indexes": {
         "market_index": {
           "name": "market_index",
-          "columns": ["market_acct"],
+          "columns": [
+            "market_acct"
+          ],
           "isUnique": false
         }
       },
@@ -644,8 +714,12 @@
           "name": "makes_order_tx_sig_orders_order_tx_sig_fk",
           "tableFrom": "makes",
           "tableTo": "orders",
-          "columnsFrom": ["order_tx_sig"],
-          "columnsTo": ["order_tx_sig"],
+          "columnsFrom": [
+            "order_tx_sig"
+          ],
+          "columnsTo": [
+            "order_tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -653,8 +727,12 @@
           "name": "makes_market_acct_markets_market_acct_fk",
           "tableFrom": "makes",
           "tableTo": "markets",
-          "columnsFrom": ["market_acct"],
-          "columnsTo": ["market_acct"],
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -782,8 +860,12 @@
           "name": "markets_proposal_acct_proposals_proposal_acct_fk",
           "tableFrom": "markets",
           "tableTo": "proposals",
-          "columnsFrom": ["proposal_acct"],
-          "columnsTo": ["proposal_acct"],
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -791,8 +873,12 @@
           "name": "markets_base_mint_acct_tokens_mint_acct_fk",
           "tableFrom": "markets",
           "tableTo": "tokens",
-          "columnsFrom": ["base_mint_acct"],
-          "columnsTo": ["mint_acct"],
+          "columnsFrom": [
+            "base_mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -800,8 +886,12 @@
           "name": "markets_quote_mint_acct_tokens_mint_acct_fk",
           "tableFrom": "markets",
           "tableTo": "tokens",
-          "columnsFrom": ["quote_mint_acct"],
-          "columnsTo": ["mint_acct"],
+          "columnsFrom": [
+            "quote_mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -809,8 +899,12 @@
           "name": "markets_bids_token_acct_token_accts_token_acct_fk",
           "tableFrom": "markets",
           "tableTo": "token_accts",
-          "columnsFrom": ["bids_token_acct"],
-          "columnsTo": ["token_acct"],
+          "columnsFrom": [
+            "bids_token_acct"
+          ],
+          "columnsTo": [
+            "token_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -818,8 +912,12 @@
           "name": "markets_asks_token_acct_token_accts_token_acct_fk",
           "tableFrom": "markets",
           "tableTo": "token_accts",
-          "columnsFrom": ["asks_token_acct"],
-          "columnsTo": ["token_acct"],
+          "columnsFrom": [
+            "asks_token_acct"
+          ],
+          "columnsTo": [
+            "token_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -919,7 +1017,10 @@
       "indexes": {
         "actor_index": {
           "name": "actor_index",
-          "columns": ["market_acct", "actor_acct"],
+          "columns": [
+            "market_acct",
+            "actor_acct"
+          ],
           "isUnique": false
         }
       },
@@ -928,8 +1029,12 @@
           "name": "orders_order_tx_sig_transactions_tx_sig_fk",
           "tableFrom": "orders",
           "tableTo": "transactions",
-          "columnsFrom": ["order_tx_sig"],
-          "columnsTo": ["tx_sig"],
+          "columnsFrom": [
+            "order_tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -937,8 +1042,12 @@
           "name": "orders_market_acct_markets_market_acct_fk",
           "tableFrom": "orders",
           "tableTo": "markets",
-          "columnsFrom": ["market_acct"],
-          "columnsTo": ["market_acct"],
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -946,8 +1055,12 @@
           "name": "orders_actor_acct_users_user_acct_fk",
           "tableFrom": "orders",
           "tableTo": "users",
-          "columnsFrom": ["actor_acct"],
-          "columnsTo": ["user_acct"],
+          "columnsFrom": [
+            "actor_acct"
+          ],
+          "columnsTo": [
+            "user_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1015,8 +1128,12 @@
           "name": "prices_market_acct_markets_market_acct_fk",
           "tableFrom": "prices",
           "tableTo": "markets",
-          "columnsFrom": ["market_acct"],
-          "columnsTo": ["market_acct"],
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1024,7 +1141,10 @@
       "compositePrimaryKeys": {
         "prices_created_at_market_acct_pk": {
           "name": "prices_created_at_market_acct_pk",
-          "columns": ["created_at", "market_acct"]
+          "columns": [
+            "created_at",
+            "market_acct"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -1070,8 +1190,12 @@
           "name": "program_system_autocrat_acct_programs_program_acct_fk",
           "tableFrom": "program_system",
           "tableTo": "programs",
-          "columnsFrom": ["autocrat_acct"],
-          "columnsTo": ["program_acct"],
+          "columnsFrom": [
+            "autocrat_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1079,8 +1203,12 @@
           "name": "program_system_conditional_vault_acct_programs_program_acct_fk",
           "tableFrom": "program_system",
           "tableTo": "programs",
-          "columnsFrom": ["conditional_vault_acct"],
-          "columnsTo": ["program_acct"],
+          "columnsFrom": [
+            "conditional_vault_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1088,8 +1216,12 @@
           "name": "program_system_pricing_model_acct_programs_program_acct_fk",
           "tableFrom": "program_system",
           "tableTo": "programs",
-          "columnsFrom": ["pricing_model_acct"],
-          "columnsTo": ["program_acct"],
+          "columnsFrom": [
+            "pricing_model_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1097,8 +1229,12 @@
           "name": "program_system_migrator_acct_programs_program_acct_fk",
           "tableFrom": "program_system",
           "tableTo": "programs",
-          "columnsFrom": ["migrator_acct"],
-          "columnsTo": ["program_acct"],
+          "columnsFrom": [
+            "migrator_acct"
+          ],
+          "columnsTo": [
+            "program_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1149,7 +1285,10 @@
         "program_version": {
           "name": "program_version",
           "nullsNotDistinct": false,
-          "columns": ["program_acct", "version"]
+          "columns": [
+            "program_acct",
+            "version"
+          ]
         }
       }
     },
@@ -1236,8 +1375,12 @@
           "name": "proposal_details_proposal_acct_proposals_proposal_acct_fk",
           "tableFrom": "proposal_details",
           "tableTo": "proposals",
-          "columnsFrom": ["proposal_acct"],
-          "columnsTo": ["proposal_acct"],
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1247,7 +1390,9 @@
         "proposal_details_slug_unique": {
           "name": "proposal_details_slug_unique",
           "nullsNotDistinct": false,
-          "columns": ["slug"]
+          "columns": [
+            "slug"
+          ]
         }
       }
     },
@@ -1378,8 +1523,12 @@
           "name": "proposals_dao_acct_daos_dao_acct_fk",
           "tableFrom": "proposals",
           "tableTo": "daos",
-          "columnsFrom": ["dao_acct"],
-          "columnsTo": ["dao_acct"],
+          "columnsFrom": [
+            "dao_acct"
+          ],
+          "columnsTo": [
+            "dao_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1387,8 +1536,12 @@
           "name": "proposals_base_vault_conditional_vaults_cond_vault_acct_fk",
           "tableFrom": "proposals",
           "tableTo": "conditional_vaults",
-          "columnsFrom": ["base_vault"],
-          "columnsTo": ["cond_vault_acct"],
+          "columnsFrom": [
+            "base_vault"
+          ],
+          "columnsTo": [
+            "cond_vault_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1396,8 +1549,12 @@
           "name": "proposals_quote_vault_conditional_vaults_cond_vault_acct_fk",
           "tableFrom": "proposals",
           "tableTo": "conditional_vaults",
-          "columnsFrom": ["quote_vault"],
-          "columnsTo": ["cond_vault_acct"],
+          "columnsFrom": [
+            "quote_vault"
+          ],
+          "columnsTo": [
+            "cond_vault_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1409,6 +1566,13 @@
       "name": "reactions",
       "schema": "",
       "columns": {
+        "reaction_id": {
+          "name": "reaction_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "reactor_acct": {
           "name": "reactor_acct",
           "type": "varchar(44)",
@@ -1446,8 +1610,12 @@
           "name": "reactions_comment_id_comments_comment_id_fk",
           "tableFrom": "reactions",
           "tableTo": "comments",
-          "columnsFrom": ["comment_id"],
-          "columnsTo": ["comment_id"],
+          "columnsFrom": [
+            "comment_id"
+          ],
+          "columnsTo": [
+            "comment_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1455,18 +1623,17 @@
           "name": "reactions_proposal_acct_proposals_proposal_acct_fk",
           "tableFrom": "reactions",
           "tableTo": "proposals",
-          "columnsFrom": ["proposal_acct"],
-          "columnsTo": ["proposal_acct"],
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "reactions_proposal_acct_reaction_reactor_acct_pk": {
-          "name": "reactions_proposal_acct_reaction_reactor_acct_pk",
-          "columns": ["proposal_acct", "reaction", "reactor_acct"]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
     "sessions": {
@@ -1506,8 +1673,12 @@
           "name": "sessions_user_acct_users_user_acct_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": ["user_acct"],
-          "columnsTo": ["user_acct"],
+          "columnsFrom": [
+            "user_acct"
+          ],
+          "columnsTo": [
+            "user_acct"
+          ],
           "onDelete": "restrict",
           "onUpdate": "restrict"
         }
@@ -1590,17 +1761,25 @@
       "indexes": {
         "block_index": {
           "name": "block_index",
-          "columns": ["market_acct", "order_block"],
+          "columns": [
+            "market_acct",
+            "order_block"
+          ],
           "isUnique": false
         },
         "time_index": {
           "name": "time_index",
-          "columns": ["market_acct", "order_time"],
+          "columns": [
+            "market_acct",
+            "order_time"
+          ],
           "isUnique": false
         },
         "maker_index": {
           "name": "maker_index",
-          "columns": ["maker_order_tx_sig"],
+          "columns": [
+            "maker_order_tx_sig"
+          ],
           "isUnique": false
         }
       },
@@ -1609,8 +1788,12 @@
           "name": "takes_order_tx_sig_orders_order_tx_sig_fk",
           "tableFrom": "takes",
           "tableTo": "orders",
-          "columnsFrom": ["order_tx_sig"],
-          "columnsTo": ["order_tx_sig"],
+          "columnsFrom": [
+            "order_tx_sig"
+          ],
+          "columnsTo": [
+            "order_tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1618,8 +1801,12 @@
           "name": "takes_maker_order_tx_sig_makes_order_tx_sig_fk",
           "tableFrom": "takes",
           "tableTo": "makes",
-          "columnsFrom": ["maker_order_tx_sig"],
-          "columnsTo": ["order_tx_sig"],
+          "columnsFrom": [
+            "maker_order_tx_sig"
+          ],
+          "columnsTo": [
+            "order_tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1627,8 +1814,12 @@
           "name": "takes_market_acct_markets_market_acct_fk",
           "tableFrom": "takes",
           "tableTo": "markets",
-          "columnsFrom": ["market_acct"],
-          "columnsTo": ["market_acct"],
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1694,7 +1885,11 @@
       "indexes": {
         "acct_amount_created": {
           "name": "acct_amount_created",
-          "columns": ["token_acct", "created_at", "amount"],
+          "columns": [
+            "token_acct",
+            "created_at",
+            "amount"
+          ],
           "isUnique": false
         }
       },
@@ -1703,8 +1898,12 @@
           "name": "token_acct_balances_token_acct_token_accts_token_acct_fk",
           "tableFrom": "token_acct_balances",
           "tableTo": "token_accts",
-          "columnsFrom": ["token_acct"],
-          "columnsTo": ["token_acct"],
+          "columnsFrom": [
+            "token_acct"
+          ],
+          "columnsTo": [
+            "token_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1712,8 +1911,12 @@
           "name": "token_acct_balances_mint_acct_tokens_mint_acct_fk",
           "tableFrom": "token_acct_balances",
           "tableTo": "tokens",
-          "columnsFrom": ["mint_acct"],
-          "columnsTo": ["mint_acct"],
+          "columnsFrom": [
+            "mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1721,8 +1924,12 @@
           "name": "token_acct_balances_tx_sig_transactions_tx_sig_fk",
           "tableFrom": "token_acct_balances",
           "tableTo": "transactions",
-          "columnsFrom": ["tx_sig"],
-          "columnsTo": ["tx_sig"],
+          "columnsFrom": [
+            "tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1730,7 +1937,12 @@
       "compositePrimaryKeys": {
         "token_acct_balances_token_acct_mint_acct_amount_created_at_pk": {
           "name": "token_acct_balances_token_acct_mint_acct_amount_created_at_pk",
-          "columns": ["token_acct", "mint_acct", "amount", "created_at"]
+          "columns": [
+            "token_acct",
+            "mint_acct",
+            "amount",
+            "created_at"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -1783,8 +1995,12 @@
           "name": "token_accts_mint_acct_tokens_mint_acct_fk",
           "tableFrom": "token_accts",
           "tableTo": "tokens",
-          "columnsFrom": ["mint_acct"],
-          "columnsTo": ["mint_acct"],
+          "columnsFrom": [
+            "mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1870,7 +2086,10 @@
       "indexes": {
         "watcher_slot_index": {
           "name": "watcher_slot_index",
-          "columns": ["watcher_acct", "slot"],
+          "columns": [
+            "watcher_acct",
+            "slot"
+          ],
           "isUnique": false
         }
       },
@@ -1879,8 +2098,12 @@
           "name": "transaction_watcher_transactions_watcher_acct_transaction_watchers_acct_fk",
           "tableFrom": "transaction_watcher_transactions",
           "tableTo": "transaction_watchers",
-          "columnsFrom": ["watcher_acct"],
-          "columnsTo": ["acct"],
+          "columnsFrom": [
+            "watcher_acct"
+          ],
+          "columnsTo": [
+            "acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1888,8 +2111,12 @@
           "name": "transaction_watcher_transactions_tx_sig_transactions_tx_sig_fk",
           "tableFrom": "transaction_watcher_transactions",
           "tableTo": "transactions",
-          "columnsFrom": ["tx_sig"],
-          "columnsTo": ["tx_sig"],
+          "columnsFrom": [
+            "tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1897,7 +2124,10 @@
       "compositePrimaryKeys": {
         "transaction_watcher_transactions_watcher_acct_tx_sig_pk": {
           "name": "transaction_watcher_transactions_watcher_acct_tx_sig_pk",
-          "columns": ["watcher_acct", "tx_sig"]
+          "columns": [
+            "watcher_acct",
+            "tx_sig"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -1968,8 +2198,12 @@
           "name": "transaction_watchers_latest_tx_sig_transactions_tx_sig_fk",
           "tableFrom": "transaction_watchers",
           "tableTo": "transactions",
-          "columnsFrom": ["latest_tx_sig"],
-          "columnsTo": ["tx_sig"],
+          "columnsFrom": [
+            "latest_tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1977,8 +2211,12 @@
           "name": "transaction_watchers_first_tx_sig_transactions_tx_sig_fk",
           "tableFrom": "transaction_watchers",
           "tableTo": "transactions",
-          "columnsFrom": ["first_tx_sig"],
-          "columnsTo": ["tx_sig"],
+          "columnsFrom": [
+            "first_tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2036,7 +2274,9 @@
       "indexes": {
         "txn_slot_index": {
           "name": "txn_slot_index",
-          "columns": ["slot"],
+          "columns": [
+            "slot"
+          ],
           "isUnique": false
         }
       },
@@ -2104,8 +2344,12 @@
           "name": "twaps_market_acct_markets_market_acct_fk",
           "tableFrom": "twaps",
           "tableTo": "markets",
-          "columnsFrom": ["market_acct"],
-          "columnsTo": ["market_acct"],
+          "columnsFrom": [
+            "market_acct"
+          ],
+          "columnsTo": [
+            "market_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2113,8 +2357,12 @@
           "name": "twaps_proposal_acct_proposals_proposal_acct_fk",
           "tableFrom": "twaps",
           "tableTo": "proposals",
-          "columnsFrom": ["proposal_acct"],
-          "columnsTo": ["proposal_acct"],
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2122,9 +2370,93 @@
       "compositePrimaryKeys": {
         "twaps_updated_slot_market_acct_pk": {
           "name": "twaps_updated_slot_market_acct_pk",
-          "columns": ["updated_slot", "market_acct"]
+          "columns": [
+            "updated_slot",
+            "market_acct"
+          ]
         }
       },
+      "uniqueConstraints": {}
+    },
+    "user_deposits": {
+      "name": "user_deposits",
+      "schema": "",
+      "columns": {
+        "tx_sig": {
+          "name": "tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_acct": {
+          "name": "user_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_amount": {
+          "name": "token_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mint_acct": {
+          "name": "mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_deposits_tx_sig_transactions_tx_sig_fk": {
+          "name": "user_deposits_tx_sig_transactions_tx_sig_fk",
+          "tableFrom": "user_deposits",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_deposits_user_acct_users_user_acct_fk": {
+          "name": "user_deposits_user_acct_users_user_acct_fk",
+          "tableFrom": "user_deposits",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_acct"
+          ],
+          "columnsTo": [
+            "user_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_deposits_mint_acct_tokens_mint_acct_fk": {
+          "name": "user_deposits_mint_acct_tokens_mint_acct_fk",
+          "tableFrom": "user_deposits",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "mint_acct"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
     "user_performance": {
@@ -2181,8 +2513,12 @@
           "name": "user_performance_proposal_acct_proposals_proposal_acct_fk",
           "tableFrom": "user_performance",
           "tableTo": "proposals",
-          "columnsFrom": ["proposal_acct"],
-          "columnsTo": ["proposal_acct"],
+          "columnsFrom": [
+            "proposal_acct"
+          ],
+          "columnsTo": [
+            "proposal_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2190,8 +2526,12 @@
           "name": "user_performance_user_acct_users_user_acct_fk",
           "tableFrom": "user_performance",
           "tableTo": "users",
-          "columnsFrom": ["user_acct"],
-          "columnsTo": ["user_acct"],
+          "columnsFrom": [
+            "user_acct"
+          ],
+          "columnsTo": [
+            "user_acct"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2199,7 +2539,10 @@
       "compositePrimaryKeys": {
         "user_performance_proposal_acct_user_acct_pk": {
           "name": "user_performance_proposal_acct_user_acct_pk",
-          "columns": ["proposal_acct", "user_acct"]
+          "columns": [
+            "proposal_acct",
+            "user_acct"
+          ]
         }
       },
       "uniqueConstraints": {}

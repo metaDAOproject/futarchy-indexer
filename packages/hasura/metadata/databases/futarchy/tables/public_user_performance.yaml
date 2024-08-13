@@ -21,4 +21,5 @@ select_permissions:
         - total_volume
         - created_at
       filter: {}
+      allow_aggregations: true
     comment: ""

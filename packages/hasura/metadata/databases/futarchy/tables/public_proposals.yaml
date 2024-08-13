@@ -55,7 +55,7 @@ array_relationships:
           name: user_performance
           schema: public
 insert_permissions:
-  - role: anonymous
+  - role: comments
     permission:
       check: {}
       columns:
@@ -93,4 +93,5 @@ select_permissions:
         - ended_at
         - updated_at
       filter: {}
+      allow_aggregations: true
     comment: ""
