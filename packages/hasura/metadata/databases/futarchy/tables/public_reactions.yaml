@@ -13,6 +13,7 @@ insert_permissions:
     permission:
       check: {}
       columns:
+        - reaction_id
         - comment_id
         - proposal_acct
         - reaction
@@ -23,6 +24,7 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
+        - reaction_id
         - comment_id
         - proposal_acct
         - reaction
