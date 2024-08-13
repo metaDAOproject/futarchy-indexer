@@ -896,6 +896,29 @@ export const proposalTotalTradeVolume = pgView("proposal_total_trade_volume", {
   GROUP BY pass_market.proposal_acct, pass_market_acct, fail_market_acct
   `);
 
+export const userDeposits = pgTable(
+  "user_deposits",
+  {
+    txSig: transaction("tx_sig")
+      .references(() => transactions.txSig)
+      .notNull(),
+      
+    userAcct: pubkey("user_acct")
+      .notNull()
+      .references(() => users.userAcct),
+    
+    tokenAmount: tokenAmount("token_amount").notNull(),
+
+    mintAcct: pubkey("mint_acct")
+      .references(() => conditionalVaults.underlyingMintAcct)
+      .notNull(),
+   
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  }
+);
+
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type IndexerAccountDependencyReadRecord =
   typeof indexerAccountDependencies._.inferSelect;

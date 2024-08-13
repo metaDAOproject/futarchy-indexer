@@ -1,6 +1,6 @@
 {
-  "id": "7f53cc25-7e47-4391-a342-3a63ebdb6ae7",
-  "prevId": "c8459ecb-595e-426f-b3e6-602a300e13e7",
+  "id": "045d0ce4-8b71-409a-abab-7ddc7f0cf413",
+  "prevId": "7f53cc25-7e47-4391-a342-3a63ebdb6ae7",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -2378,6 +2378,87 @@
           ]
         }
       },
+      "uniqueConstraints": {}
+    },
+    "user_deposits": {
+      "name": "user_deposits",
+      "schema": "",
+      "columns": {
+        "tx_sig": {
+          "name": "tx_sig",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_acct": {
+          "name": "user_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_amount": {
+          "name": "token_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mint_acct": {
+          "name": "mint_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_deposits_tx_sig_transactions_tx_sig_fk": {
+          "name": "user_deposits_tx_sig_transactions_tx_sig_fk",
+          "tableFrom": "user_deposits",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "tx_sig"
+          ],
+          "columnsTo": [
+            "tx_sig"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_deposits_user_acct_users_user_acct_fk": {
+          "name": "user_deposits_user_acct_users_user_acct_fk",
+          "tableFrom": "user_deposits",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_acct"
+          ],
+          "columnsTo": [
+            "user_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_deposits_mint_acct_conditional_vaults_underlying_mint_acct_fk": {
+          "name": "user_deposits_mint_acct_conditional_vaults_underlying_mint_acct_fk",
+          "tableFrom": "user_deposits",
+          "tableTo": "conditional_vaults",
+          "columnsFrom": [
+            "mint_acct"
+          ],
+          "columnsTo": [
+            "underlying_mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
     "user_performance": {
