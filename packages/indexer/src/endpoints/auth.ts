@@ -79,10 +79,27 @@ export async function authPut(req: Request, res: Response) {
     );
 
     const existingSession = await checkExistingSession(pubKey);
-    if (existingSession) {
-      return res.status(409).json({
-        error: "Session already exists and has not expired.",
+    if (existingSession && existingSession.expiresAt) {
+      const token = jwt.sign(
+        {
+          sub: existingSession.id,
+          pubKey,
+          iat: Math.floor(existingSession.createdAt.getTime() / 1000), // Issued at
+          exp: Math.floor(existingSession.expiresAt?.getTime() / 1000), // Expiry time
+          "https://hasura.io/jwt/claims": {
+            "x-hasura-default-role": "user",
+            "x-hasura-allowed-roles": ["user"],
+            "x-hasura-user-id": pubKey,
+          },
+        },
+        PRIVATE_KEY, // Use the RSA private key to sign the JWT
+        { algorithm: "RS256" } // Specify the RS256 algorithm
+      );
+      return res.status(200).json({
+        message: "Session already exists and has not expired.",
         sessionId: existingSession.id,
+        expiryTime,
+        token, // Include the JWT in the response
       });
     }
 
