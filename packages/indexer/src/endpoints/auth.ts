@@ -123,6 +123,7 @@ export async function authPut(req: Request, res: Response) {
         "https://hasura.io/jwt/claims": {
           "x-hasura-default-role": "user",
           "x-hasura-allowed-roles": ["user"],
+          "x-hasura-role": "user",
           "x-hasura-user-id": pubKey,
         },
       },

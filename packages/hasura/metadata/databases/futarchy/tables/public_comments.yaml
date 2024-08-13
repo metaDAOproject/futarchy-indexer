@@ -24,7 +24,7 @@ array_relationships:
           name: reactions
           schema: public
 insert_permissions:
-  - role: anonymous
+  - role: user
     permission:
       check: {}
       columns:
