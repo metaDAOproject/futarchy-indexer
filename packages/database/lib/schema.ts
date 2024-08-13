@@ -910,7 +910,7 @@ export const userDeposits = pgTable(
     tokenAmount: tokenAmount("token_amount").notNull(),
 
     mintAcct: pubkey("mint_acct")
-      .references(() => conditionalVaults.underlyingMintAcct)
+      .references(() => tokens.mintAcct)
       .notNull(),
    
     createdAt: timestamp("created_at", { withTimezone: true })

@@ -19,7 +19,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "user_deposits" ADD CONSTRAINT "user_deposits_mint_acct_conditional_vaults_underlying_mint_acct_fk" FOREIGN KEY ("mint_acct") REFERENCES "conditional_vaults"("underlying_mint_acct") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "user_deposits" ADD CONSTRAINT "user_deposits_mint_acct_tokens_mint_acct_fk" FOREIGN KEY ("mint_acct") REFERENCES "tokens"("mint_acct") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

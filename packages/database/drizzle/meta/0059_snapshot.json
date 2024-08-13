@@ -1,6 +1,6 @@
 {
-  "id": "045d0ce4-8b71-409a-abab-7ddc7f0cf413",
-  "prevId": "7f53cc25-7e47-4391-a342-3a63ebdb6ae7",
+  "id": "cc1901de-30c2-4121-9485-e5a1b7f5af76",
+  "prevId": "fb6a4a64-3597-4b8c-933b-0feb57c233d8",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -2444,15 +2444,15 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "user_deposits_mint_acct_conditional_vaults_underlying_mint_acct_fk": {
-          "name": "user_deposits_mint_acct_conditional_vaults_underlying_mint_acct_fk",
+        "user_deposits_mint_acct_tokens_mint_acct_fk": {
+          "name": "user_deposits_mint_acct_tokens_mint_acct_fk",
           "tableFrom": "user_deposits",
-          "tableTo": "conditional_vaults",
+          "tableTo": "tokens",
           "columnsFrom": [
             "mint_acct"
           ],
           "columnsTo": [
-            "underlying_mint_acct"
+            "mint_acct"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
