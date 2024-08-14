@@ -9,6 +9,8 @@ import {
   schema,
   eq,
   or,
+  gt,
+  lte,
   and,
   isNull,
   sql,
@@ -658,6 +660,26 @@ async function calculateUserPerformance(
       .execute();
   });
 
+  // Get the time for us to search across the price space for spot
+  const proposalFinalizedAt = proposals.completedAt ?? sql`NOW()`
+  // TODO: Get spot price at proposal finalization or even current spot price
+  // if the proposal is still active (this would be UNREALISED P&L)
+  // TODO: If this is 0 we really need to throw and error and alert someone, we shouldn't have missing spot data
+  const spotPrice = await usingDb((db) => {
+    return db
+      .select()
+      .from(schema.prices)
+      .where(
+        and(
+          lte(schema.prices.createdAt, proposalFinalizedAt),
+          gt(schema.prices.createdAt, sql`${proposalFinalizedAt} - INTERVAL '2 min'`)
+        )
+      )
+      .limit(1)
+      .orderBy(desc(schema.prices.createdAt))
+      .execute();
+  });
+
   let actors = orders.reduce((current, next) => {
     const actor = next.actorAcct;
     let totals = current.get(actor);
@@ -677,12 +699,15 @@ async function calculateUserPerformance(
       return current;
     }
 
-    const orderAmount = PriceMath.getHumanAmount(
+    // Debatable size or quantity, often used interchangably
+    const size = PriceMath.getHumanAmount(
       new BN(next.filledBaseAmount),
       tokenDecimals
     );
-    const price = PriceMath.getChainAmount(
-      Number(next.quotePrice).valueOf() * orderAmount,
+    
+    // Amount or notional
+    const amount = PriceMath.getChainAmount(
+      Number(next.quotePrice).valueOf() * size,
       daoDecimals
     );
 
@@ -690,12 +715,12 @@ async function calculateUserPerformance(
       totals.tokensBought = new BN(totals.tokensBought).add(
         new BN(next.filledBaseAmount)
       );
-      totals.volumeBought = new BN(totals.volumeBought).add(new BN(price));
+      totals.volumeBought = new BN(totals.volumeBought).add(new BN(amount));
     } else if (next.side === "ASK") {
       totals.tokensSold = new BN(totals.tokensSold).add(
         new BN(next.filledBaseAmount)
       );
-      totals.volumeSold = new BN(totals.volumeSold).add(new BN(price));
+      totals.volumeSold = new BN(totals.volumeSold).add(new BN(amount));
     }
 
     current.set(actor, totals);
@@ -706,6 +731,26 @@ async function calculateUserPerformance(
   const toInsert: Array<UserPerformance> = Array.from(actors.entries()).map(
     (k) => {
       const [actor, values] = k;
+
+      // NOTE: this gets us the delta, whereas we need to know the direction at the very end
+      const tradeSizeDelta: BN = new BN(values.tokensBought).sub(values.tokensSold).abs()
+
+      // NOTE: Directionally orients our last leg
+      const needsSellToExit = values.tokensBought > values.tokensSold; // boolean
+
+      // We need to complete the round trip / final leg
+      if(tradeSizeDelta.toNumber() !== 0) {
+        // TODO: This needs to be revised given the spot price can't be null or 0 if we want to really do this
+        const lastLegNotional = tradeSizeDelta.mul(new BN(spotPrice[0].price ?? 0))
+        if(needsSellToExit) {
+          // We've bought more than we've sold, therefore when we exit the position calulcation
+          // we need to count the remaining volume as a sell at spot price when conditional
+          // market is finalized.
+          values.volumeSold = new BN(values.volumeSold).add(lastLegNotional)
+        } else {
+          values.volumeBought = new BN(values.volumeBought).add(lastLegNotional)
+        }
+      }
 
       return <UserPerformance>{
         proposalAcct: onChainProposal.publicKey.toString(),
