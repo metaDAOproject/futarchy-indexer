@@ -80,8 +80,8 @@ importers:
         specifier: ^0.3.0-alpha.6
         version: 0.3.0-alpha.6(fastestsmallesttextencoderdecoder@1.0.22)
       '@metadaoproject/futarchy-sdk':
-        specifier: 3.0.0-alpha.10
-        version: 3.0.0-alpha.10(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
+        specifier: 4.0.0-alpha.31
+        version: 4.0.0-alpha.31(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
       '@metadaoproject/indexer-db':
         specifier: workspace:*
         version: link:../database
@@ -1473,19 +1473,20 @@ packages:
       tdigest: 0.1.2
     dev: false
 
-  /@metadaoproject/futarchy-sdk@3.0.0-alpha.10(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1):
-    resolution: {integrity: sha512-Arc1MkB89QsKUt/QshdFU8TEYCNc1Mfk+6RlKaRX9s4Tp0NUVOH36TDdBFyRIFyv0lR3Z/MVFd4/b25ioAfFYA==}
+  /@metadaoproject/futarchy-sdk@4.0.0-alpha.31(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1):
+    resolution: {integrity: sha512-uugimbCdzZTW7b+mvecFsd5EYSRVT5h9E3gm/NMq4PoKn14fqtpHt9PkgiAtbNcyYc+aR1B0VRb7sPSo6nZ3Mw==}
     requiresBuild: true
     dependencies:
       '@coral-xyz/anchor': 0.28.1-beta.2
-      '@metadaoproject/futarchy': 0.3.0-alpha.6(fastestsmallesttextencoderdecoder@1.0.22)
-      '@metadaoproject/futarchy-ts': 2.1.0(fastestsmallesttextencoderdecoder@1.0.22)
+      '@metadaoproject/futarchy': 0.3.0-alpha.10(fastestsmallesttextencoderdecoder@1.0.22)
+      '@metadaoproject/futarchy-ts': 4.1.0(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/js': 0.20.1(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/mpl-token-metadata': 3.2.1(@metaplex-foundation/umi@0.9.1)
       '@metaplex-foundation/umi': 0.9.1
       '@metaplex-foundation/umi-bundle-defaults': 0.9.1(@metaplex-foundation/umi@0.9.1)(@solana/web3.js@1.91.8)
       '@metaplex-foundation/umi-uploader-bundlr': 0.9.1(@metaplex-foundation/umi@0.9.1)(@solana/web3.js@1.91.8)
       '@openbook-dex/openbook-v2': 0.2.6(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/spl-memo': 0.2.5(@solana/web3.js@1.91.8)
       '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/wallet-adapter-base': 0.9.23(@solana/web3.js@1.91.8)
       '@solana/web3.js': 1.91.8
@@ -1506,8 +1507,24 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@metadaoproject/futarchy-ts@2.1.0(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-6oLy/cQqb8ZWM7ED7tfOPiJAd3FXjlqypYW20MrF1H3XOI393ysRMmieSYFhh3txzvHkEW4PU6tJpXl6aL1syA==}
+  /@metadaoproject/futarchy-ts@4.1.0(fastestsmallesttextencoderdecoder@1.0.22):
+    resolution: {integrity: sha512-qI8EvXXKkwXMdGEISy6GlZ4uG5o3WZDHBWtXhJLs+59uklJTr4tfXpm4YF6q3UgV4052MiJBS5aN6bTKlFvKKw==}
+    dependencies:
+      '@coral-xyz/anchor': 0.29.0
+      '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/web3.js': 1.91.8
+      bn.js: 5.2.1
+      decimal.js: 10.4.3
+      esbuild: 0.17.19
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - fastestsmallesttextencoderdecoder
+      - utf-8-validate
+    dev: false
+
+  /@metadaoproject/futarchy@0.3.0-alpha.10(fastestsmallesttextencoderdecoder@1.0.22):
+    resolution: {integrity: sha512-nhxIKnFc/anhto3OPDbufhOo9KlVJdXRfH2nP3xfDwMHUYDtODisw7o/e1hMkM7u45TuIPFHIGm8YBkoht6zVg==}
     dependencies:
       '@coral-xyz/anchor': 0.29.0
       '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
@@ -1616,6 +1633,7 @@ packages:
 
   /@metaplex-foundation/js@0.20.1(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22):
     resolution: {integrity: sha512-aqiLoEiToXdfI5pS+17/GN/dIO2D31gLoVQvEKDQi9XcnOPVhfJerXDmwgKbhp79OGoYxtlvVw+b2suacoUzGQ==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     dependencies:
       '@irys/sdk': 0.0.2(arweave@1.15.0)(debug@4.3.4)
       '@metaplex-foundation/beet': 0.7.1
@@ -2462,6 +2480,16 @@ packages:
       - encoding
       - supports-color
       - utf-8-validate
+    dev: false
+
+  /@solana/spl-memo@0.2.5(@solana/web3.js@1.91.8):
+    resolution: {integrity: sha512-0Zx5t3gAdcHlRTt2O3RgGlni1x7vV7Xq7j4z9q8kKOMgU03PyoTbFQ/BSYCcICHzkaqD7ZxAiaJ6dlXolg01oA==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      '@solana/web3.js': ^1.91.6
+    dependencies:
+      '@solana/web3.js': 1.91.8
+      buffer: 6.0.3
     dev: false
 
   /@solana/spl-token-group@0.0.4(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22):
@@ -4171,6 +4199,7 @@ packages:
 
   /ethereum-bloom-filters@1.1.0:
     resolution: {integrity: sha512-J1gDRkLpuGNvWYzWslBQR9cDV4nd4kfvVTE/Wy4Kkm4yb3EYRSlyi0eB/inTsSTTVyA0+HyzHgbr95Fn/Z1fSw==}
+    deprecated: do not use this package use package versions above as this can miss some topics
     dependencies:
       '@noble/hashes': 1.4.0
     dev: false
