@@ -23,7 +23,7 @@
         "INDEXER_WSS_URL": "l"
       },
 
-      // If the environment variFnext rables should not be inherited from the parent process.
+      // If the environment variables should not be inherited from the parent process.
       "strictEnv": false,
 
       // If the program should be run in watch mode.
