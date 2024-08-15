@@ -1,9 +1,10 @@
 name: Build and Apply Hasura Metadata [STAGING]
 on:
   push:
-    branches: [feat/bad-permissions-for-proposal-insert]
-    # paths:
-    #   - "/packages/hasura/**"
+    branches: [fix/bad-permissions-for-proposal-insert]
+    paths:
+      # - "./packages/hasura/**"
+      - "**"
 jobs:
   update_hasura:
     name: Update Hasura Configuration based on any metadata changes
