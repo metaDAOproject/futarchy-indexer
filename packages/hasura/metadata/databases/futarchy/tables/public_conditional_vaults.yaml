@@ -33,6 +33,18 @@ insert_permissions:
         - status
         - underlying_mint_acct
         - underlying_token_acct
+  - role: user
+    permission:
+      check: {}
+      columns:
+        - cond_finalize_token_mint_acct
+        - cond_revert_token_mint_acct
+        - cond_vault_acct
+        - nonce
+        - settlement_authority
+        - status
+        - underlying_mint_acct
+        - underlying_token_acct
     comment: ""
 select_permissions:
   - role: anonymous

@@ -55,10 +55,11 @@ array_relationships:
           name: user_performance
           schema: public
 insert_permissions:
-  - role: comments
+  - role: user
     permission:
       check: {}
       columns:
+        - autocrat_version
         - dao_acct
         - proposal_acct
         - proposal_num
@@ -68,9 +69,38 @@ insert_permissions:
         - fail_market_acct
         - base_vault
         - quote_vault
+        - created_at
+        - updated_at
+        - initial_slot
+        - end_slot
     comment: ""
 select_permissions:
   - role: anonymous
+    permission:
+      columns:
+        - end_slot
+        - initial_slot
+        - proposal_num
+        - base_vault
+        - dao_acct
+        - description_url
+        - fail_market_acct
+        - pass_market_acct
+        - pricing_model_fail_acct
+        - pricing_model_pass_acct
+        - proposal_acct
+        - proposer_acct
+        - quote_vault
+        - status
+        - autocrat_version
+        - completed_at
+        - created_at
+        - ended_at
+        - updated_at
+      filter: {}
+      allow_aggregations: true
+    comment: ""
+  - role: user
     permission:
       columns:
         - end_slot
