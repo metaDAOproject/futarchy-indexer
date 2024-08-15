@@ -3,7 +3,7 @@ on:
   push:
     branches: [staging]
     paths:
-      - "./packages/hasura/**"
+      - "**"
 jobs:
   update_hasura:
     name: Update Hasura Configuration based on any metadata changes
