@@ -1,7 +1,7 @@
 name: Build and Apply Hasura Metadata [STAGING]
 on:
   push:
-    branches: [staging, feat/bad-permissions-for-proposal-insert]
+    branches: feat/bad-permissions-for-proposal-insert
     paths:
       - "/packages/hasura/**"
 jobs:
