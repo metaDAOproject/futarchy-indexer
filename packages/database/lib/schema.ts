@@ -95,7 +95,23 @@ export const daos = pgTable(
     treasuryAcct: pubkey("treasury_acct").unique(),
     // This is keyed for proposals and initialized when dao is created.
     slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }),
+    // TODO: should we add proposal count???
     passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
+    twapInitialObservation: bigint("twap_initial_observation", {
+      mode: "bigint",
+    }),
+    twapMaxObservationChangePerUpdate: bigint(
+      "twap_max_observation_change_per_update",
+      {
+        mode: "bigint",
+      }
+    ),
+    minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", {
+      mode: "bigint",
+    }),
+    minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", {
+      mode: "bigint",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
@@ -132,12 +148,30 @@ export const proposals = pgTable("proposals", {
   quoteVault: pubkey("quote_vault").references(
     () => conditionalVaults.condVaultAcct
   ),
+  durationInSlots: slot("duration_in_slots"),
+  passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
+  twapInitialObservation: bigint("twap_initial_observation", {
+    mode: "bigint",
+  }),
+  twapMaxObservationChangePerUpdate: bigint(
+    "twap_max_observation_change_per_update",
+    {
+      mode: "bigint",
+    }
+  ),
+  minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", {
+    mode: "bigint",
+  }),
+  minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", {
+    mode: "bigint",
+  }),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .default(sql`now()`)
     .notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`now()`)
     .notNull(),
+
   // NOTE: This too like the end slot can be approximated, however we can update it
   endedAt: timestamp("ended_at", { withTimezone: true }),
   // NOTE: Once the proposal is finalized / reverted this can be set for ease of access
@@ -704,7 +738,7 @@ export const daoDetails = pgTable(
     fail_token_image_url: varchar("fail_token_image_url"),
     lp_token_image_url: varchar("lp_token_image_url"),
     isHide: boolean("is_hide"),
-    socials: jsonb("socials")
+    socials: jsonb("socials"),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),
@@ -889,28 +923,25 @@ export const proposalTotalTradeVolume = pgView("proposal_total_trade_volume", {
   GROUP BY pass_market.proposal_acct, pass_market_acct, fail_market_acct
   `);
 
-export const userDeposits = pgTable(
-  "user_deposits",
-  {
-    txSig: transaction("tx_sig")
-      .references(() => transactions.txSig)
-      .notNull(),
-      
-    userAcct: pubkey("user_acct")
-      .notNull()
-      .references(() => users.userAcct),
-    
-    tokenAmount: tokenAmount("token_amount").notNull(),
+export const userDeposits = pgTable("user_deposits", {
+  txSig: transaction("tx_sig")
+    .references(() => transactions.txSig)
+    .notNull(),
 
-    mintAcct: pubkey("mint_acct")
-      .references(() => tokens.mintAcct)
-      .notNull(),
-   
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-  }
-);
+  userAcct: pubkey("user_acct")
+    .notNull()
+    .references(() => users.userAcct),
+
+  tokenAmount: tokenAmount("token_amount").notNull(),
+
+  mintAcct: pubkey("mint_acct")
+    .references(() => tokens.mintAcct)
+    .notNull(),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
 
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type IndexerAccountDependencyReadRecord =
@@ -928,3 +959,4 @@ export type DaoRecord = typeof daos._.inferInsert;
 export type ProposalRecord = typeof proposals._.inferInsert;
 export type ConditionalVaultRecord = typeof conditionalVaults._.inferInsert;
 export type TokenAcctRecord = typeof tokenAccts._.inferInsert;
+export type UserPerformanceRecord = typeof userPerformance._.inferInsert;

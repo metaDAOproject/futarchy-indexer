@@ -93,6 +93,12 @@ select_permissions:
         - quote_vault
         - status
         - autocrat_version
+        - duration_in_slots
+        - pass_threshold_bps
+        - twap_initial_observation
+        - twap_max_observation_change_per_update
+        - min_quote_futarchic_liquidity
+        - min_base_futarchic_liquidity
         - completed_at
         - created_at
         - ended_at

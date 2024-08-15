@@ -27,6 +27,7 @@ import {
   ProposalStatus,
   TokenAcctRecord,
   TokenRecord,
+  UserPerformanceRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
 import {
   getAccount,
@@ -175,6 +176,12 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .add(new BN(dbDao.slotsPerProposal?.toString()))
               .toString()
           ),
+          minBaseFutarchicLiquidity: dbDao.minBaseFutarchicLiquidity,
+          minQuoteFutarchicLiquidity: dbDao.minQuoteFutarchicLiquidity,
+          passThresholdBps: dbDao.passThresholdBps,
+          twapInitialObservation: dbDao.twapInitialObservation,
+          twapMaxObservationChangePerUpdate:
+            dbDao.twapMaxObservationChangePerUpdate,
         };
 
         await usingDb((db) =>
@@ -207,7 +214,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           )[0];
 
           const slotDifference = onChainProposal.account.slotEnqueued
-            .add(new BN(dbDao.slotsPerProposal?.toString()))
+            .add(new BN(dbDao.slotsPerProposal?.valueOf()))
             .sub(new BN(currentSlot));
 
           const lowHoursEstimate = Math.floor(
@@ -661,7 +668,11 @@ async function calculateUserPerformance(
   });
 
   // Get the time for us to search across the price space for spot
-  const proposalFinalizedAt = proposals.completedAt ?? sql`NOW()`
+  const proposalFinalizedAt = proposals.completedAt ?? new Date();
+  const proposalFinalizedAtMinus2Minutes = new Date(proposalFinalizedAt);
+  proposalFinalizedAtMinus2Minutes.setMinutes(
+    proposalFinalizedAt.getMinutes() - 2
+  );
   // TODO: Get spot price at proposal finalization or even current spot price
   // if the proposal is still active (this would be UNREALISED P&L)
   // TODO: If this is 0 we really need to throw and error and alert someone, we shouldn't have missing spot data
@@ -672,7 +683,7 @@ async function calculateUserPerformance(
       .where(
         and(
           lte(schema.prices.createdAt, proposalFinalizedAt),
-          gt(schema.prices.createdAt, sql`${proposalFinalizedAt} - INTERVAL '2 min'`)
+          gt(schema.prices.createdAt, proposalFinalizedAtMinus2Minutes)
         )
       )
       .limit(1)
@@ -704,7 +715,7 @@ async function calculateUserPerformance(
       new BN(next.filledBaseAmount),
       tokenDecimals
     );
-    
+
     // Amount or notional
     const amount = PriceMath.getChainAmount(
       Number(next.quotePrice).valueOf() * size,
@@ -726,42 +737,46 @@ async function calculateUserPerformance(
     current.set(actor, totals);
 
     return current;
-  }, new Map<String, UserPerformanceTotals>());
+  }, new Map<string, UserPerformanceTotals>());
 
-  const toInsert: Array<UserPerformance> = Array.from(actors.entries()).map(
-    (k) => {
-      const [actor, values] = k;
+  const toInsert: Array<UserPerformanceRecord> = Array.from(
+    actors.entries()
+  ).map<UserPerformanceRecord>((k) => {
+    const [actor, values] = k;
 
-      // NOTE: this gets us the delta, whereas we need to know the direction at the very end
-      const tradeSizeDelta: BN = new BN(values.tokensBought).sub(values.tokensSold).abs()
+    // NOTE: this gets us the delta, whereas we need to know the direction at the very end
+    const tradeSizeDelta: BN = new BN(values.tokensBought)
+      .sub(values.tokensSold)
+      .abs();
 
-      // NOTE: Directionally orients our last leg
-      const needsSellToExit = values.tokensBought > values.tokensSold; // boolean
+    // NOTE: Directionally orients our last leg
+    const needsSellToExit = values.tokensBought > values.tokensSold; // boolean
 
-      // We need to complete the round trip / final leg
-      if(tradeSizeDelta.toNumber() !== 0) {
-        // TODO: This needs to be revised given the spot price can't be null or 0 if we want to really do this
-        const lastLegNotional = tradeSizeDelta.mul(new BN(spotPrice[0].price ?? 0))
-        if(needsSellToExit) {
-          // We've bought more than we've sold, therefore when we exit the position calulcation
-          // we need to count the remaining volume as a sell at spot price when conditional
-          // market is finalized.
-          values.volumeSold = new BN(values.volumeSold).add(lastLegNotional)
-        } else {
-          values.volumeBought = new BN(values.volumeBought).add(lastLegNotional)
-        }
+    // We need to complete the round trip / final leg
+    if (tradeSizeDelta.toNumber() !== 0) {
+      // TODO: This needs to be revised given the spot price can't be null or 0 if we want to really do this
+      const lastLegNotional = tradeSizeDelta.mul(
+        new BN(Number(spotPrice[0].price ?? "0"))
+      );
+      if (needsSellToExit) {
+        // We've bought more than we've sold, therefore when we exit the position calulcation
+        // we need to count the remaining volume as a sell at spot price when conditional
+        // market is finalized.
+        values.volumeSold = new BN(values.volumeSold).add(lastLegNotional);
+      } else {
+        values.volumeBought = new BN(values.volumeBought).add(lastLegNotional);
       }
-
-      return <UserPerformance>{
-        proposalAcct: onChainProposal.publicKey.toString(),
-        userAcct: actor,
-        tokensBought: values.tokensBought,
-        tokensSold: values.tokensSold,
-        volumeBought: values.volumeBought,
-        volumeSold: values.volumeSold,
-      };
     }
-  );
+
+    return <UserPerformanceRecord>{
+      proposalAcct: onChainProposal.publicKey.toString(),
+      userAcct: actor,
+      tokensBought: BigInt(values.tokensBought.toString()),
+      tokensSold: BigInt(values.tokensSold.toString()),
+      volumeBought: BigInt(values.volumeBought.toString()),
+      volumeSold: BigInt(values.volumeSold.toString()),
+    };
+  });
 
   if (toInsert.length > 0) {
     await usingDb((db) => {

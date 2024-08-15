@@ -18,7 +18,7 @@ export enum AutocratDaoIndexerError {
 }
 
 export const AutocratDaoIndexer: IntervalFetchIndexer = {
-  cronExpression: "30 * * * * *",
+  cronExpression: "*/20 * * * * *",
   index: async () => {
     try {
       // Fetches all daos from the database
@@ -30,13 +30,14 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
       const daosToInsert: Dao[] = [];
       for (const daoAggregate of onChainDaos) {
         for (const dao of daoAggregate.daos) {
-          if (
-            !dbDaos.find((dbDao) =>
-              new PublicKey(dbDao.daoAcct).equals(dao.publicKey)
-            )
-          ) {
-            daosToInsert.push(dao);
-          }
+          // if (
+          //   !dbDaos.find((dbDao) =>
+          //     new PublicKey(dbDao.daoAcct).equals(dao.publicKey)
+          //   )
+          // ) {
+          //   daosToInsert.push(dao);
+          // }
+          daosToInsert.push(dao);
         }
       }
 
@@ -74,19 +75,52 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
         );
 
         let daoToInsert: DaoRecord = {
-          daoAcct: dao.publicKey.toString(),
+          daoAcct: dao.publicKey.toBase58(),
           programAcct: dao.protocol.autocrat.programId.toString(),
           baseAcct: dao.baseToken.publicKey,
           quoteAcct: dao.quoteToken.publicKey,
           slotsPerProposal: BigInt(dao.daoAccount.slotsPerProposal.toString()),
-          treasuryAcct: dao.daoAccount.treasury.toString(),
+          treasuryAcct: dao.daoAccount.treasury.toBase58(),
+          minBaseFutarchicLiquidity: BigInt(
+            dao.daoAccount.minBaseFutarchicLiquidity
+              ? dao.daoAccount.minBaseFutarchicLiquidity.toNumber()
+              : 0
+          ),
+          minQuoteFutarchicLiquidity: BigInt(
+            dao.daoAccount.minQuoteFutarchicLiquidity
+              ? dao.daoAccount.minQuoteFutarchicLiquidity.toNumber()
+              : 0
+          ),
+          passThresholdBps: BigInt(dao.daoAccount.passThresholdBps),
+          twapInitialObservation: BigInt(
+            dao.daoAccount.twapInitialObservation
+              ? dao.daoAccount.twapInitialObservation.toNumber()
+              : 0
+          ),
+          twapMaxObservationChangePerUpdate: BigInt(
+            dao.daoAccount.twapMaxObservationChangePerUpdate
+              ? dao.daoAccount.twapMaxObservationChangePerUpdate.toNumber()
+              : 0
+          ),
         };
         // After we have the token in the DB, we can now insert the dao
         await usingDb((db) =>
           db
             .insert(schema.daos)
             .values(daoToInsert)
-            .onConflictDoNothing()
+            .onConflictDoUpdate({
+              set: {
+                minBaseFutarchicLiquidity:
+                  daoToInsert.minBaseFutarchicLiquidity,
+                minQuoteFutarchicLiquidity:
+                  daoToInsert.minQuoteFutarchicLiquidity,
+                twapInitialObservation: daoToInsert.twapInitialObservation,
+                twapMaxObservationChangePerUpdate:
+                  daoToInsert.twapMaxObservationChangePerUpdate,
+                passThresholdBps: daoToInsert.passThresholdBps,
+              },
+              target: schema.daos.daoAcct,
+            })
             .execute()
         );
       });

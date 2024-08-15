@@ -43,6 +43,10 @@ select_permissions:
         - program_acct
         - quote_acct
         - treasury_acct
+        - twap_initial_observation
+        - twap_max_observation_change_per_update
+        - min_quote_futarchic_liquidity
+        - min_base_futarchic_liquidity
         - created_at
         - updated_at
       filter: {}
