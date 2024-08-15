@@ -668,7 +668,11 @@ async function calculateUserPerformance(
   });
 
   // Get the time for us to search across the price space for spot
-  const proposalFinalizedAt = proposals.completedAt ?? sql`NOW()`;
+  const proposalFinalizedAt = proposals.completedAt ?? new Date();
+  const proposalFinalizedAtMinus2Minutes = new Date(proposalFinalizedAt);
+  proposalFinalizedAtMinus2Minutes.setMinutes(
+    proposalFinalizedAt.getMinutes() - 2
+  );
   // TODO: Get spot price at proposal finalization or even current spot price
   // if the proposal is still active (this would be UNREALISED P&L)
   // TODO: If this is 0 we really need to throw and error and alert someone, we shouldn't have missing spot data
@@ -679,10 +683,7 @@ async function calculateUserPerformance(
       .where(
         and(
           lte(schema.prices.createdAt, proposalFinalizedAt),
-          gt(
-            schema.prices.createdAt,
-            sql`${proposalFinalizedAt} - INTERVAL '2 min'`
-          )
+          gt(schema.prices.createdAt, proposalFinalizedAtMinus2Minutes)
         )
       )
       .limit(1)
@@ -738,9 +739,9 @@ async function calculateUserPerformance(
     return current;
   }, new Map<string, UserPerformanceTotals>());
 
-  const toInsert: Array<UserPerformance> = Array.from(actors.entries()).map<
-    UserPerformanceRecord | undefined
-  >((k) => {
+  const toInsert: Array<UserPerformanceRecord> = Array.from(
+    actors.entries()
+  ).map<UserPerformanceRecord>((k) => {
     const [actor, values] = k;
 
     // NOTE: this gets us the delta, whereas we need to know the direction at the very end
@@ -767,13 +768,13 @@ async function calculateUserPerformance(
       }
     }
 
-    return <UserPerformance>{
+    return <UserPerformanceRecord>{
       proposalAcct: onChainProposal.publicKey.toString(),
       userAcct: actor,
-      tokensBought: values.tokensBought,
-      tokensSold: values.tokensSold,
-      volumeBought: values.volumeBought,
-      volumeSold: values.volumeSold,
+      tokensBought: BigInt(values.tokensBought.toString()),
+      tokensSold: BigInt(values.tokensSold.toString()),
+      volumeBought: BigInt(values.volumeBought.toString()),
+      volumeSold: BigInt(values.volumeSold.toString()),
     };
   });
 
