@@ -1,0 +1,26 @@
+table:
+  name: user_deposits
+  schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - token_amount
+        - mint_acct
+        - tx_sig
+        - user_acct
+        - created_at
+      filter: {}
+      allow_aggregations: true
+    comment: ""
+  - role: user
+    permission:
+      columns:
+        - token_amount
+        - mint_acct
+        - tx_sig
+        - user_acct
+        - created_at
+      filter: {}
+      allow_aggregations: true
+    comment: ""

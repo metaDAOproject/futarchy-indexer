@@ -27,5 +27,6 @@
 - "!include public_transactions.yaml"
 - "!include public_twap_chart_data.yaml"
 - "!include public_twaps.yaml"
+- "!include public_user_deposits.yaml"
 - "!include public_user_performance.yaml"
 - "!include public_users.yaml"
