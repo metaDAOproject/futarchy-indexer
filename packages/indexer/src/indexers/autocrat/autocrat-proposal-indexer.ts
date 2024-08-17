@@ -682,6 +682,7 @@ async function calculateUserPerformance(
       .from(schema.prices)
       .where(
         and(
+          eq(schema.prices.marketAcct, base_tokens.mintAcct),
           lte(schema.prices.createdAt, proposalFinalizedAt),
           gt(schema.prices.createdAt, proposalFinalizedAtMinus2Minutes)
         )
@@ -704,9 +705,6 @@ async function calculateUserPerformance(
       };
     }
 
-    if (!base_tokens){
-      console.error(`Unable to locate base token for ${proposals.proposalAcct} for DAO ${proposals.daoAcct}`)
-    }
     const baseTokenDecimals = base_tokens?.decimals;
     const quoteTokenDecimals = quote_tokens?.decimals ?? 6; // NOTE: Safe for now
 
@@ -721,7 +719,7 @@ async function calculateUserPerformance(
     );
 
     // Amount or notional
-    const amount = Number(next.quotePrice).valueOf() * size
+    const amount = Number(next.quotePrice).valueOf() * size;
 
     if (next.side === "BID") {
       totals.tokensBought = totals.tokensBought + size;
@@ -750,7 +748,8 @@ async function calculateUserPerformance(
     // We need to complete the round trip / final leg
     if (tradeSizeDelta !== 0) {
       // TODO: This needs to be revised given the spot price can't be null or 0 if we want to really do this
-      const lastLegNotional = tradeSizeDelta * Number(spotPrice[0].price ?? "0");
+      const lastLegNotional =
+        tradeSizeDelta * Number(spotPrice[0]?.price ?? "0");
 
       if (needsSellToExit) {
         // We've bought more than we've sold, therefore when we exit the position calulcation
