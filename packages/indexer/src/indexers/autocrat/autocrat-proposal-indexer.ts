@@ -763,10 +763,10 @@ async function calculateUserPerformance(
     return <UserPerformanceRecord>{
       proposalAcct: onChainProposal.publicKey.toString(),
       userAcct: actor,
-      tokensBought: BigInt(values.tokensBought.toString()),
-      tokensSold: BigInt(values.tokensSold.toString()),
-      volumeBought: BigInt(values.volumeBought.toString()),
-      volumeSold: BigInt(values.volumeSold.toString()),
+      tokensBought: values.tokensBought.toString(),
+      tokensSold: values.tokensSold.toString(),
+      volumeBought: values.volumeBought.toString(),
+      volumeSold: values.volumeSold.toString(),
     };
   });
 
