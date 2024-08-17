@@ -9,10 +9,11 @@ object_relationships:
     using:
       foreign_key_constraint_on: proposal_acct
 insert_permissions:
-  - role: anonymous
+  - role: user
     permission:
       check: {}
       columns:
+        - reaction_id
         - comment_id
         - proposal_acct
         - reaction
@@ -23,6 +24,7 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
+        - reaction_id
         - comment_id
         - proposal_acct
         - reaction
@@ -30,8 +32,31 @@ select_permissions:
         - updated_at
       filter: {}
     comment: ""
+  - role: user
+    permission:
+      columns:
+        - comment_id
+        - proposal_acct
+        - reaction
+        - reactor_acct
+        - updated_at
+        - reaction_id
+      filter: {}
+    comment: ""
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - comment_id
+        - proposal_acct
+        - reaction
+        - reactor_acct
+        - updated_at
+      filter: {}
+      check: null
+    comment: ""
 delete_permissions:
-  - role: anonymous
+  - role: user
     permission:
       filter: {}
     comment: ""

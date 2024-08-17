@@ -6,4 +6,31 @@
         from_env: HASURA_GRAPHQL_METADATA_DATABASE_URL
       isolation_level: read-committed
       use_prepared_statements: false
+  logical_models:
+    - fields:
+        - name: user_acct
+          type:
+            nullable: false
+            scalar: text
+        - name: total_volume
+          type:
+            nullable: true
+            scalar: bigint
+      name: dao_trader
+      select_permissions:
+        - permission:
+            columns:
+              - user_acct
+              - total_volume
+            filter: {}
+          role: anonymous
+  native_queries:
+    - arguments:
+        dao_slug:
+          description: Slug of the DAO
+          nullable: false
+          type: text
+      code: "select up.user_acct::TEXT, sum(up.total_volume)::BIGINT as \"total_volume\" from user_performance up\r\njoin proposals p on up.proposal_acct = p.proposal_acct \r\njoin daos d on p.dao_acct = d.dao_acct\r\njoin dao_details dd on dd.dao_id = d.dao_id \r\nwhere dd.slug = {{dao_slug}}\r\ngroup by dd.slug, up.user_acct\r\norder by sum(up.total_volume) desc;"
+      returns: dao_trader
+      root_field_name: top_dao_traders
   tables: "!include futarchy/tables/tables.yaml"

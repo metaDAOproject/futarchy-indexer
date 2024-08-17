@@ -12,7 +12,7 @@
     "@debridge-finance/solana-transaction-parser": "^2.0.1",
     "@lukasdeco/prom-client": "^15.1.4",
     "@metadaoproject/futarchy": "^0.3.0-alpha.6",
-    "@metadaoproject/futarchy-sdk": "3.0.0-alpha.10",
+    "@metadaoproject/futarchy-sdk": "4.0.0-alpha.31",
     "@metadaoproject/indexer-db": "workspace:*",
     "@metaplex-foundation/umi-bundle-defaults": "^0.9.1",
     "@metaplex-foundation/umi-uploader-bundlr": "^0.9.1",
@@ -31,6 +31,7 @@
     "express": "^4.19.2",
     "fastq": "^1.17.1",
     "inquirer": "^9.2.14",
+    "jsonwebtoken": "^9.0.2",
     "match-discriminated-union": "^1.0.0",
     "tweetnacl": "^1.0.3",
     "zod": "^3.22.4"
@@ -39,6 +40,7 @@
     "@types/bs58": "^4.0.1",
     "@types/express": "^4.17.21",
     "@types/inquirer": "^9.0.7",
+    "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.10.6",
     "bun-types": "^1.0.30"
   }

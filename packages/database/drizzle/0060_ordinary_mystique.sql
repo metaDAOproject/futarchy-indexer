@@ -1,0 +1,2 @@
+ALTER TABLE "reactions" DROP CONSTRAINT "reactions_proposal_acct_reaction_reactor_acct_pk";--> statement-breakpoint
+ALTER TABLE "reactions" ADD COLUMN "reaction_id" uuid DEFAULT gen_random_uuid() NOT NULL;

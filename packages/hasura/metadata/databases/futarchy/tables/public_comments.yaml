@@ -23,3 +23,38 @@ array_relationships:
         table:
           name: reactions
           schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      columns:
+        - comment_id
+        - commentor_acct
+        - content
+        - created_at
+        - proposal_acct
+        - responding_comment_id
+    comment: ""
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - comment_id
+        - responding_comment_id
+        - commentor_acct
+        - proposal_acct
+        - content
+        - created_at
+      filter: {}
+    comment: ""
+  - role: user
+    permission:
+      columns:
+        - comment_id
+        - responding_comment_id
+        - commentor_acct
+        - proposal_acct
+        - content
+        - created_at
+      filter: {}
+    comment: ""

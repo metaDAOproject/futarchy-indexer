@@ -1,3 +1,4 @@
+import { BN } from "@coral-xyz/anchor";
 import {
   IndexerImplementation,
   IndexerType,
@@ -19,15 +20,16 @@ export type IndexerWithAccountDeps = {
 
 export type User = {
   userAcct: string;
-}
+};
 
 export type UserPerformanceTotals = {
-  tokensBought: string
-  tokensSold: string;
-  volumeBought: string;
-  volumeSold: string;
-}
+  tokensBought: number;
+  tokensSold: number;
+  volumeBought: number;
+  volumeSold: number;
+};
 
 export type UserPerformance = {
   proposalAcct: string;
-} & User & UserPerformanceTotals
+} & User &
+  UserPerformanceTotals;

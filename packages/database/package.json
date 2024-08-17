@@ -10,7 +10,7 @@
     "sql": "bun src/run-sql.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.32.1",
+    "drizzle-orm": "0.30.6",
     "pg": "^8.11.3",
     "dotenv": "16.4.5"
   },
@@ -20,7 +20,7 @@
     "@types/pg": "^8.10.9",
     "ansicolor": "^2.0.1",
     "as-table": "^1.0.55",
-    "drizzle-kit": "^0.23.1",
+    "drizzle-kit": "0.20.18",
     "inquirer": "^9.2.14"
   }
 }
