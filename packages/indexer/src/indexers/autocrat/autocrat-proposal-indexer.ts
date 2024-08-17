@@ -682,6 +682,7 @@ async function calculateUserPerformance(
       .from(schema.prices)
       .where(
         and(
+          eq(schema.prices.marketAcct, base_tokens.mintAcct),
           lte(schema.prices.createdAt, proposalFinalizedAt),
           gt(schema.prices.createdAt, proposalFinalizedAtMinus2Minutes)
         )
@@ -704,9 +705,10 @@ async function calculateUserPerformance(
       };
     }
 
-    const baseTokenDecimals = base_tokens?.decimals ?? -1;
+    const baseTokenDecimals = base_tokens?.decimals;
     const quoteTokenDecimals = quote_tokens?.decimals ?? 6; // NOTE: Safe for now
-    if (!baseTokenDecimals && !quoteTokenDecimals) {
+
+    if (!baseTokenDecimals || !quoteTokenDecimals) {
       return current;
     }
 
@@ -717,7 +719,7 @@ async function calculateUserPerformance(
     );
 
     // Amount or notional
-    const amount = Number(next.quotePrice).valueOf() * size
+    const amount = Number(next.quotePrice).valueOf() * size;
 
     if (next.side === "BID") {
       totals.tokensBought = totals.tokensBought + size;
@@ -746,7 +748,9 @@ async function calculateUserPerformance(
     // We need to complete the round trip / final leg
     if (tradeSizeDelta !== 0) {
       // TODO: This needs to be revised given the spot price can't be null or 0 if we want to really do this
-      const lastLegNotional = tradeSizeDelta * Number(spotPrice[0].price ?? "0");
+      const lastLegNotional =
+        tradeSizeDelta * Number(spotPrice[0]?.price ?? "0");
+
       if (needsSellToExit) {
         // We've bought more than we've sold, therefore when we exit the position calulcation
         // we need to count the remaining volume as a sell at spot price when conditional
