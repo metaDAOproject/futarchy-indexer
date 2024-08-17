@@ -705,7 +705,7 @@ async function calculateUserPerformance(
     }
 
     const baseTokenDecimals = base_tokens?.decimals ?? -1;
-    const quoteTokenDecimals = quote_tokens?.decimals ?? -1;
+    const quoteTokenDecimals = quote_tokens?.decimals ?? 6; // NOTE: Safe for now
     if (!baseTokenDecimals && !quoteTokenDecimals) {
       return current;
     }
@@ -717,16 +717,13 @@ async function calculateUserPerformance(
     );
 
     // Amount or notional
-    const amount = PriceMath.getChainAmount(
-      Number(next.quotePrice).valueOf() * size,
-      quoteTokenDecimals // By default this should be 6
-    );
+    const amount = Number(next.quotePrice).valueOf() * size
 
     if (next.side === "BID") {
-      totals.tokensBought = totals.tokensBought + (Number(next.filledBaseAmount) / 10 ** baseTokenDecimals);
+      totals.tokensBought = totals.tokensBought + size;
       totals.volumeBought = totals.volumeBought + amount;
     } else if (next.side === "ASK") {
-      totals.tokensSold = totals.tokensSold + (Number(next.filledBaseAmount) / 10 ** baseTokenDecimals);
+      totals.tokensSold = totals.tokensSold + size;
       totals.volumeSold = totals.volumeSold + amount;
     }
 
