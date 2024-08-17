@@ -646,13 +646,13 @@ async function calculateUserPerformance(
         eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString())
       )
       .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
-      .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
       .leftJoin(quoteTokens, eq(schema.daos.quoteAcct, quoteTokens.mintAcct))
+      .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
       .limit(1)
       .execute();
   });
 
-  const { proposals, base_tokens, quote_tokens } = proposal;
+  const { proposals, quote_tokens, base_tokens } = proposal;
 
   const orders = await usingDb((db) => {
     return db
