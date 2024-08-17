@@ -23,10 +23,10 @@ export type User = {
 };
 
 export type UserPerformanceTotals = {
-  tokensBought: BN;
-  tokensSold: BN;
-  volumeBought: BN;
-  volumeSold: BN;
+  tokensBought: number;
+  tokensSold: number;
+  volumeBought: number;
+  volumeSold: number;
 };
 
 export type UserPerformance = {

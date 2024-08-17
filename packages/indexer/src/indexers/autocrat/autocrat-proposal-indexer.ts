@@ -635,8 +635,8 @@ async function insertAssociatedAccountsDataForProposal(
 async function calculateUserPerformance(
   onChainProposal: ProposalAccountWithKey
 ) {
+  const quoteTokens = alias(schema.tokens, "quote_tokens"); // NOTE: This should be USDC for now
   const baseTokens = alias(schema.tokens, "base_tokens");
-  const daoTokens = alias(schema.tokens, "dao_tokens");
   // calculate performance
   const [proposal] = await usingDb((db) => {
     return db
@@ -647,12 +647,12 @@ async function calculateUserPerformance(
       )
       .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
       .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
-      .leftJoin(daoTokens, eq(schema.daos.quoteAcct, daoTokens.mintAcct))
+      .leftJoin(quoteTokens, eq(schema.daos.quoteAcct, quoteTokens.mintAcct))
       .limit(1)
       .execute();
   });
 
-  const { proposals, base_tokens, dao_tokens } = proposal;
+  const { proposals, base_tokens, quote_tokens } = proposal;
 
   const orders = await usingDb((db) => {
     return db
@@ -697,41 +697,37 @@ async function calculateUserPerformance(
 
     if (!totals) {
       totals = <UserPerformanceTotals>{
-        tokensBought: new BN(0),
-        tokensSold: new BN(0),
-        volumeBought: new BN(0),
-        volumeSold: new BN(0),
+        tokensBought: 0,
+        tokensSold: 0,
+        volumeBought: 0,
+        volumeSold: 0,
       };
     }
 
-    const tokenDecimals = base_tokens?.decimals ?? -1;
-    const daoDecimals = dao_tokens?.decimals ?? -1;
-    if (!tokenDecimals && !daoDecimals) {
+    const baseTokenDecimals = base_tokens?.decimals ?? -1;
+    const quoteTokenDecimals = quote_tokens?.decimals ?? -1;
+    if (!baseTokenDecimals && !quoteTokenDecimals) {
       return current;
     }
 
     // Debatable size or quantity, often used interchangably
     const size = PriceMath.getHumanAmount(
       new BN(next.filledBaseAmount),
-      tokenDecimals
+      baseTokenDecimals
     );
 
     // Amount or notional
     const amount = PriceMath.getChainAmount(
       Number(next.quotePrice).valueOf() * size,
-      daoDecimals
+      quoteTokenDecimals // By default this should be 6
     );
 
     if (next.side === "BID") {
-      totals.tokensBought = new BN(totals.tokensBought).add(
-        new BN(next.filledBaseAmount)
-      );
-      totals.volumeBought = new BN(totals.volumeBought).add(new BN(amount));
+      totals.tokensBought = totals.tokensBought + (Number(next.filledBaseAmount) / 10 ** baseTokenDecimals);
+      totals.volumeBought = totals.volumeBought + amount;
     } else if (next.side === "ASK") {
-      totals.tokensSold = new BN(totals.tokensSold).add(
-        new BN(next.filledBaseAmount)
-      );
-      totals.volumeSold = new BN(totals.volumeSold).add(new BN(amount));
+      totals.tokensSold = totals.tokensSold + (Number(next.filledBaseAmount) / 10 ** baseTokenDecimals);
+      totals.volumeSold = totals.volumeSold + amount;
     }
 
     current.set(actor, totals);
@@ -745,26 +741,22 @@ async function calculateUserPerformance(
     const [actor, values] = k;
 
     // NOTE: this gets us the delta, whereas we need to know the direction at the very end
-    const tradeSizeDelta: BN = new BN(values.tokensBought)
-      .sub(values.tokensSold)
-      .abs();
+    const tradeSizeDelta = Math.abs(values.tokensBought - values.tokensSold);
 
     // NOTE: Directionally orients our last leg
     const needsSellToExit = values.tokensBought > values.tokensSold; // boolean
 
     // We need to complete the round trip / final leg
-    if (tradeSizeDelta.toNumber() !== 0) {
+    if (tradeSizeDelta !== 0) {
       // TODO: This needs to be revised given the spot price can't be null or 0 if we want to really do this
-      const lastLegNotional = tradeSizeDelta.mul(
-        new BN(Number(spotPrice[0].price ?? "0"))
-      );
+      const lastLegNotional = tradeSizeDelta * Number(spotPrice[0].price ?? "0");
       if (needsSellToExit) {
         // We've bought more than we've sold, therefore when we exit the position calulcation
         // we need to count the remaining volume as a sell at spot price when conditional
         // market is finalized.
-        values.volumeSold = new BN(values.volumeSold).add(lastLegNotional);
+        values.volumeSold = values.volumeSold + lastLegNotional;
       } else {
-        values.volumeBought = new BN(values.volumeBought).add(lastLegNotional);
+        values.volumeBought = values.volumeBought + lastLegNotional;
       }
     }
 
