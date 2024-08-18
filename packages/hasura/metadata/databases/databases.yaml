@@ -24,6 +24,28 @@
               - total_volume
             filter: {}
           role: anonymous
+    - fields:
+        - name: proposal_acct
+          type:
+            nullable: false
+            scalar: varchar
+        - name: user_count
+          type:
+            nullable: true
+            scalar: bigint
+        - name: trade_count
+          type:
+            nullable: true
+            scalar: numeric
+      name: proposal_statistics
+      select_permissions:
+        - permission:
+            columns:
+              - proposal_acct
+              - user_count
+              - trade_count
+            filter: {}
+          role: anonymous
   native_queries:
     - arguments:
         dao_slug:
@@ -33,4 +55,12 @@
       code: "select up.user_acct::TEXT, sum(up.total_volume)::BIGINT as \"total_volume\" from user_performance up\r\njoin proposals p on up.proposal_acct = p.proposal_acct \r\njoin daos d on p.dao_acct = d.dao_acct\r\njoin dao_details dd on dd.dao_id = d.dao_id \r\nwhere dd.slug = {{dao_slug}}\r\ngroup by dd.slug, up.user_acct\r\norder by sum(up.total_volume) desc;"
       returns: dao_trader
       root_field_name: top_dao_traders
+    - arguments:
+        proposal_acct:
+          description: the proposal account
+          nullable: true
+          type: varchar
+      code: "WITH market_actors AS (\n    SELECT \n      market_acct,\n      actor_acct,\n      COUNT(*) AS countOrders\n    FROM \n      orders\n    GROUP BY \n      market_acct, actor_acct\n), distinct_users_by_proposal AS (\n    SELECT\n        proposal_acct,\n        COUNT(DISTINCT actor_acct) AS uniqueUsersCount,\n        SUM(countOrders) AS totalTrades\n    FROM market_actors\n    JOIN markets ON markets.market_acct = market_actors.market_acct\n    GROUP BY proposal_acct\n)\nSELECT\n\tproposal_acct,\n\tuniqueUsersCount AS user_count,\n\ttotalTrades AS trade_count\nFROM distinct_users_by_proposal\nWHERE \n    CASE \n        WHEN {{proposal_acct}} IS NOT NULL \n            THEN proposal_acct = {{proposal_acct}} \n        ELSE 1 = 1 \n    END;"
+      returns: proposal_statistics
+      root_field_name: user_count_and_trade_count_per_proposal
   tables: "!include futarchy/tables/tables.yaml"

@@ -70,6 +70,13 @@ array_relationships:
         table:
           name: token_accts
           schema: public
+  - name: user_deposits
+    using:
+      foreign_key_constraint_on:
+        column: mint_acct
+        table:
+          name: user_deposits
+          schema: public
 select_permissions:
   - role: anonymous
     permission:
