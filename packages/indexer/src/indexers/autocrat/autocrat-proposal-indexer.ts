@@ -213,15 +213,23 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             )
           )[0];
 
+          const endSlot: BN = onChainProposal.account.slotEnqueued
+            .add(new BN(dbDao.slotsPerProposal?.valueOf()))
+
           const slotDifference = onChainProposal.account.slotEnqueued
             .add(new BN(dbDao.slotsPerProposal?.valueOf()))
             .sub(new BN(currentSlot));
-
+          
           const lowHoursEstimate = Math.floor(
             (slotDifference.toNumber() * 400) / 1000 / 60 / 60
           );
 
-          const endedAt = new Date(currentTime.toLocaleString());
+          // Our check to ensure we're actually updating the time correctly.
+          if(currentSlot <= endSlot.toNumber() && lowHoursEstimate <= 0){
+            console.error('Issue with slot update contact administrator')
+          }
+
+          const endedAt = new Date(currentTime.toUTCString());
           endedAt.setHours(endedAt.getHours() + lowHoursEstimate);
 
           await usingDb((db) =>
