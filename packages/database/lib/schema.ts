@@ -832,6 +832,22 @@ export const userPerformance = pgTable(
       precision: 40,
       scale: 20,
     }).notNull(),
+    tokensBoughtResolvingMarket: numeric("tokens_bought_resolving_market", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
+    tokensSoldResolvingMarket: numeric("tokens_sold_resolving_market", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
+    volumeBoughtResolvingMarket: numeric("volume_bought_resolving_market", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
+    volumeSoldResolvingMarket: numeric("volume_sold_resolving_market", {
+      precision: 40,
+      scale: 20,
+    }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),

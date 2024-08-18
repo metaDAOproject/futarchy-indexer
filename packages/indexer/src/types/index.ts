@@ -27,6 +27,10 @@ export type UserPerformanceTotals = {
   tokensSold: number;
   volumeBought: number;
   volumeSold: number;
+  tokensBoughtResolvingMarket: number;
+  tokensSoldResolvingMarket: number;
+  volumeBoughtResolvingMarket: number;
+  volumeSoldResolvingMarket: number;
 };
 
 export type UserPerformance = {
