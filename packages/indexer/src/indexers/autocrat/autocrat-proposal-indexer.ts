@@ -716,6 +716,8 @@ async function calculateUserPerformance(
         tokensSoldResolvingMarket: 0, // P/F market sell quantity
         volumeBoughtResolvingMarket: 0, // P/F market buy volume
         volumeSoldResolvingMarket: 0, // P/F market sell volume
+        buyOrderCount: 0,
+        sellOrderCount: 0,
       };
     }
 
@@ -740,6 +742,7 @@ async function calculateUserPerformance(
     if (next.side === "BID") {
       totals.tokensBought = totals.tokensBought + size;
       totals.volumeBought = totals.volumeBought + amount;
+      totals.buyOrderCount = totals.buyOrderCount + 1;
       // If this is the resolving market then we want to keep a running tally for that for P&L
       if(next.marketAcct === resolvingMarket){
         totals.tokensBoughtResolvingMarket = totals.tokensBoughtResolvingMarket + size;
@@ -749,6 +752,7 @@ async function calculateUserPerformance(
     } else if (next.side === "ASK") {
       totals.tokensSold = totals.tokensSold + size;
       totals.volumeSold = totals.volumeSold + amount;
+      totals.sellOrderCount = totals.sellOrderCount + 1;
       // If this is the resolving market then we want to keep a running tally for that for P&L
       if(next.marketAcct === resolvingMarket){
         totals.tokensSoldResolvingMarket = totals.tokensSoldResolvingMarket + size;
@@ -790,6 +794,7 @@ async function calculateUserPerformance(
 
     return <UserPerformanceRecord>{
       proposalAcct: onChainProposal.publicKey.toString(),
+      daoAcct: proposals.daoAcct,
       userAcct: actor,
       tokensBought: values.tokensBought.toString(),
       tokensSold: values.tokensSold.toString(),
@@ -799,6 +804,8 @@ async function calculateUserPerformance(
       tokensSoldResolvingMarket: values.tokensSoldResolvingMarket.toString(),
       volumeBoughtResolvingMarket: values.volumeBoughtResolvingMarket.toString(),
       volumeSoldResolvingMarket: values.volumeSoldResolvingMarket.toString(),
+      buyOrdersCount: values.buyOrderCount as unknown as bigint,
+      sellOrdersCount: values.sellOrderCount as unknown as bigint,
     };
   });
 

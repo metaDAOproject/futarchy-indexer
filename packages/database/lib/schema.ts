@@ -812,6 +812,9 @@ export const userPerformance = pgTable(
     userAcct: pubkey("user_acct")
       .notNull()
       .references(() => users.userAcct),
+    daoAcct: pubkey("dao_acct")
+      .notNull()
+      .references(() => daos.daoAcct),
     tokensBought: numeric("tokens_bought", {
       precision: 40,
       scale: 20,
@@ -831,23 +834,34 @@ export const userPerformance = pgTable(
     totalVolume: numeric("total_volume", {
       precision: 40,
       scale: 20,
-    }).notNull(),
+    }).notNull()
+      .default("0.0"),
     tokensBoughtResolvingMarket: numeric("tokens_bought_resolving_market", {
       precision: 40,
       scale: 20,
-    }).notNull(),
+    }).notNull()
+      .default("0.0"),
     tokensSoldResolvingMarket: numeric("tokens_sold_resolving_market", {
       precision: 40,
       scale: 20,
-    }).notNull(),
+    }).notNull()
+      .default("0.0"),
     volumeBoughtResolvingMarket: numeric("volume_bought_resolving_market", {
       precision: 40,
       scale: 20,
-    }).notNull(),
+    }).notNull()
+      .default("0.0"),
     volumeSoldResolvingMarket: numeric("volume_sold_resolving_market", {
       precision: 40,
       scale: 20,
-    }).notNull(),
+    }).notNull()
+      .default("0.0"),
+    buyOrdersCount: bigint("buy_orders_count", { mode: "bigint" })
+      .notNull()
+      .default(0 as unknown as bigint),
+    sellOrdersCount: bigint("sell_orders_count", { mode: "bigint" })
+      .notNull()
+      .default(0 as unknown as bigint),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
