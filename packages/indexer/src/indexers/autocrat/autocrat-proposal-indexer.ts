@@ -836,9 +836,16 @@ async function calculateUserPerformance(
                   ],
                   set: {
                     tokensBought: insert.tokensBought,
+                    daoAcct: insert.daoAcct,
                     tokensSold: insert.tokensSold,
                     volumeBought: insert.volumeBought,
                     volumeSold: insert.volumeSold,
+                    tokensBoughtResolvingMarket: insert.tokensBoughtResolvingMarket,
+                    tokensSoldResolvingMarket: insert.tokensSoldResolvingMarket,
+                    volumeBoughtResolvingMarket: insert.volumeBoughtResolvingMarket,
+                    volumeSoldResolvingMarket: insert.volumeSoldResolvingMarket,
+                    buyOrdersCount: insert.buyOrdersCount,
+                    sellOrdersCount: insert.sellOrdersCount,
                   },
                 });
             } catch (e) {
