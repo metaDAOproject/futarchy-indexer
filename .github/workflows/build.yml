@@ -24,7 +24,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: themetadao/indexer
+          images: themetadao/indexer:main
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
