@@ -660,7 +660,17 @@ async function calculateUserPerformance(
       .execute();
   });
 
-  const { proposals, quote_tokens, base_tokens } = proposal;
+  const { proposals, daos, quote_tokens, base_tokens } = proposal;
+
+  let proposalDaoAcct = daos?.daoAcct
+
+  if (!proposalDaoAcct) {
+    proposalDaoAcct = proposals.daoAcct
+  }
+
+  if (!proposalDaoAcct) {
+    console.error('No daoAcct found')
+  }
 
   const allOrders = await usingDb((db) => {
     return db
@@ -794,7 +804,7 @@ async function calculateUserPerformance(
 
     return <UserPerformanceRecord>{
       proposalAcct: onChainProposal.publicKey.toString(),
-      daoAcct: proposals.daoAcct,
+      daoAcct: proposalDaoAcct,
       userAcct: actor,
       tokensBought: values.tokensBought.toString(),
       tokensSold: values.tokensSold.toString(),
