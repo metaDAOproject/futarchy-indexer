@@ -213,15 +213,23 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             )
           )[0];
 
+          const endSlot: BN = onChainProposal.account.slotEnqueued
+            .add(new BN(dbDao.slotsPerProposal?.valueOf()))
+
           const slotDifference = onChainProposal.account.slotEnqueued
             .add(new BN(dbDao.slotsPerProposal?.valueOf()))
             .sub(new BN(currentSlot));
-
+          
           const lowHoursEstimate = Math.floor(
             (slotDifference.toNumber() * 400) / 1000 / 60 / 60
           );
 
-          const endedAt = new Date(currentTime.toLocaleString());
+          // Our check to ensure we're actually updating the time correctly.
+          if(currentSlot <= endSlot.toNumber() && lowHoursEstimate <= 0){
+            console.error('Issue with slot update contact administrator')
+          }
+
+          const endedAt = new Date(currentTime.toUTCString());
           endedAt.setHours(endedAt.getHours() + lowHoursEstimate);
 
           await usingDb((db) =>
@@ -652,9 +660,19 @@ async function calculateUserPerformance(
       .execute();
   });
 
-  const { proposals, quote_tokens, base_tokens } = proposal;
+  const { proposals, daos, quote_tokens, base_tokens } = proposal;
 
-  const orders = await usingDb((db) => {
+  let proposalDaoAcct = daos?.daoAcct
+
+  if (!proposalDaoAcct) {
+    proposalDaoAcct = proposals.daoAcct
+  }
+
+  if (!proposalDaoAcct) {
+    console.error('No daoAcct found')
+  }
+
+  const allOrders = await usingDb((db) => {
     return db
       .select()
       .from(schema.orders)
@@ -673,6 +691,8 @@ async function calculateUserPerformance(
   proposalFinalizedAtMinus2Minutes.setMinutes(
     proposalFinalizedAt.getMinutes() - 2
   );
+
+  const resolvingMarket = proposals.status === ProposalStatus.Passed ? proposals.passMarketAcct : proposals.failMarketAcct;
   // TODO: Get spot price at proposal finalization or even current spot price
   // if the proposal is still active (this would be UNREALISED P&L)
   // TODO: If this is 0 we really need to throw and error and alert someone, we shouldn't have missing spot data
@@ -692,19 +712,26 @@ async function calculateUserPerformance(
       .execute();
   });
 
-  let actors = orders.reduce((current, next) => {
+  let actors = allOrders.reduce((current, next) => {
     const actor = next.actorAcct;
     let totals = current.get(actor);
 
     if (!totals) {
       totals = <UserPerformanceTotals>{
-        tokensBought: 0,
+        tokensBought: 0, // Aggregate value for reporting
         tokensSold: 0,
         volumeBought: 0,
         volumeSold: 0,
+        tokensBoughtResolvingMarket: 0, // P/F market buy quantity
+        tokensSoldResolvingMarket: 0, // P/F market sell quantity
+        volumeBoughtResolvingMarket: 0, // P/F market buy volume
+        volumeSoldResolvingMarket: 0, // P/F market sell volume
+        buyOrderCount: 0,
+        sellOrderCount: 0,
       };
     }
 
+    // Token Decimals used for nomalizing results
     const baseTokenDecimals = base_tokens?.decimals;
     const quoteTokenDecimals = quote_tokens?.decimals ?? 6; // NOTE: Safe for now
 
@@ -721,12 +748,26 @@ async function calculateUserPerformance(
     // Amount or notional
     const amount = Number(next.quotePrice).valueOf() * size;
 
+    // Buy Side
     if (next.side === "BID") {
       totals.tokensBought = totals.tokensBought + size;
       totals.volumeBought = totals.volumeBought + amount;
+      totals.buyOrderCount = totals.buyOrderCount + 1;
+      // If this is the resolving market then we want to keep a running tally for that for P&L
+      if(next.marketAcct === resolvingMarket){
+        totals.tokensBoughtResolvingMarket = totals.tokensBoughtResolvingMarket + size;
+        totals.volumeBoughtResolvingMarket = totals.volumeBoughtResolvingMarket + amount;
+      }
+    // Sell Side
     } else if (next.side === "ASK") {
       totals.tokensSold = totals.tokensSold + size;
       totals.volumeSold = totals.volumeSold + amount;
+      totals.sellOrderCount = totals.sellOrderCount + 1;
+      // If this is the resolving market then we want to keep a running tally for that for P&L
+      if(next.marketAcct === resolvingMarket){
+        totals.tokensSoldResolvingMarket = totals.tokensSoldResolvingMarket + size;
+        totals.volumeSoldResolvingMarket = totals.volumeSoldResolvingMarket + amount;
+      }
     }
 
     current.set(actor, totals);
@@ -740,10 +781,10 @@ async function calculateUserPerformance(
     const [actor, values] = k;
 
     // NOTE: this gets us the delta, whereas we need to know the direction at the very end
-    const tradeSizeDelta = Math.abs(values.tokensBought - values.tokensSold);
+    const tradeSizeDelta = Math.abs(values.tokensBoughtResolvingMarket - values.tokensSoldResolvingMarket);
 
     // NOTE: Directionally orients our last leg
-    const needsSellToExit = values.tokensBought > values.tokensSold; // boolean
+    const needsSellToExit = values.tokensBoughtResolvingMarket > values.tokensSoldResolvingMarket; // boolean
 
     // We need to complete the round trip / final leg
     if (tradeSizeDelta !== 0) {
@@ -755,19 +796,26 @@ async function calculateUserPerformance(
         // We've bought more than we've sold, therefore when we exit the position calulcation
         // we need to count the remaining volume as a sell at spot price when conditional
         // market is finalized.
-        values.volumeSold = values.volumeSold + lastLegNotional;
+        values.volumeSoldResolvingMarket = values.volumeSoldResolvingMarket + lastLegNotional;
       } else {
-        values.volumeBought = values.volumeBought + lastLegNotional;
+        values.volumeBoughtResolvingMarket = values.volumeBoughtResolvingMarket + lastLegNotional;
       }
     }
 
     return <UserPerformanceRecord>{
       proposalAcct: onChainProposal.publicKey.toString(),
+      daoAcct: proposalDaoAcct,
       userAcct: actor,
       tokensBought: values.tokensBought.toString(),
       tokensSold: values.tokensSold.toString(),
       volumeBought: values.volumeBought.toString(),
       volumeSold: values.volumeSold.toString(),
+      tokensBoughtResolvingMarket: values.tokensBoughtResolvingMarket.toString(),
+      tokensSoldResolvingMarket: values.tokensSoldResolvingMarket.toString(),
+      volumeBoughtResolvingMarket: values.volumeBoughtResolvingMarket.toString(),
+      volumeSoldResolvingMarket: values.volumeSoldResolvingMarket.toString(),
+      buyOrdersCount: values.buyOrderCount as unknown as bigint,
+      sellOrdersCount: values.sellOrderCount as unknown as bigint,
     };
   });
 
@@ -801,6 +849,12 @@ async function calculateUserPerformance(
                     tokensSold: insert.tokensSold,
                     volumeBought: insert.volumeBought,
                     volumeSold: insert.volumeSold,
+                    tokensBoughtResolvingMarket: insert.tokensBoughtResolvingMarket,
+                    tokensSoldResolvingMarket: insert.tokensSoldResolvingMarket,
+                    volumeBoughtResolvingMarket: insert.volumeBoughtResolvingMarket,
+                    volumeSoldResolvingMarket: insert.volumeSoldResolvingMarket,
+                    buyOrdersCount: insert.buyOrdersCount,
+                    sellOrdersCount: insert.sellOrdersCount,
                   },
                 });
             } catch (e) {

@@ -33,7 +33,7 @@ jobs:
           context: .
           file: packages/indexer/Dockerfile
           push: true
-          tags: themetadao/indexer:main
+          tags: themetadao/indexer:staging
           labels: ${{ steps.meta.outputs.labels }}
 
   redeploy_app:

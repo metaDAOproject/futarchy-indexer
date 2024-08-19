@@ -1,6 +1,16 @@
 table:
   name: user_deposits
   schema: public
+object_relationships:
+  - name: token
+    using:
+      foreign_key_constraint_on: mint_acct
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_sig
+  - name: user
+    using:
+      foreign_key_constraint_on: user_acct
 select_permissions:
   - role: anonymous
     permission:
