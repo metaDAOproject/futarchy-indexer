@@ -43,9 +43,14 @@ export class TelegramBotAPI implements AlertChatBotInterface {
   public async sendMessage(
     chatId: number | string,
     text: string
-  ): Promise<ChatbotApiResponse<any>> {
+  ): Promise<ChatbotApiResponse<any> | null> {
     const params = { chat_id: chatId, text };
-    return this.request("POST", "sendMessage", params);
+    try {
+      return this.request("POST", "sendMessage", params);
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
 
   public async getUpdates(
@@ -73,7 +78,7 @@ export interface AlertChatBotInterface {
   sendMessage(
     chatId: number | string,
     text: string
-  ): Promise<ChatbotApiResponse<any>>;
+  ): Promise<ChatbotApiResponse<any> | null>;
   getUpdates(
     offset?: number,
     limit?: number,
