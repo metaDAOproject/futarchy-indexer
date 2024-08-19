@@ -18,6 +18,7 @@ import {
   InstructionDisplay,
   Instruction as AnchorInstruction,
 } from "@coral-xyz/anchor/dist/cjs/coder/borsh/instruction";
+import { logger } from "../logger";
 
 /**
  * This version should be bumped every time we update this file.
@@ -401,13 +402,17 @@ function getIxWithDisplay(
       };
     }
   });
+  try {
+    const ixDisplay = coder.format(decodedIx, accounts);
 
-  const ixDisplay = coder.format(decodedIx, accounts);
-
-  return {
-    instruction: decodedIx,
-    instructionDisplay: ixDisplay,
-  };
+    return {
+      instruction: decodedIx,
+      instructionDisplay: ixDisplay,
+    };
+  } catch (e) {
+    logger.error("error with coder formatting of decodedIx:", e);
+    return null;
+  }
 }
 
 function flattenIdlAccounts(
