@@ -836,7 +836,6 @@ async function calculateUserPerformance(
                   ],
                   set: {
                     tokensBought: insert.tokensBought,
-                    daoAcct: insert.daoAcct,
                     tokensSold: insert.tokensSold,
                     volumeBought: insert.volumeBought,
                     volumeSold: insert.volumeSold,
