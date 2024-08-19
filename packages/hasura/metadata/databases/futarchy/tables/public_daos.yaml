@@ -31,6 +31,13 @@ array_relationships:
         table:
           name: proposals
           schema: public
+  - name: user_performances
+    using:
+      foreign_key_constraint_on:
+        column: dao_acct
+        table:
+          name: user_performance
+          schema: public
 select_permissions:
   - role: anonymous
     permission:

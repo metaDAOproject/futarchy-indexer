@@ -2,6 +2,9 @@ table:
   name: user_performance
   schema: public
 object_relationships:
+  - name: dao
+    using:
+      foreign_key_constraint_on: dao_acct
   - name: proposal
     using:
       foreign_key_constraint_on: proposal_acct
@@ -12,14 +15,22 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
+        - buy_orders_count
+        - sell_orders_count
+        - dao_acct
         - proposal_acct
         - user_acct
         - tokens_bought
-        - tokens_sold
-        - volume_bought
-        - volume_sold
+        - tokens_bought_resolving_market
+        - tokens_sold_resolving_market
         - total_volume
+        - volume_bought
+        - volume_bought_resolving_market
+        - volume_sold
+        - volume_sold_resolving_market
         - created_at
+        - updated_at
+        - tokens_sold
       filter: {}
       allow_aggregations: true
     comment: ""

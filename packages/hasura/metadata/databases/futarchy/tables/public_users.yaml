@@ -16,6 +16,13 @@ array_relationships:
         table:
           name: sessions
           schema: public
+  - name: user_deposits
+    using:
+      foreign_key_constraint_on:
+        column: user_acct
+        table:
+          name: user_deposits
+          schema: public
   - name: user_performances
     using:
       foreign_key_constraint_on:
