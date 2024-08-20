@@ -77,11 +77,9 @@ const convertJupBaseOutTokenPrice = (
   inputTokenDecimals: number,
   outputTokenDecimals: number
 ): number => {
-  const price =
-    Number(data.inAmount ?? "0") /
-    10 ** inputTokenDecimals /
-    (Number(data.outAmount ?? "0") / 10 ** outputTokenDecimals);
-  return price;
+  const inPrice = Number(data.inAmount ?? "0") / 10 ** inputTokenDecimals;
+  const outPrice = Number(data.outAmount ?? "0") / 10 ** outputTokenDecimals;
+  return inPrice / outPrice;
 };
 
 export const fetchQuoteFromJupe = async (
