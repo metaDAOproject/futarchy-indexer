@@ -72,75 +72,121 @@ const convertJupTokenPrice = (
   return price;
 };
 
+const convertJupBaseOutTokenPrice = (
+  data: JupTokenQuoteRes,
+  inputTokenDecimals: number,
+  outputTokenDecimals: number
+): number => {
+  const price =
+    Number(data.inAmount ?? "0") /
+    10 ** inputTokenDecimals /
+    (Number(data.outAmount ?? "0") / 10 ** outputTokenDecimals);
+  return price;
+};
+
 export const fetchQuoteFromJupe = async (
   acct: string
 ): Promise<[number, number | undefined] | null> => {
   try {
-    const inputToken = await usingDb((db) =>
+    const baseToken = await usingDb((db) =>
       db
         .select()
         .from(schema.tokens)
         .where(eq(schema.tokens.mintAcct, acct))
         .execute()
     );
-    // call jup
 
-    // if it's USDC we compare to USDT
-    const outputMint =
+    // Define the output mint based on the input token
+    const quoteMint =
       acct === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
         ? "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
         : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
-    const outputToken = await usingDb((db) =>
+    const quoteToken = await usingDb((db) =>
       db
         .select()
         .from(schema.tokens)
-        .where(eq(schema.tokens.mintAcct, outputMint))
+        .where(eq(schema.tokens.mintAcct, quoteMint))
         .execute()
     );
 
-    const amountVal = 1 * 10 ** inputToken[0].decimals;
+    const amountVal = 1 * 10 ** baseToken[0].decimals;
 
-    const url =
+    // Fetch ASK price (original fetch)
+    const askUrl =
       `https://public.jupiterapi.com/quote?inputMint=${acct}&` +
-      `outputMint=${outputMint}&` +
+      `outputMint=${quoteMint}&` +
       `amount=${amountVal.toString()}&` +
       "slippageBps=30&" +
       "swapMode=ExactIn&" +
       "onlyDirectRoutes=false&" +
       "maxAccounts=64&" +
       "experimentalDexes=Jupiter%20LO";
-    const tokenPriceRes = await fetch(url);
+    const askRes = await fetch(askUrl);
 
-    if (tokenPriceRes.status !== 200) {
+    if (askRes.status !== 200) {
       logger.error(
-        "non-200 response from jupiter quotes:",
-        tokenPriceRes.status,
-        tokenPriceRes.statusText
+        "non-200 response from Jupiter ASK quote:",
+        askRes.status,
+        askRes.statusText
       );
-    }
-
-    const tokenPriceJson = (await tokenPriceRes.json()) as JupTokenQuoteRes;
-
-    if (tokenPriceJson.error) {
-      logger.error("jupiter response error found:", tokenPriceJson);
       return null;
     }
 
-    if (!tokenPriceJson.outAmount || !tokenPriceJson.inAmount) {
-      logger.error("token price output or input is 0 value");
+    const askJson = (await askRes.json()) as JupTokenQuoteRes;
+
+    if (askJson.error || !askJson.outAmount || !askJson.inAmount) {
+      logger.error("Error with ASK quote response:", askJson);
       return null;
     }
-    return [
-      convertJupTokenPrice(
-        tokenPriceJson,
-        inputToken[0].decimals,
-        outputToken[0].decimals
-      ),
-      tokenPriceJson.contextSlot,
-    ];
+
+    const askPrice = convertJupTokenPrice(
+      askJson,
+      baseToken[0].decimals,
+      quoteToken[0].decimals
+    );
+
+    // Fetch BID price (swapped input/output)
+    const bidUrl =
+      `https://public.jupiterapi.com/quote?inputMint=${quoteMint}&` +
+      `outputMint=${acct}&` +
+      `amount=${(1 * 10 ** quoteToken[0].decimals).toString()}&` +
+      "slippageBps=30&" +
+      "swapMode=ExactIn&" +
+      "onlyDirectRoutes=false&" +
+      "maxAccounts=64&" +
+      "experimentalDexes=Jupiter%20LO";
+    const bidRes = await fetch(bidUrl);
+
+    if (bidRes.status !== 200) {
+      logger.error(
+        "non-200 response from Jupiter BID quote:",
+        bidRes.status,
+        bidRes.statusText
+      );
+      return null;
+    }
+
+    const bidJson = (await bidRes.json()) as JupTokenQuoteRes;
+
+    if (bidJson.error || !bidJson.outAmount || !bidJson.inAmount) {
+      logger.error("Error with BID quote response:", bidJson);
+      return null;
+    }
+
+    const bidPrice = convertJupBaseOutTokenPrice(
+      bidJson,
+      baseToken[0].decimals,
+      quoteToken[0].decimals
+    );
+
+    // Calculate the mid-price
+    const midPrice = (askPrice + bidPrice) / 2;
+
+    // Return the mid-price and the context slot from the ASK response
+    return [midPrice, askJson.contextSlot];
   } catch (e) {
-    logger.error("error getting price number from jupiter: ", e);
+    logger.error("error getting price from Jupiter: ", e);
     return null;
   }
 };
