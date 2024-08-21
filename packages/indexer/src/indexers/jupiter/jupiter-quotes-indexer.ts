@@ -74,11 +74,11 @@ const convertJupTokenPrice = (
 
 const convertJupBaseOutTokenPrice = (
   data: JupTokenQuoteRes,
-  inputTokenDecimals: number,
-  outputTokenDecimals: number
+  quoteTokenDecimals: number,
+  baseTokenDecimals: number
 ): number => {
-  const inPrice = Number(data.inAmount ?? "0") / 10 ** inputTokenDecimals;
-  const outPrice = Number(data.outAmount ?? "0") / 10 ** outputTokenDecimals;
+  const inPrice = Number(data.inAmount ?? "0") / 10 ** quoteTokenDecimals;
+  const outPrice = Number(data.outAmount ?? "0") / 10 ** baseTokenDecimals;
   return inPrice / outPrice;
 };
 
@@ -174,9 +174,16 @@ export const fetchQuoteFromJupe = async (
 
     const bidPrice = convertJupBaseOutTokenPrice(
       bidJson,
-      baseToken[0].decimals,
-      quoteToken[0].decimals
+      quoteToken[0].decimals,
+      baseToken[0].decimals
     );
+
+    if (!askPrice) {
+      return [bidPrice, askJson.contextSlot];
+    }
+    if (!bidPrice) {
+      return [askPrice, askJson.contextSlot];
+    }
 
     // Calculate the mid-price
     const midPrice = (askPrice + bidPrice) / 2;
