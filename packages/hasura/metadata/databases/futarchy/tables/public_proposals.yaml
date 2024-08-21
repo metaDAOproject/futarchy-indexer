@@ -73,6 +73,13 @@ insert_permissions:
         - updated_at
         - initial_slot
         - end_slot
+        - description_url
+        - pass_threshold_bps
+        - duration_in_slots
+        - min_base_futarchic_liquidity
+        - min_quote_futarchic_liquidity
+        - twap_initial_observation
+        - twap_max_observation_change_per_update
     comment: ""
 select_permissions:
   - role: anonymous
@@ -124,6 +131,12 @@ select_permissions:
         - quote_vault
         - status
         - autocrat_version
+        - duration_in_slots
+        - pass_threshold_bps
+        - twap_initial_observation
+        - twap_max_observation_change_per_update
+        - min_quote_futarchic_liquidity
+        - min_base_futarchic_liquidity
         - completed_at
         - created_at
         - ended_at

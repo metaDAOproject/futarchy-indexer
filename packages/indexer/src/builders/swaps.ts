@@ -315,7 +315,16 @@ export class SwapBuilder {
     } catch (e: any) {
       logger.errorWithChatBotAlert(
         "swap peristable general error",
-        e.message ? e.message : e
+        e.message
+          ? {
+              message: e.message,
+              stack: e.stack,
+              name: e.name,
+              cause: e.cause,
+              fileName: e.fileName,
+              lineNumber: e.lineNumber,
+            }
+          : e
       );
       return Err({ type: SwapPersistableError.GeneralError });
     }

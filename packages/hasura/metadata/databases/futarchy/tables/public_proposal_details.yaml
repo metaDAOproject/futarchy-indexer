@@ -41,12 +41,34 @@ select_permissions:
         - content
       filter: {}
     comment: ""
+  - role: user
+    permission:
+      columns:
+        - proposal_id
+        - base_cond_vault_acct
+        - description
+        - fail_market_acct
+        - pass_market_acct
+        - proposal_acct
+        - proposer_acct
+        - quote_cond_vault_acct
+        - slug
+        - title
+        - categories
+        - content
+      filter: {}
+    comment: ""
   - role: proposer
     permission:
       columns:
         - proposal_id
+        - base_cond_vault_acct
         - description
+        - fail_market_acct
+        - pass_market_acct
         - proposal_acct
+        - proposer_acct
+        - quote_cond_vault_acct
         - slug
         - title
         - categories
