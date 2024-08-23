@@ -1,6 +1,7 @@
 export enum AmmInstructionIndexerError {
   GeneralError = "GeneralError",
   MissingMarket = "MissingMarket",
+  FailedSwap = "FailedSwap",
 }
 
 export enum SwapPersistableError {

@@ -206,6 +206,14 @@ export class SwapBuilder {
             (userQuotePreBalance ?? BigInt(0))
         ).abs();
 
+        if (
+          !!tx.err &&
+          quoteAmount.toNumber() === 0 &&
+          baseAmount.toNumber() === 0
+        ) {
+          return Err({ type: AmmInstructionIndexerError.FailedSwap });
+        }
+
         // determine price
         // NOTE: This is estimated given the output is a min expected value
         // default is input / output (buying a token with USDC or whatever)
@@ -244,9 +252,9 @@ export class SwapBuilder {
         }
 
         const ammPrice =
-          quoteAmount && baseAmount
+          quoteAmount.toNumber() && baseAmount.toNumber()
             ? quoteAmount.mul(new BN(10).pow(new BN(12))).div(baseAmount)
-            : 0;
+            : new BN(0);
         const price = getHumanPrice(
           ammPrice,
           baseToken[0].decimals,
