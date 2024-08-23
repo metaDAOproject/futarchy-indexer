@@ -252,7 +252,7 @@ export class SwapBuilder {
         }
 
         const ammPrice =
-          quoteAmount && baseAmount
+          quoteAmount.toNumber() && baseAmount.toNumber()
             ? quoteAmount.mul(new BN(10).pow(new BN(12))).div(baseAmount)
             : new BN(0);
         const price = getHumanPrice(
