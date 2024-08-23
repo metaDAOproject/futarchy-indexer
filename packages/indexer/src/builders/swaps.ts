@@ -198,7 +198,6 @@ export class SwapBuilder {
         const userQuotePostBalance =
           userQuoteAcctWithBalances?.postTokenBalance?.amount;
 
-        //TODO you need to populate post and prebalance here based on the txn balances perhaps...
         const baseAmount = new BN(
           (userBasePostBalance ?? BigInt(0)) - (userBasePreBalance ?? BigInt(0))
         ).abs();
@@ -244,9 +243,10 @@ export class SwapBuilder {
           return Err({ type: AmmInstructionIndexerError.MissingMarket });
         }
 
-        const ammPrice = quoteAmount
-          .mul(new BN(10).pow(new BN(12)))
-          .div(baseAmount);
+        const ammPrice =
+          quoteAmount && baseAmount
+            ? quoteAmount.mul(new BN(10).pow(new BN(12))).div(baseAmount)
+            : 0;
         const price = getHumanPrice(
           ammPrice,
           baseToken[0].decimals,
