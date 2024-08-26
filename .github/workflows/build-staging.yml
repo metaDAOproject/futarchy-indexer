@@ -1,7 +1,7 @@
 name: STAGING -- Build & Push Docker Image
 on:
   push:
-    branches: [staging, fix/staging-cicd]
+    branches: [staging]
     paths:
       - "**"
 
