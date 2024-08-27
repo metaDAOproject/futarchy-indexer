@@ -77,8 +77,8 @@ importers:
         specifier: ^15.1.4
         version: 15.1.4
       '@metadaoproject/futarchy':
-        specifier: ^0.3.0-alpha.6
-        version: 0.3.0-alpha.6(fastestsmallesttextencoderdecoder@1.0.22)
+        specifier: 0.3.0-alpha.10
+        version: 0.3.0-alpha.10(fastestsmallesttextencoderdecoder@1.0.22)
       '@metadaoproject/futarchy-sdk':
         specifier: 4.0.0-alpha.31
         version: 4.0.0-alpha.31(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
@@ -1525,22 +1525,6 @@ packages:
 
   /@metadaoproject/futarchy@0.3.0-alpha.10(fastestsmallesttextencoderdecoder@1.0.22):
     resolution: {integrity: sha512-nhxIKnFc/anhto3OPDbufhOo9KlVJdXRfH2nP3xfDwMHUYDtODisw7o/e1hMkM7u45TuIPFHIGm8YBkoht6zVg==}
-    dependencies:
-      '@coral-xyz/anchor': 0.29.0
-      '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/web3.js': 1.91.8
-      bn.js: 5.2.1
-      decimal.js: 10.4.3
-      esbuild: 0.17.19
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - utf-8-validate
-    dev: false
-
-  /@metadaoproject/futarchy@0.3.0-alpha.6(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-KbjWD24HvE+OMzMk6RLFKoPCqWPZ9bgcdjrarGAAyxei94yAQ2b07tmKdVbk9QDrellzsaikxpjQ/yHWfSCCLg==}
     dependencies:
       '@coral-xyz/anchor': 0.29.0
       '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
