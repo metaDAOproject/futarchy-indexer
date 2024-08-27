@@ -2,7 +2,7 @@ import { serialize, deserialize, Transaction } from "./serializer";
 import { expect, describe, test } from "bun:test";
 
 describe("serializer", async () => {
-  test.todo("serialize-deserialize", async () => {
+  test("serialize-deserialize", async () => {
     const testTx: Transaction = {
       blockTime: 0,
       slot: 0,

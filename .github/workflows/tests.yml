@@ -28,3 +28,7 @@ jobs:
 
       - name: Test
         run: bun test
+        env:
+          RPC_ENDPOINT: https://api.devnet.solana.com/
+          INDEXER_URL: https://staging-indexer.metadao.fi
+          INDEXER_WSS_URL: wss://staging-indexer.metadao.fi
