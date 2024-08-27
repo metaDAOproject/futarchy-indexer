@@ -1,4 +1,4 @@
-name: STAGING -- Build & Push Docker Image
+name: Run tests before merge
 on:
   pull_request:
     branches: [staging]
