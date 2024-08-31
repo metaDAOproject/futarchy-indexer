@@ -4,7 +4,7 @@ import {
   FutarchyRPCClient,
   FutarchyIndexerClient,
 } from "@metadaoproject/futarchy-sdk";
-import { ConditionalVaultClient } from "@metadaoproject/futarchy";
+import { ConditionalVaultClient } from "@metadaoproject/futarchy/v0.4";
 
 export const RPC_ENDPOINT = process.env.RPC_ENDPOINT ?? "";
 export const INDEXER_URL = process.env.INDEXER_URL ?? "";

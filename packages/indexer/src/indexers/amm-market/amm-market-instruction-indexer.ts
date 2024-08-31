@@ -1,13 +1,13 @@
 import { VersionedTransactionResponse } from "@solana/web3.js";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { TransactionRecord } from "@metadaoproject/indexer-db/lib/schema";
-import { AMM_PROGRAM_ID } from "@metadaoproject/futarchy";
+import { AMM_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
 import { InstructionIndexer } from "../instruction-indexer";
 import {
   AmmInstructionIndexerError,
   SwapPersistableError,
 } from "../../types/errors";
-import { ammClient, IDL } from "../common";
+import { ammClient, ammParser, IDL } from "../common";
 import { SwapBuilder } from "../../builders/swaps";
 import { logger } from "../../logger";
 
@@ -32,6 +32,7 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
     >
   > {
     const builder = new SwapBuilder();
+    // const res = await ammParser.parseTransaction(ammClient.provider.connection, transaction.txSig);
     const buildRes = await builder.withSignatureAndCtx(transaction.txSig, {
       slot: Number(transaction.slot),
     });

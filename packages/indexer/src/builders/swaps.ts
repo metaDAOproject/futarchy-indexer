@@ -1,4 +1,4 @@
-import { Context } from "@solana/web3.js";
+import { Connection, Context } from "@solana/web3.js";
 import { Err, Ok, Result, TaggedUnion } from "../match";
 import {
   AmmInstructionIndexerError,
@@ -21,6 +21,7 @@ import {
 import { logger } from "../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 import { getHumanPrice } from "../usecases/math";
+import { ammParser } from "../indexers/common";
 
 export class SwapPersistable {
   private ordersRecord: OrdersRecord;
@@ -120,6 +121,7 @@ export class SwapBuilder {
       if (swapOrder.length > 0) {
         return Err({ type: SwapPersistableError.AlreadyPersistedSwap });
       }
+
 
       const txRes = await getTransaction(signature);
       if (!txRes.success) {

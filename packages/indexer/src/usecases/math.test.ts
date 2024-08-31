@@ -1,6 +1,6 @@
 import { expect, test, describe } from "bun:test";
 import { getHumanPrice } from "./math";
-import { PriceMath } from "@metadaoproject/futarchy";
+import { PriceMath } from "@metadaoproject/futarchy/v0.4";
 import { BN } from "@coral-xyz/anchor";
 
 describe("getHumanPrice", () => {

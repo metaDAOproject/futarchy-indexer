@@ -77,8 +77,8 @@ importers:
         specifier: ^15.1.4
         version: 15.1.4
       '@metadaoproject/futarchy':
-        specifier: ^0.3.0-alpha.6
-        version: 0.3.0-alpha.6(fastestsmallesttextencoderdecoder@1.0.22)
+        specifier: ^0.4.0-alpha.2
+        version: 0.4.0-alpha.2(fastestsmallesttextencoderdecoder@1.0.22)
       '@metadaoproject/futarchy-sdk':
         specifier: 4.0.0-alpha.31
         version: 4.0.0-alpha.31(arweave@1.15.0)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.8.1)
@@ -1539,10 +1539,11 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@metadaoproject/futarchy@0.3.0-alpha.6(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-KbjWD24HvE+OMzMk6RLFKoPCqWPZ9bgcdjrarGAAyxei94yAQ2b07tmKdVbk9QDrellzsaikxpjQ/yHWfSCCLg==}
+  /@metadaoproject/futarchy@0.4.0-alpha.2(fastestsmallesttextencoderdecoder@1.0.22):
+    resolution: {integrity: sha512-1ophwRxoMOVMUBsr7xXv/f5hYIoYi0aWYxEQhUTdXQRb5Vy7m5TiucPkCmwB9Giai/bXfLCU10we+TXo5NxIxw==}
     dependencies:
       '@coral-xyz/anchor': 0.29.0
+      '@noble/hashes': 1.4.0
       '@solana/spl-token': 0.3.11(@solana/web3.js@1.91.8)(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/web3.js': 1.91.8
       bn.js: 5.2.1

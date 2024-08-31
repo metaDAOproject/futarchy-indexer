@@ -6,7 +6,7 @@ import {
   AutocratIDL,
   CONDITIONAL_VAULT_PROGRAM_ID,
   ConditionalVaultIDL,
-} from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
 
 export const SLOTS_TO_DAYS: Record<string, number> = {
   "648000": 3,
