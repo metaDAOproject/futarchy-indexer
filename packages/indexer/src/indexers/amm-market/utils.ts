@@ -64,6 +64,8 @@ export async function indexAmmMarketAccountWithContext(
       updatedSlot: context
         ? BigInt(context.slot)
         : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
+        lastObservation: ammMarketAccount.oracle.lastObservation,
+        lastPrice: ammMarketAccount.oracle.lastPrice
     };
 
     // TODO batch commits across inserts - maybe with event queue
@@ -81,12 +83,14 @@ export async function indexAmmMarketAccountWithContext(
     }
   }
 
+  const priceFromReserves = PriceMath.getAmmPriceFromReserves(
+    ammMarketAccount?.baseAmount,
+    ammMarketAccount?.quoteAmount
+  );
+
   // indexing the conditional market price
   const conditionalMarketSpotPrice = getHumanPrice(
-    PriceMath.getAmmPriceFromReserves(
-      ammMarketAccount?.baseAmount,
-      ammMarketAccount?.quoteAmount
-    ),
+    priceFromReserves,
     baseToken.decimals!!,
     quoteToken.decimals!!
   );
