@@ -495,8 +495,8 @@ async function insertAssociatedAccountsDataForProposal(
     if (dao && daoDetails) {
       if (isQuote) {
         // Fail / Pass USDC
-        imageUrl = isFail
-          ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f38677ab-8ec6-4706-6606-7d4e0a3cfc00/public"
+        imageUrl = !isFail
+          ? "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/d9bfd8de-2937-419a-96f6-8d6a3a76d200/public"
           : "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/d9bfd8de-2937-419a-96f6-8d6a3a76d200/public";
       } else {
         // Base Token
