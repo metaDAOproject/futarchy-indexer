@@ -41,7 +41,7 @@ export const AmmMarketAccountIntervalFetchIndexer: IntervalFetchIndexer = {
       }
       return res;
     } catch (e) {
-      logger.error("general error with indexing amm market account info:", e);
+      logger.errorWithChatBotAlert("general error with indexing amm market account info:", e);
       return Err({ type: AmmAccountIntervalIndexerError.General });
     }
   },
