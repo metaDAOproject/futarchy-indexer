@@ -64,8 +64,8 @@ export async function indexAmmMarketAccountWithContext(
       updatedSlot: context
         ? BigInt(context.slot)
         : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
-        lastObservation: ammMarketAccount.oracle.lastObservation,
-        lastPrice: ammMarketAccount.oracle.lastPrice
+        lastObservation: ammMarketAccount.oracle.lastObservation.toNumber(),
+        lastPrice: ammMarketAccount.oracle.lastPrice.toNumber()
     };
 
     // TODO batch commits across inserts - maybe with event queue
