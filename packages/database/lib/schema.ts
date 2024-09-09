@@ -303,6 +303,20 @@ export enum InstructionType {
   VaultRedeemConditionalTokensForUnderlyingTokens = "vault_redeem_conditional_tokens_for_underlying_tokens",
 }
 
+export const signatures = pgTable(
+  "signatures",
+  {
+    signature: transaction("signature").primaryKey(),
+    slot: slot("slot").notNull(),
+    didErr: boolean("did_err").notNull(),
+    err: text("err"),
+    blockTime: timestamp("block_time", { withTimezone: true }),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  }
+)
+
 export const transactions = pgTable(
   "transactions",
   {
@@ -329,46 +343,46 @@ export enum TransactionWatchStatus {
   Disabled = "disabled",
 }
 
-export const transactionWatchers = pgTable("transaction_watchers", {
-  acct: pubkey("acct").primaryKey(),
-  latestTxSig: transaction("latest_tx_sig").references(
-    () => transactions.txSig
-  ),
-  /**
-   * We can use this to monitor if the transaction history is being cleared by the rpc.
-   * Ideally this should not change once set.
-   */
-  firstTxSig: transaction("first_tx_sig").references(() => transactions.txSig),
-  /**
-   * This may be significantly higher than the slot of the latest signature. The invariant here
-   * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
-   */
-  checkedUpToSlot: slot("checked_up_to_slot").notNull(),
-  serializerLogicVersion: smallint("serializer_logic_version").notNull(),
-  description: text("description").notNull(),
-  status: pgEnum("status", TransactionWatchStatus)
-    .default(TransactionWatchStatus.Disabled)
-    .notNull(),
-  failureLog: text("failure_log"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
-});
+// export const transactionWatchers = pgTable("transaction_watchers", {
+//   acct: pubkey("acct").primaryKey(),
+//   latestTxSig: transaction("latest_tx_sig").references(
+//     () => transactions.txSig
+//   ),
+//   /**
+//    * We can use this to monitor if the transaction history is being cleared by the rpc.
+//    * Ideally this should not change once set.
+//    */
+//   firstTxSig: transaction("first_tx_sig").references(() => transactions.txSig),
+//   /**
+//    * This may be significantly higher than the slot of the latest signature. The invariant here
+//    * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
+//    */
+//   checkedUpToSlot: slot("checked_up_to_slot").notNull(),
+//   serializerLogicVersion: smallint("serializer_logic_version").notNull(),
+//   description: text("description").notNull(),
+//   status: pgEnum("status", TransactionWatchStatus)
+//     .default(TransactionWatchStatus.Disabled)
+//     .notNull(),
+//   failureLog: text("failure_log"),
+//   updatedAt: timestamp("updated_at", { withTimezone: true }),
+// });
 
-export const transactionWatcherTransactions = pgTable(
-  "transaction_watcher_transactions",
-  {
-    watcherAcct: pubkey("watcher_acct")
-      .references(() => transactionWatchers.acct)
-      .notNull(),
-    txSig: transaction("tx_sig")
-      .references(() => transactions.txSig)
-      .notNull(),
-    slot: slot("slot").notNull(),
-  },
-  (table) => ({
-    pk: primaryKey(table.watcherAcct, table.txSig),
-    slotIdx: index("watcher_slot_index").on(table.watcherAcct, table.slot),
-  })
-);
+// export const transactionWatcherTransactions = pgTable(
+//   "transaction_watcher_transactions",
+//   {
+//     watcherAcct: pubkey("watcher_acct")
+//       .references(() => transactionWatchers.acct)
+//       .notNull(),
+//     txSig: transaction("tx_sig")
+//       .references(() => transactions.txSig)
+//       .notNull(),
+//     slot: slot("slot").notNull(),
+//   },
+//   (table) => ({
+//     pk: primaryKey(table.watcherAcct, table.txSig),
+//     slotIdx: index("watcher_slot_index").on(table.watcherAcct, table.slot),
+//   })
+// );
 
 export enum IndexerImplementation {
   AutocratV0OpenbookV2 = "AutocratV0OpenbookV2",
@@ -1001,8 +1015,8 @@ export type MarketRecord = typeof markets._.inferInsert;
 export type TakesRecord = typeof takes._.inferInsert;
 export type OrdersRecord = typeof orders._.inferInsert;
 export type TransactionRecord = typeof transactions._.inferInsert;
-export type TransactionWatcherTransactionRecord =
-  typeof transactionWatcherTransactions._.inferInsert;
+// export type TransactionWatcherTransactionRecord =
+//   typeof transactionWatcherTransactions._.inferInsert;
 export type TokenRecord = typeof tokens._.inferInsert;
 export type DaoRecord = typeof daos._.inferInsert;
 export type ProposalRecord = typeof proposals._.inferInsert;
