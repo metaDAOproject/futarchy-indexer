@@ -314,6 +314,7 @@ export const signatures = pgTable(
     created_at: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    queriedAddr: pubkey("queried_addr").notNull(),
   }
 )
 
