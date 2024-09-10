@@ -1,0 +1,1 @@
+ALTER TABLE "signatures" ADD CONSTRAINT "signatures_sequence_num_unique" UNIQUE("sequence_num");

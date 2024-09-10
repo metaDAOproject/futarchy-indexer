@@ -17,6 +17,8 @@ import {
   uuid,
   pgView,
   QueryBuilder,
+  serial,
+  bigserial,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -306,18 +308,22 @@ export enum InstructionType {
 export const signatures = pgTable(
   "signatures",
   {
-    signature: transaction("signature").primaryKey(),
+    signature: transaction("signature").notNull(),
+    queried_addr: pubkey("queried_addr").notNull(),
     slot: slot("slot").notNull(),
-    didErr: boolean("did_err").notNull(),
+    did_err: boolean("did_err").notNull(),
     err: text("err"),
-    blockTime: timestamp("block_time", { withTimezone: true }),
+    block_time: timestamp("block_time", { withTimezone: true }),
     created_at: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    queriedAddr: pubkey("queried_addr").notNull(),
+    sequence_num: bigserial('sequence_num', { mode: 'bigint' }).notNull().unique(),
   },
   (table) => ({
-    slotIdx: index("created_at_index").on(table.created_at),
+    pk: primaryKey(table.signature, table.queried_addr ),
+    // slotIdx: index("created_at_index").on(table.created_at),
+    sequenceNumIdx: index("sequence_num_index").on(table.sequence_num),
+    queriedAddrIdx: index("queried_addr_index").on(table.queried_addr),
   })
 )
 
