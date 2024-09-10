@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "created_at_index" ON "signatures" ("created_at");

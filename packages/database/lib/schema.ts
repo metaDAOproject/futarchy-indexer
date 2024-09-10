@@ -315,7 +315,10 @@ export const signatures = pgTable(
       .notNull()
       .defaultNow(),
     queriedAddr: pubkey("queried_addr").notNull(),
-  }
+  },
+  (table) => ({
+    slotIdx: index("created_at_index").on(table.created_at),
+  })
 )
 
 export const transactions = pgTable(

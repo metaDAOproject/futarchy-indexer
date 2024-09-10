@@ -122,7 +122,7 @@ const backfillAndSubscribe = async (programId: PublicKey) => {
   setInterval(async () => {
     const newSignatures = await insertNewSignatures(programId);
     console.log(`inserted up to ${newSignatures.length} new signatures for ${programId.toString()}`);
-  }, 1000);
+  }, 10_000);
 }
 
 const main = async () => {
