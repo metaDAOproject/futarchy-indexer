@@ -67,6 +67,11 @@ export enum Reactions {
   Celebrate = "Celebrate",
 }
 
+export enum V04SwapType {
+  Buy = "Buy",
+  Sell = "Sell",
+}
+
 type NonEmptyList<E> = [E, ...E[]];
 
 function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
@@ -326,6 +331,36 @@ export const signatures = pgTable(
     queriedAddrIdx: index("queried_addr_index").on(table.queried_addr),
   })
 )
+
+export const v0_4_amm = pgTable(
+  "v0_4_amm",
+  {
+    amm_addr: pubkey("amm_addr").primaryKey(),
+    created_at_slot: slot("created_at_slot").notNull(),
+    lp_mint_addr: pubkey("lp_mint_addr").notNull(),
+    base_mint_addr: pubkey("base_mint_addr").notNull(),
+    quote_mint_addr: pubkey("quote_mint_addr").notNull(),
+    base_reserves: bigint("base_reserves", { mode: "bigint" }).notNull(),
+    quote_reserves: bigint("quote_reserves", { mode: "bigint" }).notNull(),
+    latest_seq_num_applied: bigint("latest_seq_num_applied", { mode: "bigint" })
+      .references(() => signatures.sequence_num).notNull(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  }
+)
+
+// export const v0_4_swaps = pgTable(
+//   "v0_4_swaps",
+//   {
+//     signature: transaction("signature").notNull().primaryKey(),
+//     slot: slot("slot").notNull(),
+//     block_time: timestamp("block_time", { withTimezone: true }).notNull(),
+//     swap_type: pgEnum("swap_type", V04SwapType).notNull(),
+//     amm_addr: pubkey("amm_addr").notNull(),
+//     // input_amount: 
+//   },
+// )
 
 export const transactions = pgTable(
   "transactions",
