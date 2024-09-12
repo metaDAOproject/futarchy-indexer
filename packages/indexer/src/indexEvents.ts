@@ -75,9 +75,20 @@ export const indexAmmEvents = async () => {
 
   const events = transactionResponses.flatMap(r => r ? parseEvents(conditionalVaultClient.vaultProgram, r) : []);
 
-  events.forEach(event => {
+  events.forEach(async event => {
     if (event.name === "InitializeQuestionEvent") {
       console.log(event.data);
+      await usingDb(async (db) => {
+        await db.insert(schema.v0_4_questions).values({
+          question_addr: event.data.question.toString(),
+          is_resolved: false,
+          oracle_addr: event.data.oracle.toString(),
+          num_outcomes: event.data.numOutcomes,
+          payout_numerators: Array(event.data.numOutcomes).fill(0),
+          payout_denominator: 0n,
+          question_id: event.data.questionId,
+        }).onConflictDoNothing();
+      });
     }
   });
 
