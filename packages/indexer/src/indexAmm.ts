@@ -22,6 +22,30 @@ export const indexAmms = async () => {
   const signature = "QKiGuARe4hsK4k6CrnGMvYfMPgxQsPbYY5QKVBXSrJt2Pd7QTEcHhxsas8ftAAjuEYFvSnz9MM2jdoqJcYg8YVg";
 
   // const tx = await txParser.parseTransaction(connection, signature, true);
+
+  // for (const ix of tx ?? []) {
+  //   if (ix.programId.equals(AMM_PROGRAM_ID)) {
+  //     // if (ix.args && typeof ix.args === 'object' && 'unknown' in ix.args) {
+  //       const data = ix.args.unknown as Buffer;
+  //       const eventData = anchor.utils.bytes.base64.encode(data.slice(8));
+  //       // console.log(eventData);
+
+  //       // Decode the event data
+  //       const event = ammClient.program.coder.events.decode(eventData);
+  //       if (event) {
+  //         console.log('Decoded event:', event);
+  //         // Process the event data as needed
+  //       }
+  //     } else {
+  //       console.log('Unexpected ix.args structure:', ix.args);
+  //     }
+  //   // }
+  //     // const event = ammClient.program.coder.events.decode(ix.args);
+  //     // console.log(ix.accounts);
+  // }
+
+  // // console.log(tx);
+  // return;
   const transactionResponse = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
 
   const events: { name: string; data: any }[] = [];
@@ -57,14 +81,27 @@ export const indexAmms = async () => {
     }
   }
 
+  const ix = transactionResponse?.transaction.message.compiledInstructions[0].data;
+
+    // const ixData = anchor.utils.bytes.bs58.decode(
+    //     ix.data
+    //   );
+      const eventData = anchor.utils.bytes.base64.encode(Buffer.from(ix?.slice(8)));
+      const event = ammClient.program.coder.events.decode(eventData);
+      console.log(event);
+
+  console.log(events);
+
+  // return;
+
   console.log(ammClient.program.coder.events)
 
   console.log(events[0].data.swapType);
 
-  return;
+  // return;
   // return events;
 
-  console.log(tx?.meta?.innerInstructions?.[0]);
+  // console.log(tx?.meta?.innerInstructions?.[0]);
   // console.log(ammClient.program.idl.gcc)
 
   // ammClient.program.coder.
@@ -77,7 +114,7 @@ export const indexAmms = async () => {
   // const log = tx.
 
   // ammClient.program.coder.events.decode()
-  return;
+  // return;
 
   const eligibleSignatures = await usingDb(async (db) => {
     const tx = await db.select()

@@ -19,6 +19,7 @@ import {
   QueryBuilder,
   serial,
   bigserial,
+  customType,
 } from "drizzle-orm/pg-core";
 
 // Implementation discussed here https://github.com/metaDAOproject/futarchy-indexer/pull/1
@@ -48,6 +49,15 @@ export enum MarketType {
   JUPITER_QUOTE = "jupiter_quote",
   BIRDEYE_PRICES = "birdeye_prices",
 }
+
+const bytea = customType<{
+  data: Buffer
+  default: false
+}>({
+  dataType() {
+    return 'bytea'
+  },
+})
 
 export enum ProposalStatus {
   Pending = "Pending",
@@ -350,17 +360,38 @@ export const v0_4_amm = pgTable(
   }
 )
 
-// export const v0_4_swaps = pgTable(
-//   "v0_4_swaps",
-//   {
-//     signature: transaction("signature").notNull().primaryKey(),
-//     slot: slot("slot").notNull(),
-//     block_time: timestamp("block_time", { withTimezone: true }).notNull(),
-//     swap_type: pgEnum("swap_type", V04SwapType).notNull(),
-//     amm_addr: pubkey("amm_addr").notNull(),
-//     // input_amount: 
-//   },
-// )
+export const v0_4_swaps = pgTable(
+  "v0_4_swaps",
+  {
+    signature: transaction("signature").notNull().primaryKey(),
+    slot: slot("slot").notNull(),
+    block_time: timestamp("block_time", { withTimezone: true }).notNull(),
+    swap_type: pgEnum("swap_type", V04SwapType).notNull(),
+    amm_addr: pubkey("amm_addr").notNull(),
+    user: pubkey("user").notNull(),
+    input_amount: tokenAmount("input_amount").notNull(),
+    output_amount: tokenAmount("output_amount").notNull(),
+    inserted_at: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+)
+
+export const v0_4_questions = pgTable(
+  "v0_4_questions",
+  {
+    question_addr: pubkey("question_addr").primaryKey(),
+    is_resolved: boolean("is_resolved").notNull(),
+    oracle_addr: pubkey("oracle_addr").notNull(),
+    num_outcomes: smallint("num_outcomes").notNull(),
+    payout_numerators: jsonb("payout_numerators").notNull(),
+    payout_denominator: bigint("payout_denominator", { mode: "bigint" }).notNull(),
+    question_id: jsonb("question_id").notNull(),
+    inserted_at: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  }
+)
 
 export const transactions = pgTable(
   "transactions",

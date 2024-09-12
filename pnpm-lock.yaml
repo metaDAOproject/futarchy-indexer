@@ -77,8 +77,8 @@ importers:
         specifier: ^15.1.4
         version: 15.1.4
       '@metadaoproject/futarchy':
-        specifier: 0.4.0-alpha.7
-        version: 0.4.0-alpha.7(fastestsmallesttextencoderdecoder@1.0.22)
+        specifier: 0.4.0-alpha.9
+        version: 0.4.0-alpha.9(fastestsmallesttextencoderdecoder@1.0.22)
       '@metadaoproject/futarchy-sdk':
         specifier: 4.0.0-alpha.31
         version: 4.0.0-alpha.31(arweave@1.15.1)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.9.0)
@@ -1539,8 +1539,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@metadaoproject/futarchy@0.4.0-alpha.7(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-0y8WapIFto1guS2Dmw4qDThyVSgGZ7wNgjzEGjvll20gdoxyLfRvrE7h3UT+n5qVNVQHOLDCP77RTworkErA5Q==}
+  /@metadaoproject/futarchy@0.4.0-alpha.9(fastestsmallesttextencoderdecoder@1.0.22):
+    resolution: {integrity: sha512-1w4QPgA95zouhL8KGZvLkc06O8vesM+AGwW9sBXQkXns3AB3oM6fQiXO4EPGVhpoSZ2jesMyazbziFD9hZE1Bw==}
     dependencies:
       '@coral-xyz/anchor': 0.29.0
       '@metaplex-foundation/umi': 0.9.2
