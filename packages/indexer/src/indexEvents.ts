@@ -75,9 +75,9 @@ export const indexAmmEvents = async () => {
 
   const events = transactionResponses.flatMap(r => r ? parseEvents(ammClient.program, r) : []);
 
-  events.forEach(async event => {
+  events.forEach(async event => {0
     if (event.name === "CreateAmmEvent") {
-      console.log(event.data);
+      // TODO check if amm already exists rather than entering this
       await usingDb(async (db) => {
         const existingToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.lpMint.toString())).limit(1);
         if (existingToken.length === 0) {
@@ -129,8 +129,24 @@ export const indexAmmEvents = async () => {
           quote_mint_addr: event.data.quoteMint.toString(),
           base_reserves: 0n,
           quote_reserves: 0n,
-        });
+        }).onConflictDoNothing();
       });
+    } else if (event.name === "AddLiquidityEvent") {
+      await usingDb(async (db) => {
+        await db.update(schema.v0_4_amms).set({
+          base_reserves: BigInt(event.data.common.postBaseReserves.toString()),
+          quote_reserves: BigInt(event.data.common.postQuoteReserves.toString()),
+        }).where(eq(schema.v0_4_amms.amm_addr, event.data.common.amm.toString()));
+      });
+    } else if (event.name === "SwapEvent") {
+      await usingDb(async (db) => {
+        await db.update(schema.v0_4_amms).set({
+          base_reserves: BigInt(event.data.common.postBaseReserves.toString()),
+          quote_reserves: BigInt(event.data.common.postQuoteReserves.toString()),
+        }).where(eq(schema.v0_4_amms.amm_addr, event.data.common.amm.toString()));
+      });
+    } else {
+      console.log("unknown event", event);
     }
   });
 }
