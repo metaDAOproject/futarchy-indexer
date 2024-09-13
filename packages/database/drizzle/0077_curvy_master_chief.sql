@@ -1,0 +1,1 @@
+ALTER TABLE "v0_4_metric_decisions" ALTER COLUMN "dao_id" SET NOT NULL;

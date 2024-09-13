@@ -53,7 +53,91 @@ const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionRespo
 }
 
 export const indexAmmEvents = async () => {
-  console.log("indexAmmEvents2");
+  const eligibleSignatures = await usingDb(async (db) => {
+    const tx = await db.select()
+      .from(schema.signatures)
+      .where(eq(schema.signatures.queried_addr, AMM_PROGRAM_ID.toString()))
+      .orderBy(desc(schema.signatures.slot))
+      .limit(100)
+    return tx;
+  });
+
+  const signature = eligibleSignatures[0].signature;
+
+  console.log("signature", signature);
+
+  const transactionResponses = await connection.getTransactions(eligibleSignatures.map(s => s.signature), { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
+
+  if (!transactionResponses || transactionResponses.length === 0) {
+    console.log("No transaction response");
+    return;
+  }
+
+  const events = transactionResponses.flatMap(r => r ? parseEvents(ammClient.program, r) : []);
+
+  events.forEach(async event => {
+    if (event.name === "CreateAmmEvent") {
+      console.log(event.data);
+      await usingDb(async (db) => {
+        const existingToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.lpMint.toString())).limit(1);
+        if (existingToken.length === 0) {
+          console.log("inserting token", event.data.lpMint.toString());
+          // const mint: token.Mint = await token.getMint(connection, event.data.lpMint);
+          await db.insert(schema.tokens).values({
+            mintAcct: event.data.lpMint.toString(),
+            symbol: event.data.lpMint.toString().slice(0, 3),
+            name: event.data.lpMint.toString().slice(0, 3),
+            decimals: 9,
+            supply: 0n,
+            updatedAt: new Date(),
+          }).onConflictDoNothing();
+        }
+
+        const existingBaseToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.baseMint.toString())).limit(1);
+        if (existingBaseToken.length === 0) {
+          console.log("inserting token", event.data.baseMint.toString());
+          const mint: token.Mint = await token.getMint(connection, event.data.baseMint);
+          await db.insert(schema.tokens).values({
+            mintAcct: event.data.baseMint.toString(),
+            symbol: event.data.baseMint.toString().slice(0, 3),
+            name: event.data.baseMint.toString().slice(0, 3),
+            decimals: mint.decimals,
+            supply: mint.supply,
+            updatedAt: new Date(),
+          }).onConflictDoNothing();
+        }
+
+        const existingQuoteToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.quoteMint.toString())).limit(1);
+        if (existingQuoteToken.length === 0) {
+          console.log("inserting token", event.data.quoteMint.toString());
+          const mint: token.Mint = await token.getMint(connection, event.data.quoteMint);
+          await db.insert(schema.tokens).values({
+            mintAcct: event.data.quoteMint.toString(),
+            symbol: event.data.quoteMint.toString().slice(0, 3),
+            name: event.data.quoteMint.toString().slice(0, 3),
+            decimals: mint.decimals,
+            supply: mint.supply,
+            updatedAt: new Date(),
+          }).onConflictDoNothing();
+        }
+
+        await db.insert(schema.v0_4_amms).values({
+          amm_addr: event.data.common.amm.toString(),
+          lp_mint_addr: event.data.lpMint.toString(),
+          created_at_slot: BigInt(event.data.common.slot.toString()),
+          base_mint_addr: event.data.baseMint.toString(),
+          quote_mint_addr: event.data.quoteMint.toString(),
+          base_reserves: 0n,
+          quote_reserves: 0n,
+        });
+      });
+    }
+  });
+}
+
+
+
+export const indexVaultEvents = async () => {
   const eligibleSignatures = await usingDb(async (db) => {
     const tx = await db.select()
       .from(schema.signatures)

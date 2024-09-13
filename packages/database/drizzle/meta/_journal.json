@@ -526,6 +526,27 @@
       "when": 1726187343137,
       "tag": "0074_bouncy_mikhail_rasputin",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "5",
+      "when": 1726241165690,
+      "tag": "0075_stiff_tiger_shark",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "5",
+      "when": 1726246257132,
+      "tag": "0076_needy_gertrude_yorkes",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "5",
+      "when": 1726246659109,
+      "tag": "0077_curvy_master_chief",
+      "breakpoints": true
     }
   ]
 }

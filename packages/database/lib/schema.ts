@@ -342,19 +342,39 @@ export const signatures = pgTable(
   })
 )
 
-export const v0_4_amm = pgTable(
-  "v0_4_amm",
+export const v0_4_amms = pgTable(
+  "v0_4_amms",
   {
     amm_addr: pubkey("amm_addr").primaryKey(),
     created_at_slot: slot("created_at_slot").notNull(),
-    lp_mint_addr: pubkey("lp_mint_addr").notNull(),
-    base_mint_addr: pubkey("base_mint_addr").notNull(),
-    quote_mint_addr: pubkey("quote_mint_addr").notNull(),
+    lp_mint_addr: pubkey("lp_mint_addr").notNull().references(() => tokens.mintAcct),
+    base_mint_addr: pubkey("base_mint_addr").notNull().references(() => tokens.mintAcct),
+    quote_mint_addr: pubkey("quote_mint_addr").notNull().references(() => tokens.mintAcct),
     base_reserves: bigint("base_reserves", { mode: "bigint" }).notNull(),
     quote_reserves: bigint("quote_reserves", { mode: "bigint" }).notNull(),
-    latest_seq_num_applied: bigint("latest_seq_num_applied", { mode: "bigint" })
-      .references(() => signatures.sequence_num).notNull(),
-    created_at: timestamp("created_at", { withTimezone: true })
+    inserted_at: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  }
+)
+
+// TODO make all the fields camel-cased like the rest of the schema
+
+export const v0_4_metric_decisions = pgTable(
+  "v0_4_metric_decisions",
+  {
+    id: serial("id").primaryKey(),
+    dao_id: bigint("dao_id", { mode: "bigint" }).references(
+      () => daoDetails.daoId
+    ).notNull(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    outcome_question_addr: pubkey("outcome_question_addr").notNull().references(() => v0_4_questions.question_addr),
+    metric_question_addr: pubkey("metric_question_addr").notNull().references(() => v0_4_questions.question_addr),
+    outcome_vault_addr: pubkey("outcome_vault_addr").notNull().references(() => v0_4_conditional_vaults.conditional_vault_addr),
+    metric_vault_addr: pubkey("metric_vault_addr").notNull().references(() => v0_4_conditional_vaults.conditional_vault_addr),
+    amm_addr: pubkey("amm_addr").notNull().references(() => v0_4_amms.amm_addr),
+    inserted_at: timestamp("inserted_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
   }
