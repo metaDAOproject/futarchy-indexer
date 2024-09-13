@@ -393,6 +393,23 @@ export const v0_4_questions = pgTable(
   }
 )
 
+export const v0_4_conditional_vaults = pgTable(
+  "v0_4_conditional_vaults",
+  {
+    conditional_vault_addr: pubkey("conditional_vault_addr").primaryKey(),
+    question_addr: pubkey("question_addr").references(() => v0_4_questions.question_addr).notNull()
+      .references(() => v0_4_questions.question_addr),
+    underlying_mint_acct: pubkey("underlying_mint_acct").notNull()
+      .references(() => tokens.mintAcct),
+    underlying_token_acct: pubkey("underlying_token_acct").notNull()
+      .references(() => tokenAccts.tokenAcct),
+    pda_bump: smallint("pda_bump").notNull(),
+    inserted_at: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  }
+);
+
 export const transactions = pgTable(
   "transactions",
   {

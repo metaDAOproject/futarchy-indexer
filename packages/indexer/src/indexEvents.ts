@@ -1,9 +1,10 @@
-import { AMM_PROGRAM_ID, AmmClient, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultClient } from "@metadaoproject/futarchy/v0.4";
+import { AMM_PROGRAM_ID, AmmClient, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultClient, getVaultAddr } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq, desc } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, Connection, Keypair, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import { V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
+import * as token from "@solana/spl-token";
 
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
 
@@ -77,7 +78,6 @@ export const indexAmmEvents = async () => {
 
   events.forEach(async event => {
     if (event.name === "InitializeQuestionEvent") {
-      console.log(event.data);
       await usingDb(async (db) => {
         await db.insert(schema.v0_4_questions).values({
           question_addr: event.data.question.toString(),
@@ -89,6 +89,63 @@ export const indexAmmEvents = async () => {
           question_id: event.data.questionId,
         }).onConflictDoNothing();
       });
+    } else if (event.name === "InitializeConditionalVaultEvent") {
+      const vaultAddr = getVaultAddr(conditionalVaultClient.vaultProgram.programId, event.data.question, event.data.underlyingTokenMint)[0];
+      await usingDb(async (db) => {
+        await db.transaction(async (trx) => {
+          // Check and insert question if it doesn't exist
+          const existingQuestion = await trx.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.question_addr, event.data.question.toString())).limit(1);
+          if (existingQuestion.length === 0) {
+            await trx.insert(schema.v0_4_questions).values({
+              question_addr: event.data.question.toString(),
+              is_resolved: false,
+              oracle_addr: event.data.oracle.toString(),
+              num_outcomes: event.data.numOutcomes,
+              payout_numerators: Array(event.data.numOutcomes).fill(0n),
+              payout_denominator: 0n,
+              question_id: event.data.questionId,
+            });
+          }
+
+          // Check and insert underlying token if it doesn't exist
+          const existingToken = await trx.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.underlyingTokenMint.toString())).limit(1);
+          if (existingToken.length === 0) {
+            console.log("inserting token", event.data.underlyingTokenMint.toString());
+            const mint: token.Mint = await token.getMint(connection, event.data.underlyingTokenMint);
+            await trx.insert(schema.tokens).values({
+              mintAcct: event.data.underlyingTokenMint.toString(),
+              symbol: event.data.underlyingTokenMint.toString().slice(0, 3),
+              name: event.data.underlyingTokenMint.toString().slice(0, 3),
+              decimals: mint.decimals,
+              supply: mint.supply,
+              updatedAt: new Date(),
+            });
+          }
+
+          // Check and insert token account if it doesn't exist
+          const existingTokenAcct = await trx.select().from(schema.tokenAccts).where(eq(schema.tokenAccts.tokenAcct, event.data.vaultUnderlyingTokenAccount.toString())).limit(1);
+          if (existingTokenAcct.length === 0) {
+            await trx.insert(schema.tokenAccts).values({
+              tokenAcct: event.data.vaultUnderlyingTokenAccount.toString(),
+              mintAcct: event.data.underlyingTokenMint.toString(),
+              ownerAcct: event.data.vaultUnderlyingTokenAccount.toString(),
+              amount: 0n,
+              // Add other required fields for token_accts table
+            });
+          }
+
+          // Insert the conditional vault
+          await trx.insert(schema.v0_4_conditional_vaults).values({
+            conditional_vault_addr: vaultAddr.toString(),
+            question_addr: event.data.question.toString(),
+            underlying_mint_acct: event.data.underlyingTokenMint.toString(),
+            underlying_token_acct: event.data.vaultUnderlyingTokenAccount.toString(),
+            pda_bump: event.data.pdaBump,
+          }).onConflictDoNothing();
+        });
+      });
+    } else {
+      console.log("unknown event", event);
     }
   });
 
