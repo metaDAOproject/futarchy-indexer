@@ -292,6 +292,7 @@ export const twaps = pgTable(
 
 export enum InstructionType {
   VaultMintConditionalTokens = "vault_mint_conditional_tokens",
+  VaultMintAndAmmSwap = "vault_mint_and_amm_swap",
   AmmSwap = "amm_swap",
   AmmDeposit = "amm_deposit",
   AmmWithdraw = "amm_withdraw",

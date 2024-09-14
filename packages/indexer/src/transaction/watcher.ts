@@ -470,7 +470,14 @@ async function handleNewTransaction(
 export function getMainIxTypeFromTransaction(
   tx: Transaction
 ): InstructionType | null {
-  if (tx.instructions.some((ix) => ix.name === "swap")) {
+  const hasSwap = tx.instructions.some((ix) => ix.name === "swap");
+  const hasMint = tx.instructions.some(
+    (ix) => ix.name === "mintConditionalTokens"
+  );
+  if (hasSwap && hasMint) {
+    return InstructionType.VaultMintAndAmmSwap;
+  }
+  if (hasSwap) {
     return InstructionType.AmmSwap;
   }
   if (tx.instructions.some((ix) => ix.name === "addLiquidity")) {
@@ -485,7 +492,7 @@ export function getMainIxTypeFromTransaction(
   if (tx.instructions.some((ix) => ix.name === "cancelOrder")) {
     return InstructionType.OpenbookCancelOrder;
   }
-  if (tx.instructions.some((ix) => ix.name === "mintConditionalTokens")) {
+  if (hasMint) {
     return InstructionType.VaultMintConditionalTokens;
   }
   if (tx.instructions.some((ix) => ix.name === "initializeProposal")) {
