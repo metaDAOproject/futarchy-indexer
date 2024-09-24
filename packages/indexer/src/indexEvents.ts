@@ -165,15 +165,42 @@ export const indexAmmEvents = async () => {
       } else if (event.name === "SwapEvent") {
         console.log("swap event", event);
 
-        // await usingDb(async (db) => {
-        //   await db.insert(schema.v0_4_swaps).values({
-        //     signature:
-        //   })
-        //   // await db.update(schema.v0_4_amms).set({
-        //   //   base_reserves: BigInt(event.data.common.postBaseReserves.toString()),
-        //   //   quote_reserves: BigInt(event.data.common.postQuoteReserves.toString()),
-        //   // }).where(eq(schema.v0_4_amms.amm_addr, event.data.common.amm.toString()));
-        // });
+        await usingDb(async (db) => {
+          await db.insert(schema.v0_4_swaps).values({
+            signature: signature,
+            slot: BigInt(transactionResponses[i].slot),
+            blockTime: new Date(transactionResponses[i].blockTime * 1000),
+            swapType: event.data.swapType.buy ? V04SwapType.Buy : V04SwapType.Sell,
+            ammAddr: event.data.common.amm.toString(),
+            userAddr: event.data.common.user.toString(),
+            inputAmount: event.data.inputAmount.toString(),
+            outputAmount: event.data.outputAmount.toString(),
+          }).onConflictDoNothing();
+
+          const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString())).limit(1);
+
+          if (amm.length === 0) {
+            // should never happen
+            console.log("amm not found", event.data.common.amm.toString());
+            return;
+          }
+          if (amm[0].latestAmmSeqNumApplied >= BigInt(event.data.common.seqNum.toString())) {
+            console.log("already applied", event.data.common.seqNum.toString());
+            // already applied
+            return;
+          }
+          await db.update(schema.v0_4_amms).set({
+            baseReserves: BigInt(event.data.common.postBaseReserves.toString()),
+            quoteReserves: BigInt(event.data.common.postQuoteReserves.toString()),
+            latestAmmSeqNumApplied: BigInt(event.data.common.seqNum.toString()),
+          }).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString()));
+
+
+          // await db.update(schema.v0_4_amms).set({
+          //   base_reserves: BigInt(event.data.common.postBaseReserves.toString()),
+          //   quote_reserves: BigInt(event.data.common.postQuoteReserves.toString()),
+          // }).where(eq(schema.v0_4_amms.amm_addr, event.data.common.amm.toString()));
+        });
       } else {
         console.log("unknown event", event);
       }
