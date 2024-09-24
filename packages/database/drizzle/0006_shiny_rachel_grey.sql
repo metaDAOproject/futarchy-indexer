@@ -1,1 +1,0 @@
-ALTER TABLE "transaction_watchers" RENAME COLUMN "latest_slot" TO "checked_up_to_slot";

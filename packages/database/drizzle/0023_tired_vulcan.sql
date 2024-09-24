@@ -1,2 +1,0 @@
-ALTER TABLE "twaps" DROP CONSTRAINT "twaps_market_acct_updated_slot_pk";--> statement-breakpoint
-ALTER TABLE "twaps" ADD CONSTRAINT "twaps_updated_slot_market_acct_pk" PRIMARY KEY("updated_slot","market_acct");
