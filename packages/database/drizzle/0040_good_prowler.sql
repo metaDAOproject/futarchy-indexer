@@ -1,1 +1,0 @@
-ALTER TABLE "prices" ADD COLUMN "created_by" text;

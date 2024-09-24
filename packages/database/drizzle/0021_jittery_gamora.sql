@@ -1,1 +1,0 @@
-ALTER TABLE "indexer_account_dependencies" DROP CONSTRAINT "indexer_account_dependencies_acct_transaction_watchers_acct_fk";

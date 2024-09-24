@@ -1,1 +1,0 @@
-ALTER TABLE "daos" ADD COLUMN "pass_threshold_bps" bigint;

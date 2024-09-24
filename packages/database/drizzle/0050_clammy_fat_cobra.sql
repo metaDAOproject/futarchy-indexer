@@ -1,1 +1,0 @@
-ALTER TABLE "token_accts" ALTER COLUMN "status" SET DEFAULT 'enabled';

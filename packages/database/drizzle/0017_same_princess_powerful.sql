@@ -1,1 +1,0 @@
-ALTER TABLE "daos" ADD CONSTRAINT "daos_treasury_acct_unique" UNIQUE("treasury_acct");

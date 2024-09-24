@@ -1,1 +1,0 @@
-ALTER TABLE "transaction_watchers" ADD COLUMN "updated_at" timestamp;
