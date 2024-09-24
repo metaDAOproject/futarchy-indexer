@@ -75,7 +75,7 @@ export const indexAmmEvents = async () => {
 
   const events = transactionResponses.flatMap(r => r ? parseEvents(ammClient.program, r) : []);
 
-  events.forEach(async event => {0
+  events.forEach(async event => {
     if (event.name === "CreateAmmEvent") {
       // TODO check if amm already exists rather than entering this
       await usingDb(async (db) => {
@@ -132,13 +132,29 @@ export const indexAmmEvents = async () => {
           quoteReserves: 0n,
         }).onConflictDoNothing();
       });
-    // } else if (event.name === "AddLiquidityEvent") {
-    //   await usingDb(async (db) => {
-    //     await db.update(schema.v0_4_amms).set({
-    //       base_reserves: BigInt(event.data.common.postBaseReserves.toString()),
-    //       quote_reserves: BigInt(event.data.common.postQuoteReserves.toString()),
-    //     }).where(eq(schema.v0_4_amms.amm_addr, event.data.common.amm.toString()));
-    //   });
+    } else if (event.name === "AddLiquidityEvent") {
+      await usingDb(async (db) => {
+        const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString())).limit(1);
+
+        if (amm.length === 0) {
+          // should never happen
+          console.log("amm not found", event.data.common.amm.toString());
+          return;
+        }
+        if (amm[0].latestAmmSeqNumApplied >= BigInt(event.data.common.seqNum.toString())) {
+          console.log("already applied", event.data.common.seqNum.toString());
+          // already applied
+          return;
+        }
+        await db.update(schema.v0_4_amms).set({
+          baseReserves: BigInt(event.data.common.postBaseReserves.toString()),
+          quoteReserves: BigInt(event.data.common.postQuoteReserves.toString()),
+          latestAmmSeqNumApplied: BigInt(event.data.common.seqNum.toString()),
+        }).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString()));
+
+        console.log("updated amm", event.data.common.amm.toString());
+        console.log("time", new Date().getTime());
+      });
     // } else if (event.name === "SwapEvent") {
     //   await usingDb(async (db) => {
     //     await db.update(schema.v0_4_amms).set({
