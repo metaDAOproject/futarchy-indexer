@@ -8,6 +8,13 @@
       "when": 1727196713059,
       "tag": "0000_unique_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1727212825040,
+      "tag": "0001_chubby_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }
