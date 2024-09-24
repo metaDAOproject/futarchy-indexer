@@ -66,106 +66,119 @@ export const indexAmmEvents = async () => {
 
   console.log("signature", signature);
 
-  const transactionResponses = await connection.getTransactions(eligibleSignatures.map(s => s.signature), { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
-
-  if (!transactionResponses || transactionResponses.length === 0) {
-    console.log("No transaction response");
+  if (eligibleSignatures.length === 0) {
+    console.log("No signatures");
     return;
   }
 
-  const events = transactionResponses.flatMap(r => r ? parseEvents(ammClient.program, r) : []);
+  const transactionResponses = await connection.getTransactions(eligibleSignatures.map(s => s.signature), { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
 
-  events.forEach(async event => {
-    if (event.name === "CreateAmmEvent") {
-      // TODO check if amm already exists rather than entering this
-      await usingDb(async (db) => {
-        const existingToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.lpMint.toString())).limit(1);
-        if (existingToken.length === 0) {
-          console.log("inserting token", event.data.lpMint.toString());
-          // const mint: token.Mint = await token.getMint(connection, event.data.lpMint);
-          await db.insert(schema.tokens).values({
-            mintAcct: event.data.lpMint.toString(),
-            symbol: event.data.lpMint.toString().slice(0, 3),
-            name: event.data.lpMint.toString().slice(0, 3),
-            decimals: 9,
-            supply: 0n,
-            updatedAt: new Date(),
-          }).onConflictDoNothing();
-        }
-
-        const existingBaseToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.baseMint.toString())).limit(1);
-        if (existingBaseToken.length === 0) {
-          console.log("inserting token", event.data.baseMint.toString());
-          const mint: token.Mint = await token.getMint(connection, event.data.baseMint);
-          await db.insert(schema.tokens).values({
-            mintAcct: event.data.baseMint.toString(),
-            symbol: event.data.baseMint.toString().slice(0, 3),
-            name: event.data.baseMint.toString().slice(0, 3),
-            decimals: mint.decimals,
-            supply: mint.supply,
-            updatedAt: new Date(),
-          }).onConflictDoNothing();
-        }
-
-        const existingQuoteToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.quoteMint.toString())).limit(1);
-        if (existingQuoteToken.length === 0) {
-          console.log("inserting token", event.data.quoteMint.toString());
-          const mint: token.Mint = await token.getMint(connection, event.data.quoteMint);
-          await db.insert(schema.tokens).values({
-            mintAcct: event.data.quoteMint.toString(),
-            symbol: event.data.quoteMint.toString().slice(0, 3),
-            name: event.data.quoteMint.toString().slice(0, 3),
-            decimals: mint.decimals,
-            supply: mint.supply,
-            updatedAt: new Date(),
-          }).onConflictDoNothing();
-        }
-
-        await db.insert(schema.v0_4_amms).values({
-          ammAddr: event.data.common.amm.toString(),
-          lpMintAddr: event.data.lpMint.toString(),
-          createdAtSlot: BigInt(event.data.common.slot.toString()),
-          baseMintAddr: event.data.baseMint.toString(),
-          quoteMintAddr: event.data.quoteMint.toString(),
-          latestAmmSeqNumApplied: 0n,
-          baseReserves: 0n,
-          quoteReserves: 0n,
-        }).onConflictDoNothing();
-      });
-    } else if (event.name === "AddLiquidityEvent") {
-      await usingDb(async (db) => {
-        const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString())).limit(1);
-
-        if (amm.length === 0) {
-          // should never happen
-          console.log("amm not found", event.data.common.amm.toString());
-          return;
-        }
-        if (amm[0].latestAmmSeqNumApplied >= BigInt(event.data.common.seqNum.toString())) {
-          console.log("already applied", event.data.common.seqNum.toString());
-          // already applied
-          return;
-        }
-        await db.update(schema.v0_4_amms).set({
-          baseReserves: BigInt(event.data.common.postBaseReserves.toString()),
-          quoteReserves: BigInt(event.data.common.postQuoteReserves.toString()),
-          latestAmmSeqNumApplied: BigInt(event.data.common.seqNum.toString()),
-        }).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString()));
-
-        console.log("updated amm", event.data.common.amm.toString());
-        console.log("time", new Date().getTime());
-      });
-    // } else if (event.name === "SwapEvent") {
-    //   await usingDb(async (db) => {
-    //     await db.update(schema.v0_4_amms).set({
-    //       base_reserves: BigInt(event.data.common.postBaseReserves.toString()),
-    //       quote_reserves: BigInt(event.data.common.postQuoteReserves.toString()),
-    //     }).where(eq(schema.v0_4_amms.amm_addr, event.data.common.amm.toString()));
-    //   });
-    } else {
-      console.log("unknown event", event);
+  for (let i = 0; i < eligibleSignatures.length; i++) {
+    if (transactionResponses[i] == null) {
+      console.log("No transaction response");
+      continue;
     }
-  });
+
+    const signature = eligibleSignatures[i].signature;
+    const events = parseEvents(ammClient.program, transactionResponses[i] as VersionedTransactionResponse);
+
+    events.forEach(async event => {
+      if (event.name === "CreateAmmEvent") {
+        // TODO check if amm already exists rather than entering this
+        await usingDb(async (db) => {
+          const existingToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.lpMint.toString())).limit(1);
+          if (existingToken.length === 0) {
+            console.log("inserting token", event.data.lpMint.toString());
+            // const mint: token.Mint = await token.getMint(connection, event.data.lpMint);
+            await db.insert(schema.tokens).values({
+              mintAcct: event.data.lpMint.toString(),
+              symbol: event.data.lpMint.toString().slice(0, 3),
+              name: event.data.lpMint.toString().slice(0, 3),
+              decimals: 9,
+              supply: 0n,
+              updatedAt: new Date(),
+            }).onConflictDoNothing();
+          }
+
+          const existingBaseToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.baseMint.toString())).limit(1);
+          if (existingBaseToken.length === 0) {
+            console.log("inserting token", event.data.baseMint.toString());
+            const mint: token.Mint = await token.getMint(connection, event.data.baseMint);
+            await db.insert(schema.tokens).values({
+              mintAcct: event.data.baseMint.toString(),
+              symbol: event.data.baseMint.toString().slice(0, 3),
+              name: event.data.baseMint.toString().slice(0, 3),
+              decimals: mint.decimals,
+              supply: mint.supply,
+              updatedAt: new Date(),
+            }).onConflictDoNothing();
+          }
+
+          const existingQuoteToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, event.data.quoteMint.toString())).limit(1);
+          if (existingQuoteToken.length === 0) {
+            console.log("inserting token", event.data.quoteMint.toString());
+            const mint: token.Mint = await token.getMint(connection, event.data.quoteMint);
+            await db.insert(schema.tokens).values({
+              mintAcct: event.data.quoteMint.toString(),
+              symbol: event.data.quoteMint.toString().slice(0, 3),
+              name: event.data.quoteMint.toString().slice(0, 3),
+              decimals: mint.decimals,
+              supply: mint.supply,
+              updatedAt: new Date(),
+            }).onConflictDoNothing();
+          }
+
+          await db.insert(schema.v0_4_amms).values({
+            ammAddr: event.data.common.amm.toString(),
+            lpMintAddr: event.data.lpMint.toString(),
+            createdAtSlot: BigInt(event.data.common.slot.toString()),
+            baseMintAddr: event.data.baseMint.toString(),
+            quoteMintAddr: event.data.quoteMint.toString(),
+            latestAmmSeqNumApplied: 0n,
+            baseReserves: 0n,
+            quoteReserves: 0n,
+          }).onConflictDoNothing();
+        });
+      } else if (event.name === "AddLiquidityEvent") {
+        await usingDb(async (db) => {
+          const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString())).limit(1);
+
+          if (amm.length === 0) {
+            // should never happen
+            console.log("amm not found", event.data.common.amm.toString());
+            return;
+          }
+          if (amm[0].latestAmmSeqNumApplied >= BigInt(event.data.common.seqNum.toString())) {
+            console.log("already applied", event.data.common.seqNum.toString());
+            // already applied
+            return;
+          }
+          await db.update(schema.v0_4_amms).set({
+            baseReserves: BigInt(event.data.common.postBaseReserves.toString()),
+            quoteReserves: BigInt(event.data.common.postQuoteReserves.toString()),
+            latestAmmSeqNumApplied: BigInt(event.data.common.seqNum.toString()),
+          }).where(eq(schema.v0_4_amms.ammAddr, event.data.common.amm.toString()));
+
+          console.log("updated amm", event.data.common.amm.toString());
+          console.log("time", new Date().getTime());
+        });
+      } else if (event.name === "SwapEvent") {
+        console.log("swap event", event);
+
+        // await usingDb(async (db) => {
+        //   await db.insert(schema.v0_4_swaps).values({
+        //     signature:
+        //   })
+        //   // await db.update(schema.v0_4_amms).set({
+        //   //   base_reserves: BigInt(event.data.common.postBaseReserves.toString()),
+        //   //   quote_reserves: BigInt(event.data.common.postQuoteReserves.toString()),
+        //   // }).where(eq(schema.v0_4_amms.amm_addr, event.data.common.amm.toString()));
+        // });
+      } else {
+        console.log("unknown event", event);
+      }
+    });
+  }
 }
 
 
@@ -174,7 +187,7 @@ export const indexVaultEvents = async () => {
   const eligibleSignatures = await usingDb(async (db) => {
     const tx = await db.select()
       .from(schema.signatures)
-      .where(eq(schema.signatures.queried_addr, CONDITIONAL_VAULT_PROGRAM_ID.toString()))
+      .where(eq(schema.signatures.queriedAddr, CONDITIONAL_VAULT_PROGRAM_ID.toString()))
       .orderBy(desc(schema.signatures.slot))
       .limit(100)
     return tx;
@@ -182,7 +195,7 @@ export const indexVaultEvents = async () => {
 
   const signature = eligibleSignatures[0].signature;
 
-  console.log("signature", signature);
+  console.log("vault signature", signature);
 
   const transactionResponses = await connection.getTransactions(eligibleSignatures.map(s => s.signature), { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
 
@@ -197,13 +210,13 @@ export const indexVaultEvents = async () => {
     if (event.name === "InitializeQuestionEvent") {
       await usingDb(async (db) => {
         await db.insert(schema.v0_4_questions).values({
-          question_addr: event.data.question.toString(),
-          is_resolved: false,
-          oracle_addr: event.data.oracle.toString(),
-          num_outcomes: event.data.numOutcomes,
-          payout_numerators: Array(event.data.numOutcomes).fill(0),
-          payout_denominator: 0n,
-          question_id: event.data.questionId,
+          questionAddr: event.data.question.toString(),
+          isResolved: false,
+          oracleAddr: event.data.oracle.toString(),
+          numOutcomes: event.data.numOutcomes,
+          payoutNumerators: Array(event.data.numOutcomes).fill(0),
+          payoutDenominator: 0n,
+          questionId: event.data.questionId,
         }).onConflictDoNothing();
       });
     } else if (event.name === "InitializeConditionalVaultEvent") {
@@ -211,16 +224,16 @@ export const indexVaultEvents = async () => {
       await usingDb(async (db) => {
         await db.transaction(async (trx) => {
           // Check and insert question if it doesn't exist
-          const existingQuestion = await trx.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.question_addr, event.data.question.toString())).limit(1);
+          const existingQuestion = await trx.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, event.data.question.toString())).limit(1);
           if (existingQuestion.length === 0) {
             await trx.insert(schema.v0_4_questions).values({
-              question_addr: event.data.question.toString(),
-              is_resolved: false,
-              oracle_addr: event.data.oracle.toString(),
-              num_outcomes: event.data.numOutcomes,
-              payout_numerators: Array(event.data.numOutcomes).fill(0n),
-              payout_denominator: 0n,
-              question_id: event.data.questionId,
+              questionAddr: event.data.question.toString(),
+              isResolved: false,
+              oracleAddr: event.data.oracle.toString(),
+              numOutcomes: event.data.numOutcomes,
+              payoutNumerators: Array(event.data.numOutcomes).fill(0),
+              payoutDenominator: 0n,
+              questionId: event.data.questionId,
             });
           }
 
@@ -253,11 +266,12 @@ export const indexVaultEvents = async () => {
 
           // Insert the conditional vault
           await trx.insert(schema.v0_4_conditional_vaults).values({
-            conditional_vault_addr: vaultAddr.toString(),
-            question_addr: event.data.question.toString(),
-            underlying_mint_acct: event.data.underlyingTokenMint.toString(),
-            underlying_token_acct: event.data.vaultUnderlyingTokenAccount.toString(),
-            pda_bump: event.data.pdaBump,
+            conditionalVaultAddr: vaultAddr.toString(),
+            questionAddr: event.data.question.toString(),
+            underlyingMintAcct: event.data.underlyingTokenMint.toString(),
+            underlyingTokenAcct: event.data.vaultUnderlyingTokenAccount.toString(),
+            pdaBump: event.data.pdaBump,
+            latestVaultSeqNumApplied: 0n,
           }).onConflictDoNothing();
         });
       });
