@@ -6,16 +6,7 @@ import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import { V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
-const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
-
-if (!RPC_ENDPOINT) {
-  throw new Error("RPC_ENDPOINT is not set");
-}
-
-const connection = new Connection(RPC_ENDPOINT);
-
-const ammClient = AmmClient.createClient({ provider: new AnchorProvider(connection, new Wallet(Keypair.generate()), {}) });
-const conditionalVaultClient = ConditionalVaultClient.createClient({ provider: new AnchorProvider(connection, new Wallet(Keypair.generate()), {}) });
+import { connection, ammClient, conditionalVaultClient } from "./connection";
 
 const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionResponse: VersionedTransactionResponse | TransactionResponse): { name: string; data: any }[] => {
   const events: { name: string; data: any }[] = [];
