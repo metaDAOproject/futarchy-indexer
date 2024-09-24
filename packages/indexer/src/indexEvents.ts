@@ -1,4 +1,4 @@
-import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmClient, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultClient, CreateAmmEvent, getVaultAddr, SwapEvent } from "@metadaoproject/futarchy/v0.4";
+import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmClient, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultClient, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq, desc } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, Connection, VersionedTransactionResponse } from "@solana/web3.js";
@@ -6,6 +6,7 @@ import { V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
 import { connection, ammClient, conditionalVaultClient } from "./connection";
+import { Program } from "@coral-xyz/anchor";
 
 const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionResponse: VersionedTransactionResponse | TransactionResponse): { name: string; data: any }[] => {
   const events: { name: string; data: any }[] = [];
@@ -217,34 +218,34 @@ export async function indexVaultEvents() {
   }
 }
 
-async function processVaultEvent(event) {
+async function processVaultEvent(event: { name: string; data: ConditionalVaultEvent }) {
   switch (event.name) {
     case "InitializeQuestionEvent":
-      await handleInitializeQuestionEvent(event);
+      await handleInitializeQuestionEvent(event.data as InitializeQuestionEvent);
       break;
     case "InitializeConditionalVaultEvent":
-      await handleInitializeConditionalVaultEvent(event);
+      await handleInitializeConditionalVaultEvent(event.data as InitializeConditionalVaultEvent);
       break;
     default:
       console.log("Unknown Vault event", event);
   }
 }
 
-async function handleInitializeQuestionEvent(event) {
+async function handleInitializeQuestionEvent(event: InitializeQuestionEvent) {
   await usingDb(async (db) => {
     await db.insert(schema.v0_4_questions).values({
-      questionAddr: event.data.question.toString(),
+      questionAddr: event.question.toString(),
       isResolved: false,
-      oracleAddr: event.data.oracle.toString(),
-      numOutcomes: event.data.numOutcomes,
-      payoutNumerators: Array(event.data.numOutcomes).fill(0),
+      oracleAddr: event.oracle.toString(),
+      numOutcomes: event.numOutcomes,
+      payoutNumerators: Array(event.numOutcomes).fill(0),
       payoutDenominator: 0n,
-      questionId: event.data.questionId,
+      questionId: event.questionId,
     }).onConflictDoNothing();
   });
 }
 
-async function handleInitializeConditionalVaultEvent(event) {
+async function handleInitializeConditionalVaultEvent(event: InitializeConditionalVaultEvent) {
   const vaultAddr = getVaultAddr(conditionalVaultClient.vaultProgram.programId, event.data.question, event.data.underlyingTokenMint)[0];
   await usingDb(async (db) => {
     await db.transaction(async (trx) => {
