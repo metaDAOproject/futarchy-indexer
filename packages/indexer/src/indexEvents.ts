@@ -246,39 +246,43 @@ async function handleInitializeQuestionEvent(event: InitializeQuestionEvent) {
 }
 
 async function handleInitializeConditionalVaultEvent(event: InitializeConditionalVaultEvent) {
-  const vaultAddr = getVaultAddr(conditionalVaultClient.vaultProgram.programId, event.data.question, event.data.underlyingTokenMint)[0];
+  const vaultAddr = getVaultAddr(conditionalVaultClient.vaultProgram.programId, event.question, event.underlyingTokenMint)[0];
   await usingDb(async (db) => {
     await db.transaction(async (trx) => {
-      await insertQuestionIfNotExists(trx, event);
-      await insertTokenIfNotExists(trx, event.data.underlyingTokenMint);
+      // await doesQuestionExist(trx, event);
+      if (!await doesQuestionExist(trx, event)) {
+        return;
+      }
+      await insertTokenIfNotExists(trx, event.underlyingTokenMint);
       await insertTokenAccountIfNotExists(trx, event);
       await insertConditionalVault(trx, event, vaultAddr);
     });
   });
 }
 
-async function insertQuestionIfNotExists(trx, event) {
-  const existingQuestion = await trx.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, event.data.question.toString())).limit(1);
-  if (existingQuestion.length === 0) {
-    await trx.insert(schema.v0_4_questions).values({
-      questionAddr: event.data.question.toString(),
-      isResolved: false,
-      oracleAddr: event.data.oracle.toString(),
-      numOutcomes: event.data.numOutcomes,
-      payoutNumerators: Array(event.data.numOutcomes).fill(0),
-      payoutDenominator: 0n,
-      questionId: event.data.questionId,
-    });
-  }
+async function doesQuestionExist(trx, event: InitializeConditionalVaultEvent): Promise<boolean> {
+  const existingQuestion = await trx.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, event.question.toString())).limit(1);
+  return existingQuestion.length > 0;
+  // if (existingQuestion.length === 0) {
+  //   await trx.insert(schema.v0_4_questions).values({
+  //     questionAddr: event.question.toString(),
+  //     isResolved: false,
+  //     oracleAddr: event.oracle.toString(),
+  //     numOutcomes: event.numOutcomes,
+  //     payoutNumerators: Array(event.numOutcomes).fill(0),
+  //     payoutDenominator: 0n,
+  //     questionId: event.questionId,
+  //   });
+  // }
 }
 
 async function insertTokenAccountIfNotExists(trx, event) {
-  const existingTokenAcct = await trx.select().from(schema.tokenAccts).where(eq(schema.tokenAccts.tokenAcct, event.data.vaultUnderlyingTokenAccount.toString())).limit(1);
+  const existingTokenAcct = await trx.select().from(schema.tokenAccts).where(eq(schema.tokenAccts.tokenAcct, event.vaultUnderlyingTokenAccount.toString())).limit(1);
   if (existingTokenAcct.length === 0) {
     await trx.insert(schema.tokenAccts).values({
-      tokenAcct: event.data.vaultUnderlyingTokenAccount.toString(),
-      mintAcct: event.data.underlyingTokenMint.toString(),
-      ownerAcct: event.data.vaultUnderlyingTokenAccount.toString(),
+      tokenAcct: event.vaultUnderlyingTokenAccount.toString(),
+      mintAcct: event.underlyingTokenMint.toString(),
+      ownerAcct: event.vaultUnderlyingTokenAccount.toString(),
       amount: 0n,
       // Add other required fields for token_accts table
     });
@@ -288,10 +292,10 @@ async function insertTokenAccountIfNotExists(trx, event) {
 async function insertConditionalVault(trx, event, vaultAddr) {
   await trx.insert(schema.v0_4_conditional_vaults).values({
     conditionalVaultAddr: vaultAddr.toString(),
-    questionAddr: event.data.question.toString(),
-    underlyingMintAcct: event.data.underlyingTokenMint.toString(),
-    underlyingTokenAcct: event.data.vaultUnderlyingTokenAccount.toString(),
-    pdaBump: event.data.pdaBump,
+    questionAddr: event.question.toString(),
+    underlyingMintAcct: event.underlyingTokenMint.toString(),
+    underlyingTokenAcct: event.vaultUnderlyingTokenAccount.toString(),
+    pdaBump: event.pdaBump,
     latestVaultSeqNumApplied: 0n,
   }).onConflictDoNothing();
 }

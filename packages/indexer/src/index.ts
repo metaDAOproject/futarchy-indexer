@@ -44,8 +44,10 @@ async function main() {
   await Promise.all([
     populateSignatures(),
     setInterval(async () => {
-      await indexAmmEvents();
-      await indexVaultEvents();
+      await Promise.all([
+        indexAmmEvents(),
+        indexVaultEvents(),
+      ])
     }, 1000),
   ])
   // await Promise.all([
