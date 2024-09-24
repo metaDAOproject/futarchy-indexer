@@ -43,7 +43,7 @@ async function main() {
   // await indexAmmEvents();
 
   await Promise.all([
-    populateSignatures(),
+    // populateSignatures(),
     setInterval(async () => {
       await indexAmmEvents();
     }, 1000),

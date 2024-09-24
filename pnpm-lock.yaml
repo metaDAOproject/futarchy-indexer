@@ -77,8 +77,8 @@ importers:
         specifier: ^15.1.4
         version: 15.1.4
       '@metadaoproject/futarchy':
-        specifier: 0.4.0-alpha.11
-        version: 0.4.0-alpha.11(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)
+        specifier: 0.4.0-alpha.12
+        version: 0.4.0-alpha.12(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)
       '@metadaoproject/futarchy-sdk':
         specifier: 4.0.0-alpha.31
         version: 4.0.0-alpha.31(arweave@1.15.0)(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(graphql@16.9.0)(utf-8-validate@5.0.10)
@@ -817,8 +817,8 @@ packages:
   '@metadaoproject/futarchy@0.3.0-alpha.10':
     resolution: {integrity: sha512-nhxIKnFc/anhto3OPDbufhOo9KlVJdXRfH2nP3xfDwMHUYDtODisw7o/e1hMkM7u45TuIPFHIGm8YBkoht6zVg==}
 
-  '@metadaoproject/futarchy@0.4.0-alpha.11':
-    resolution: {integrity: sha512-5WsZRTTjp7dOQ7o7Uowj9PQLa7S+4sdq4DjN9dFzTdsza3KnSDUYy1awbn1rhpz22WHYBcCH0mEuTc566EGlMQ==}
+  '@metadaoproject/futarchy@0.4.0-alpha.12':
+    resolution: {integrity: sha512-4oiHPeT8PcMb3HF6kw9TKp52FC/cXDRrCafzso+Eb/OXAPzezm63Y5covIqxKwSzcatcc2Sv5HLz9l2fZpmj+g==}
 
   '@metaplex-foundation/beet-solana@0.3.1':
     resolution: {integrity: sha512-tgyEl6dvtLln8XX81JyBvWjIiEcjTkUwZbrM5dIobTmoqMuGewSyk9CClno8qsMsFdB5T3jC91Rjeqmu/6xk2g==}
@@ -4035,7 +4035,7 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - utf-8-validate
 
-  '@metadaoproject/futarchy@0.4.0-alpha.11(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)':
+  '@metadaoproject/futarchy@0.4.0-alpha.12(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)':
     dependencies:
       '@coral-xyz/anchor': 0.29.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@metaplex-foundation/umi': 0.9.2

@@ -352,6 +352,7 @@ export const v0_4_amms = pgTable(
     quote_mint_addr: pubkey("quote_mint_addr").notNull().references(() => tokens.mintAcct),
     base_reserves: bigint("base_reserves", { mode: "bigint" }).notNull(),
     quote_reserves: bigint("quote_reserves", { mode: "bigint" }).notNull(),
+    latest_seq_num_applied: bigint("latest_seq_num_applied", { mode: "bigint" }).notNull(),
     inserted_at: timestamp("inserted_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
@@ -424,6 +425,7 @@ export const v0_4_conditional_vaults = pgTable(
     underlying_token_acct: pubkey("underlying_token_acct").notNull()
       .references(() => tokenAccts.tokenAcct),
     pda_bump: smallint("pda_bump").notNull(),
+    latest_seq_num_applied: bigint("latest_seq_num_applied", { mode: "bigint" }).notNull(),
     inserted_at: timestamp("inserted_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
