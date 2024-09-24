@@ -949,7 +949,7 @@ export const v0_4_swaps = pgTable(
   {
     signature: transaction("signature").notNull().primaryKey(),
     slot: slot("slot").notNull(),
-    block_time: timestamp("block_time", { withTimezone: true }).notNull(),
+    blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
     swapType: pgEnum("swap_type", V04SwapType).notNull(),
     ammAddr: pubkey("amm_addr").notNull(),
     userAddr: pubkey("user_addr").notNull(),
