@@ -1,0 +1,22 @@
+table:
+  name: v0_4_metric_decisions
+  schema: public
+object_relationships:
+  - name: dao_detail
+    using:
+      foreign_key_constraint_on: dao_id
+  - name: outcome_vault
+    using:
+      foreign_key_constraint_on: outcome_vault_addr
+  - name: outcome_questions
+    using:
+      foreign_key_constraint_on: outcome_question_addr
+  - name: amm
+    using:
+      foreign_key_constraint_on: amm_addr
+  - name: metric_vault
+    using:
+      foreign_key_constraint_on: metric_vault_addr
+  - name: metric_question
+    using:
+      foreign_key_constraint_on: metric_question_addr

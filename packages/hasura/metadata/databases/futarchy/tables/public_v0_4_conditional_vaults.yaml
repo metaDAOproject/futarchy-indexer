@@ -1,0 +1,28 @@
+table:
+  name: v0_4_conditional_vaults
+  schema: public
+object_relationships:
+  - name: token
+    using:
+      foreign_key_constraint_on: underlying_mint_acct
+  - name: token_acct
+    using:
+      foreign_key_constraint_on: underlying_token_acct
+  - name: question
+    using:
+      foreign_key_constraint_on: question_addr
+array_relationships:
+  - name: outcome_decisions
+    using:
+      foreign_key_constraint_on:
+        column: outcome_vault_addr
+        table:
+          name: v0_4_metric_decisions
+          schema: public
+  - name: metric_decisions
+    using:
+      foreign_key_constraint_on:
+        column: metric_vault_addr
+        table:
+          name: v0_4_metric_decisions
+          schema: public
