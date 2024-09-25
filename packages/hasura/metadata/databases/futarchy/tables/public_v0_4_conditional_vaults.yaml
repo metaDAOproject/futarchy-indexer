@@ -5,7 +5,7 @@ object_relationships:
   - name: question
     using:
       foreign_key_constraint_on: question_addr
-  - name: token
+  - name: underlying_mint
     using:
       foreign_key_constraint_on: underlying_mint_acct
   - name: token_acct
