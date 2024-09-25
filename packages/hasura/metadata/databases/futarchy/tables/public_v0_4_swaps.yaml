@@ -1,3 +1,18 @@
 table:
   name: v0_4_swaps
   schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - input_amount
+        - output_amount
+        - slot
+        - amm_addr
+        - signature
+        - swap_type
+        - user_addr
+        - block_time
+        - created_at
+      filter: {}
+    comment: ""

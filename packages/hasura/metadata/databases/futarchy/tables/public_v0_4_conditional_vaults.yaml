@@ -2,23 +2,16 @@ table:
   name: v0_4_conditional_vaults
   schema: public
 object_relationships:
+  - name: question
+    using:
+      foreign_key_constraint_on: question_addr
   - name: token
     using:
       foreign_key_constraint_on: underlying_mint_acct
   - name: token_acct
     using:
       foreign_key_constraint_on: underlying_token_acct
-  - name: question
-    using:
-      foreign_key_constraint_on: question_addr
 array_relationships:
-  - name: outcome_decisions
-    using:
-      foreign_key_constraint_on:
-        column: outcome_vault_addr
-        table:
-          name: v0_4_metric_decisions
-          schema: public
   - name: metric_decisions
     using:
       foreign_key_constraint_on:
@@ -26,3 +19,23 @@ array_relationships:
         table:
           name: v0_4_metric_decisions
           schema: public
+  - name: outcome_decisions
+    using:
+      foreign_key_constraint_on:
+        column: outcome_vault_addr
+        table:
+          name: v0_4_metric_decisions
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - latest_vault_seq_num_applied
+        - conditional_vault_addr
+        - question_addr
+        - underlying_mint_acct
+        - underlying_token_acct
+        - pda_bump
+        - created_at
+      filter: {}
+    comment: ""
