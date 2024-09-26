@@ -19,3 +19,18 @@ array_relationships:
         table:
           name: v0_4_metric_decisions
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - base_reserves
+        - created_at_slot
+        - latest_amm_seq_num_applied
+        - quote_reserves
+        - amm_addr
+        - base_mint_addr
+        - lp_mint_addr
+        - quote_mint_addr
+        - inserted_at
+      filter: {}
+    comment: ""
