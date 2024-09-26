@@ -1,0 +1,21 @@
+table:
+  name: v0_4_amms
+  schema: public
+object_relationships:
+  - name: base_token
+    using:
+      foreign_key_constraint_on: base_mint_addr
+  - name: lp_token
+    using:
+      foreign_key_constraint_on: lp_mint_addr
+  - name: quote_token
+    using:
+      foreign_key_constraint_on: quote_mint_addr
+array_relationships:
+  - name: decisions
+    using:
+      foreign_key_constraint_on:
+        column: amm_addr
+        table:
+          name: v0_4_metric_decisions
+          schema: public

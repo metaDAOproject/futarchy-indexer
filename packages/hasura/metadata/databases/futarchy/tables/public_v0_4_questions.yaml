@@ -1,0 +1,39 @@
+table:
+  name: v0_4_questions
+  schema: public
+array_relationships:
+  - name: decisions
+    using:
+      foreign_key_constraint_on:
+        column: outcome_question_addr
+        table:
+          name: v0_4_metric_decisions
+          schema: public
+  - name: metric_decisions
+    using:
+      foreign_key_constraint_on:
+        column: metric_question_addr
+        table:
+          name: v0_4_metric_decisions
+          schema: public
+  - name: question_vaults
+    using:
+      foreign_key_constraint_on:
+        column: question_addr
+        table:
+          name: v0_4_conditional_vaults
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - payout_denominator
+        - is_resolved
+        - oracle_addr
+        - question_addr
+        - payout_numerators
+        - question_id
+        - num_outcomes
+        - created_at
+      filter: {}
+    comment: ""

@@ -41,7 +41,7 @@ select_permissions:
         - content
       filter: {}
     comment: ""
-  - role: user
+  - role: proposer
     permission:
       columns:
         - proposal_id
@@ -58,7 +58,7 @@ select_permissions:
         - content
       filter: {}
     comment: ""
-  - role: proposer
+  - role: user
     permission:
       columns:
         - proposal_id
