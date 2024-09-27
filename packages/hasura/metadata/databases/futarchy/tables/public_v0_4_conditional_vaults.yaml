@@ -5,12 +5,12 @@ object_relationships:
   - name: question
     using:
       foreign_key_constraint_on: question_addr
-  - name: underlying_mint
-    using:
-      foreign_key_constraint_on: underlying_mint_acct
   - name: token_acct
     using:
       foreign_key_constraint_on: underlying_token_acct
+  - name: underlying_mint
+    using:
+      foreign_key_constraint_on: underlying_mint_acct
 array_relationships:
   - name: metric_decisions
     using:
