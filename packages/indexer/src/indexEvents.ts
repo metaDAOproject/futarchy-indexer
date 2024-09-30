@@ -1,12 +1,21 @@
 import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmClient, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultClient, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq, desc } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
-import { CompiledInnerInstruction, Connection, VersionedTransactionResponse } from "@solana/web3.js";
-import { V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
+import { CompiledInnerInstruction, Connection, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
+import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
 import { connection, ammClient, conditionalVaultClient } from "./connection";
 import { Program } from "@coral-xyz/anchor";
+import { PriceMath } from "@metadaoproject/futarchy"
+
+type Market = {
+  marketAcct: string;
+  baseMint: string;
+  quoteMint: string;
+}
+
+type DBConnection = any; // TODO: Fix typing..
 
 const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionResponse: VersionedTransactionResponse | TransactionResponse): { name: string; data: any }[] => {
   const events: { name: string; data: any }[] = [];
@@ -104,12 +113,16 @@ async function processAmmEvent(event: { name: string; data: AmmEvent }, signatur
       console.log("Unknown event", event);
   }
 }
-
 async function handleCreateAmmEvent(event: CreateAmmEvent) {
-  await usingDb(async (db) => {
+  await usingDb(async (db: DBConnection) => {
     await insertTokenIfNotExists(db, event.lpMint);
     await insertTokenIfNotExists(db, event.baseMint);
     await insertTokenIfNotExists(db, event.quoteMint);
+    await insertMarketIfNotExists(db, {
+      marketAcct: event.common.amm.toBase58(),
+      baseMint: event.baseMint.toString(),
+      quoteMint: event.quoteMint.toString(),
+    });
 
     await db.insert(schema.v0_4_amms).values({
       ammAddr: event.common.amm.toString(),
@@ -125,7 +138,7 @@ async function handleCreateAmmEvent(event: CreateAmmEvent) {
 }
 
 async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
-  await usingDb(async (db) => {
+  await usingDb(async (db: DBConnection) => {
     const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
 
     if (amm.length === 0) {
@@ -138,6 +151,8 @@ async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
       return;
     }
 
+    await insertPrice(db, amm, event);
+
     await db.update(schema.v0_4_amms).set({
       baseReserves: BigInt(event.common.postBaseReserves.toString()),
       quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
@@ -149,11 +164,11 @@ async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
 }
 
 async function handleSwapEvent(event: SwapEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
-  await usingDb(async (db) => {
+  await usingDb(async (db: DBConnection) => {
     await db.insert(schema.v0_4_swaps).values({
       signature: signature,
       slot: BigInt(transactionResponse.slot),
-      blockTime: new Date(transactionResponse.blockTime * 1000),
+      blockTime: new Date((transactionResponse.blockTime ?? 0) * 1000), // TODO: Why for the life of us would this be undefined? or null?
       swapType: event.swapType.buy ? V04SwapType.Buy : V04SwapType.Sell,
       ammAddr: event.common.amm.toString(),
       userAddr: event.common.user.toString(),
@@ -173,6 +188,8 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
       return;
     }
 
+    await insertPrice(db, amm, event);
+
     await db.update(schema.v0_4_amms).set({
       baseReserves: BigInt(event.common.postBaseReserves.toString()),
       quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
@@ -181,7 +198,7 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
   });
 }
 
-async function insertTokenIfNotExists(db, mintAcct) {
+async function insertTokenIfNotExists(db: DBConnection, mintAcct: PublicKey) {
   const existingToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, mintAcct.toString())).limit(1);
   if (existingToken.length === 0) {
     console.log("Inserting token", mintAcct.toString());
@@ -260,8 +277,8 @@ async function handleInitializeConditionalVaultEvent(event: InitializeConditiona
   });
 }
 
-async function doesQuestionExist(trx, event: InitializeConditionalVaultEvent): Promise<boolean> {
-  const existingQuestion = await trx.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, event.question.toString())).limit(1);
+async function doesQuestionExist(db: DBConnection, event: InitializeConditionalVaultEvent): Promise<boolean> {
+  const existingQuestion = await db.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, event.question.toString())).limit(1);
   return existingQuestion.length > 0;
   // if (existingQuestion.length === 0) {
   //   await trx.insert(schema.v0_4_questions).values({
@@ -276,10 +293,10 @@ async function doesQuestionExist(trx, event: InitializeConditionalVaultEvent): P
   // }
 }
 
-async function insertTokenAccountIfNotExists(trx, event) {
-  const existingTokenAcct = await trx.select().from(schema.tokenAccts).where(eq(schema.tokenAccts.tokenAcct, event.vaultUnderlyingTokenAccount.toString())).limit(1);
+async function insertTokenAccountIfNotExists(db: DBConnection, event: InitializeConditionalVaultEvent) {
+  const existingTokenAcct = await db.select().from(schema.tokenAccts).where(eq(schema.tokenAccts.tokenAcct, event.vaultUnderlyingTokenAccount.toString())).limit(1);
   if (existingTokenAcct.length === 0) {
-    await trx.insert(schema.tokenAccts).values({
+    await db.insert(schema.tokenAccts).values({
       tokenAcct: event.vaultUnderlyingTokenAccount.toString(),
       mintAcct: event.underlyingTokenMint.toString(),
       ownerAcct: event.vaultUnderlyingTokenAccount.toString(),
@@ -289,8 +306,47 @@ async function insertTokenAccountIfNotExists(trx, event) {
   }
 }
 
-async function insertConditionalVault(trx, event, vaultAddr) {
-  await trx.insert(schema.v0_4_conditional_vaults).values({
+async function insertMarketIfNotExists(db: DBConnection, market: Market) {
+  const existingMarket = await db.select().from(schema.markets).where(eq(schema.markets.marketAcct, market.marketAcct)).limit(1);
+  if (existingMarket.length === 0) {
+    await db.insert(schema.markets).values({
+      marketAcct: market.marketAcct,
+      baseMint: market.baseMint,
+      quoteMint: market.quoteMint,
+      marketType: 'amm',
+      baseLotSize: 0n,
+      quoteLotSize: 0n,
+      quoteTickSize: 0n,
+      baseMakerFee: 0,
+      quoteMakerFee: 0,
+      baseTakerFee: 0,
+      quoteTakerFee: 0
+    }).onConflictDoNothing();
+    // TODO: I don't like this on Conflict....
+  }
+}
+
+async function insertPrice(db: DBConnection, amm: any[], event: AddLiquidityEvent | SwapEvent) {
+  // Get's the AMM details for the current price from liquidity event or swap event
+  const ammPrice = PriceMath.getAmmPriceFromReserves(event.common.postBaseReserves, event.common.postQuoteReserves);
+  const baseToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, amm[0].baseMintAddr)).limit(1);
+  const quoteToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, amm[0].quoteMintAddr)).limit(1);
+  const humanPrice = PriceMath.getHumanPrice(ammPrice, baseToken[0].decimals, quoteToken[0].decimals);
+
+  // Inserts the price into the prices table
+  await db.insert(schema.prices).values({
+    marketAcct: event.common.amm.toBase58(),
+    baseAmount: BigInt(event.common.postBaseReserves.toString()),
+    quoteAmount: BigInt(event.common.postQuoteReserves.toString()),
+    price: humanPrice.toString(),
+    updatedSlot: BigInt(event.slot),
+    createdBy: 'amm-market-indexer',
+    pricesType: 'conditional' as PricesType,
+  }).onConflictDoNothing();
+}
+
+async function insertConditionalVault(db: DBConnection, event: InitializeConditionalVaultEvent, vaultAddr: PublicKey) {
+  await db.insert(schema.v0_4_conditional_vaults).values({
     conditionalVaultAddr: vaultAddr.toString(),
     questionAddr: event.question.toString(),
     underlyingMintAcct: event.underlyingTokenMint.toString(),
