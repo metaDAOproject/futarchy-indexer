@@ -164,11 +164,16 @@ async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
 }
 
 async function handleSwapEvent(event: SwapEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+  if (transactionResponse.blockTime === null || transactionResponse.blockTime === undefined) {
+    console.error('Block time is undefined', transactionResponse)
+    return;
+  };
   await usingDb(async (db: DBConnection) => {
     await db.insert(schema.v0_4_swaps).values({
       signature: signature,
       slot: BigInt(transactionResponse.slot),
-      blockTime: new Date((transactionResponse.blockTime ?? 0) * 1000), // TODO: Why for the life of us would this be undefined? or null?
+      // @ts-ignore - fixed above in the if statement
+      blockTime: new Date(transactionResponse.blockTime * 1000),
       swapType: event.swapType.buy ? V04SwapType.Buy : V04SwapType.Sell,
       ammAddr: event.common.amm.toString(),
       userAddr: event.common.user.toString(),
@@ -341,7 +346,7 @@ async function insertPrice(db: DBConnection, amm: any[], event: AddLiquidityEven
     price: humanPrice.toString(),
     updatedSlot: BigInt(event.slot),
     createdBy: 'amm-market-indexer',
-    pricesType: 'conditional' as PricesType,
+    pricesType: PricesType.Conditional,
   }).onConflictDoNothing();
 }
 
