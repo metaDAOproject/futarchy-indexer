@@ -315,8 +315,8 @@ async function insertMarketIfNotExists(db: DBConnection, market: Market) {
   if (existingMarket.length === 0) {
     await db.insert(schema.markets).values({
       marketAcct: market.marketAcct,
-      baseMint: market.baseMint,
-      quoteMint: market.quoteMint,
+      baseMintAcct: market.baseMint,
+      quoteMintAcct: market.quoteMint,
       marketType: 'amm',
       createTxSig: '',
       baseLotSize: 0n,
