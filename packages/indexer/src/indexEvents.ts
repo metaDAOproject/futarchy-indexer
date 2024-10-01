@@ -318,6 +318,7 @@ async function insertMarketIfNotExists(db: DBConnection, market: Market) {
       baseMint: market.baseMint,
       quoteMint: market.quoteMint,
       marketType: 'amm',
+      createTxSig: '',
       baseLotSize: 0n,
       quoteLotSize: 0n,
       quoteTickSize: 0n,
@@ -343,7 +344,7 @@ async function insertPrice(db: DBConnection, amm: any[], event: AddLiquidityEven
     baseAmount: BigInt(event.common.postBaseReserves.toString()),
     quoteAmount: BigInt(event.common.postQuoteReserves.toString()),
     price: humanPrice.toString(),
-    updatedSlot: BigInt(event.slot),
+    updatedSlot: BigInt(event.common.slot.toString()),
     createdBy: 'amm-market-indexer',
     pricesType: PricesType.Conditional,
   }).onConflictDoNothing();
