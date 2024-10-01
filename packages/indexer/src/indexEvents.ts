@@ -1,5 +1,5 @@
 import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq, desc } from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, and, desc } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
@@ -150,7 +150,7 @@ async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
       return;
     }
 
-    await insertPrice(db, amm, event);
+    await insertPriceIfNotDuplicate(db, amm, event);
 
     await db.update(schema.v0_4_amms).set({
       baseReserves: BigInt(event.common.postBaseReserves.toString()),
@@ -192,7 +192,7 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
       return;
     }
 
-    await insertPrice(db, amm, event);
+    await insertPriceIfNotDuplicate(db, amm, event);
 
     await db.update(schema.v0_4_amms).set({
       baseReserves: BigInt(event.common.postBaseReserves.toString()),
@@ -331,7 +331,12 @@ async function insertMarketIfNotExists(db: DBConnection, market: Market) {
   }
 }
 
-async function insertPrice(db: DBConnection, amm: any[], event: AddLiquidityEvent | SwapEvent) {
+async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: AddLiquidityEvent | SwapEvent) {
+  const existingPrice = await db.select().from(schema.prices).where(and(eq(schema.prices.marketAcct, event.common.amm.toBase58()), eq(schema.prices.updatedSlot, BigInt(event.common.slot.toString())))).limit(1);
+  if (existingPrice.length > 0) {
+    console.log("Price already exists", event.common.amm.toBase58(), BigInt(event.common.slot.toString()));
+    return;
+  }
   // Get's the AMM details for the current price from liquidity event or swap event
   const ammPrice = PriceMath.getAmmPriceFromReserves(event.common.postBaseReserves, event.common.postQuoteReserves);
   const baseToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, amm[0].baseMintAddr)).limit(1);
