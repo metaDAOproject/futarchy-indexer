@@ -1,13 +1,12 @@
-import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmClient, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultClient, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent } from "@metadaoproject/futarchy/v0.4";
+import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq, desc } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
-import { CompiledInnerInstruction, Connection, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
+import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
 import { connection, ammClient, conditionalVaultClient } from "./connection";
 import { Program } from "@coral-xyz/anchor";
-import { PriceMath } from "@metadaoproject/futarchy"
 
 type Market = {
   marketAcct: string;
