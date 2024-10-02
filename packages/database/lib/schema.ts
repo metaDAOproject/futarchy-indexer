@@ -888,11 +888,20 @@ export const userPerformance = pgTable(
   }
 );
 
+export const signature_accounts = pgTable("signature_accounts", {
+  signature: transaction("signature").notNull(),
+  account: pubkey("account").notNull(),
+  insertedAt: timestamp("inserted_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  accountIdx: index("account_index").on(table.account),
+}));
+
 export const signatures = pgTable(
   "signatures",
   {
-    signature: transaction("signature").notNull(),
-    queriedAddr: pubkey("queried_addr").notNull(),
+    signature: transaction("signature").primaryKey(),
     slot: slot("slot").notNull(),
     didErr: boolean("did_err").notNull(),
     err: text("err"),
@@ -903,10 +912,8 @@ export const signatures = pgTable(
     seqNum: bigserial("seq_num", { mode: "bigint" }).notNull().unique(),
   },
   (table) => ({
-    pk: primaryKey(table.signature, table.queriedAddr),
     slotIdx: index("slot_index").on(table.slot),
     sequenceNumIdx: index("sequence_num_index").on(table.seqNum),
-    queriedAddrIdx: index("queried_addr_index").on(table.queriedAddr),
   })
 );
 
