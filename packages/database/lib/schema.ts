@@ -939,7 +939,7 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
     .notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  recipient: text("recipient").notNull(),
+  recipient: text("recipient").notNull().default(""),
   outcomeQuestionAddr: pubkey("outcome_question_addr")
     .notNull()
     .references(() => v0_4_questions.questionAddr),
@@ -962,10 +962,14 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   marketOpened: timestamp("market_opened", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
-  grantAwarded: timestamp("grant_awarded", { withTimezone: true }).notNull(),
-  committeeEvaluation: timestamp("grant_awarded", {
+  grantAwarded: timestamp("grant_awarded", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  committeeEvaluation: timestamp("committee_evaluation", {
     withTimezone: true,
-  }).notNull(),
+  })
+    .notNull()
+    .default(sql`now()`),
 });
 
 // TODO rename `created_at` to `inserted_at`
