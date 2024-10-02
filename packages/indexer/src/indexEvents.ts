@@ -270,11 +270,11 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
 async function handleSplitEvent(event: SplitTokensEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
   await usingDb(async (db: DBConnection) => {
     await db.insert(schema.v0_4_splits).values({
-      vaultAddr: event.vault,
-      vaultSeqNum: event.seqNum,
+      vaultAddr: event.vault.toString(),
+      vaultSeqNum: BigInt(event.seqNum.toString()),
       signature: signature,
       slot: BigInt(transactionResponse.slot),
-      amount: BigInt(event.amount)
+      amount: BigInt(event.amount.toString())
     }).onConflictDoNothing();
   });
 }
@@ -282,11 +282,11 @@ async function handleSplitEvent(event: SplitTokensEvent, signature: string, tran
 async function handleMergeEvent(event: MergeTokensEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
   await usingDb(async (db: DBConnection) => {
     await db.insert(schema.v0_4_merges).values({
-      vaultAddr: event.vault,
-      vaultSeqNum: event.seqNum,
+      vaultAddr: event.vault.toString(),
+      vaultSeqNum: BigInt(event.seqNum.toString()),
       signature: signature,
       slot: BigInt(transactionResponse.slot),
-      amount: BigInt(event.amount)
+      amount: BigInt(event.amount.toString())
     }).onConflictDoNothing();
   });
 }
@@ -309,7 +309,7 @@ async function insertTokenIfNotExists(db: DBConnection, mintAcct: PublicKey) {
 
 export async function indexVaultEvents() {
   try {
-    const eligibleSignatures = await fetchEligibleSignatures(AMM_PROGRAM_ID.toString(), 100);
+    const eligibleSignatures = await fetchEligibleSignatures(CONDITIONAL_VAULT_PROGRAM_ID.toString(), 1000);
 
     if (eligibleSignatures.length === 0) {
       console.log("No signatures for Vault events");
@@ -325,7 +325,7 @@ export async function indexVaultEvents() {
       }
 
       const signature = eligibleSignatures[index].signature;
-      const events = parseEvents(ammClient.program, transactionResponse as VersionedTransactionResponse);
+      const events = parseEvents(conditionalVaultClient.vaultProgram, transactionResponse as VersionedTransactionResponse);
 
       for (const event of events) {
         await processVaultEvent(event, signature, transactionResponse);
@@ -358,7 +358,7 @@ async function processVaultEvent(event: { name: string; data: ConditionalVaultEv
       await handleMergeEvent(event.data as MergeTokensEvent, signature, transactionResponse);
       break;
     default:
-      console.log("Unknown Vault event", event);
+      console.log("Unknown Vault event", event.name);
   }
 }
 
