@@ -888,11 +888,21 @@ export const userPerformance = pgTable(
   }
 );
 
+export const signature_accounts = pgTable("signature_accounts", {
+  signature: transaction("signature").notNull(),
+  account: pubkey("account").notNull(),
+  insertedAt: timestamp("inserted_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.signature, table.account] }),
+  accountIdx: index("account_index").on(table.account),
+}));
+
 export const signatures = pgTable(
   "signatures",
   {
-    signature: transaction("signature").notNull(),
-    queriedAddr: pubkey("queried_addr").notNull(),
+    signature: transaction("signature").primaryKey(),
     slot: slot("slot").notNull(),
     didErr: boolean("did_err").notNull(),
     err: text("err"),
@@ -903,10 +913,8 @@ export const signatures = pgTable(
     seqNum: bigserial("seq_num", { mode: "bigint" }).notNull().unique(),
   },
   (table) => ({
-    pk: primaryKey(table.signature, table.queriedAddr),
     slotIdx: index("slot_index").on(table.slot),
     sequenceNumIdx: index("sequence_num_index").on(table.seqNum),
-    queriedAddrIdx: index("queried_addr_index").on(table.queriedAddr),
   })
 );
 
@@ -975,18 +983,62 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
 // TODO rename `created_at` to `inserted_at`
 
 export const v0_4_swaps = pgTable("v0_4_swaps", {
-  signature: transaction("signature").notNull().primaryKey(),
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  signature: transaction("signature").notNull(),
   slot: slot("slot").notNull(),
   blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
   swapType: pgEnum("swap_type", V04SwapType).notNull(),
   ammAddr: pubkey("amm_addr").notNull(),
   userAddr: pubkey("user_addr").notNull(),
+  ammSeqNum: bigint("amm_seq_num", { mode: "bigint" }).notNull(),
   inputAmount: tokenAmount("input_amount").notNull(),
   outputAmount: tokenAmount("output_amount").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
-});
+}, (table) => ({
+    ammIdx: index("amm_index").on(table.ammAddr),
+    signatureIdx: index("signature_index").on(table.signature),
+    seqNumAmmIdx: index("seq_num_amm_index").on(table.ammSeqNum, table.ammAddr),
+  })
+);
+
+export const v0_4_splits = pgTable(
+  "v0_4_splits",
+  {
+    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+    vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+    vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
+    signature: transaction("signature").notNull().references(() => signatures.signature),
+    slot: slot("slot").notNull(),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => ({
+    vaultIdx: index("split_vault_index").on(table.vaultAddr),
+    signatureIdx: index("split_signature_index").on(table.signature),
+    seqNumVaultIdx: index("split_seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
+  })
+);
+
+export const v0_4_merges = pgTable("v0_4_merges", {
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+  vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
+  signature: transaction("signature").notNull().references(() => signatures.signature),
+  slot: slot("slot").notNull(),
+  amount: bigint("amount", { mode: "bigint" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+}, (table) => ({
+    vaultIdx: index("merge_vault_index").on(table.vaultAddr),
+    signatureIdx: index("merge_signature_index").on(table.signature),
+    seqNumVaultIdx: index("merge_seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
+  })
+);
 
 export const v0_4_questions = pgTable("v0_4_questions", {
   questionAddr: pubkey("question_addr").primaryKey(),
