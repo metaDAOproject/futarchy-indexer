@@ -1009,9 +1009,9 @@ export const v0_4_splits = pgTable(
       .default(sql`now()`),
   },
   (table) => ({
-    vaultIdx: index("vault_index").on(table.vaultAddr),
-    signatureIdx: index("signature_index").on(table.signature),
-    seqNumVaultIdx: index("seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
+    vaultIdx: index("split_vault_index").on(table.vaultAddr),
+    signatureIdx: index("split_signature_index").on(table.signature),
+    seqNumVaultIdx: index("split_seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
   })
 );
 
@@ -1026,9 +1026,9 @@ export const v0_4_merges = pgTable("v0_4_merges", {
     .notNull()
     .default(sql`now()`),
 }, (table) => ({
-    vaultIdx: index("vault_index").on(table.vaultAddr),
-    signatureIdx: index("signature_index").on(table.signature),
-    seqNumVaultIdx: index("seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
+    vaultIdx: index("merge_vault_index").on(table.vaultAddr),
+    signatureIdx: index("merge_signature_index").on(table.signature),
+    seqNumVaultIdx: index("merge_seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
   })
 );
 
