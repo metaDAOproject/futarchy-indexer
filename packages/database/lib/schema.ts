@@ -1004,12 +1004,28 @@ export const v0_4_splits = pgTable(
     signature: transaction("signature").notNull().references(() => signatures.signature),
     slot: slot("slot").notNull().references(() => signatures.slot),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
-    questionAddr: pubkey("question_addr").references(() => v0_4_questions.questionAddr).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
   },
   (table) => ({
+    vaultIdx: index("vault_index").on(table.vaultAddr),
+    signatureIdx: index("signature_index").on(table.signature),
+    seqNumVaultIdx: index("seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
+  })
+);
+
+export const v0_4_merges = pgTable("v0_4_merges", {
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+  vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
+  signature: transaction("signature").notNull().references(() => signatures.signature),
+  slot: slot("slot").notNull().references(() => signatures.slot),
+  amount: bigint("amount", { mode: "bigint" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+}, (table) => ({
     vaultIdx: index("vault_index").on(table.vaultAddr),
     signatureIdx: index("signature_index").on(table.signature),
     seqNumVaultIdx: index("seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),
