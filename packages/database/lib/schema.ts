@@ -975,18 +975,25 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
 // TODO rename `created_at` to `inserted_at`
 
 export const v0_4_swaps = pgTable("v0_4_swaps", {
-  signature: transaction("signature").notNull().primaryKey(),
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  signature: transaction("signature").notNull(),
   slot: slot("slot").notNull(),
   blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
   swapType: pgEnum("swap_type", V04SwapType).notNull(),
   ammAddr: pubkey("amm_addr").notNull(),
   userAddr: pubkey("user_addr").notNull(),
+  ammSeqNum: bigint("amm_seq_num", { mode: "bigint" }).notNull(),
   inputAmount: tokenAmount("input_amount").notNull(),
   outputAmount: tokenAmount("output_amount").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
-});
+}, (table) => ({
+    ammIdx: index("amm_index").on(table.ammAddr),
+    signatureIdx: index("signature_index").on(table.signature),
+    slotAmmIdx: index("seq_num_amm_index").on(table.ammSeqNum, table.ammAddr),
+  })
+);
 
 export const v0_4_questions = pgTable("v0_4_questions", {
   questionAddr: pubkey("question_addr").primaryKey(),
