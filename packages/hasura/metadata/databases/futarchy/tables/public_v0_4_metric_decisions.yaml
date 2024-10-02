@@ -24,15 +24,19 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
-        - dao_id
-        - id
         - amm_addr
+        - committee_evaluation
+        - created_at
+        - dao_id
+        - description
+        - grant_awarded
+        - id
+        - market_opened
         - metric_question_addr
         - metric_vault_addr
         - outcome_question_addr
         - outcome_vault_addr
-        - description
+        - recipient
         - title
-        - created_at
       filter: {}
     comment: ""
