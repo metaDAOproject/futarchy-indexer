@@ -895,6 +895,7 @@ export const signature_accounts = pgTable("signature_accounts", {
     .notNull()
     .defaultNow(),
 }, (table) => ({
+  pk: primaryKey({ columns: [table.signature, table.account] }),
   accountIdx: index("account_index").on(table.account),
 }));
 
@@ -1009,7 +1010,7 @@ export const v0_4_splits = pgTable(
     vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
     vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
     signature: transaction("signature").notNull().references(() => signatures.signature),
-    slot: slot("slot").notNull().references(() => signatures.slot),
+    slot: slot("slot").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -1027,7 +1028,7 @@ export const v0_4_merges = pgTable("v0_4_merges", {
   vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
   vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
   signature: transaction("signature").notNull().references(() => signatures.signature),
-  slot: slot("slot").notNull().references(() => signatures.slot),
+  slot: slot("slot").notNull(),
   amount: bigint("amount", { mode: "bigint" }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

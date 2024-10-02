@@ -1,5 +1,5 @@
 {
-  "id": "697af6e0-a86a-43e1-901f-0483f3b63fd5",
+  "id": "6a1fbb95-7638-4a8f-861b-36f85ad71c96",
   "prevId": "d24b931a-c2ef-4f01-849f-5d92e5d4e459",
   "version": "5",
   "dialect": "pg",
@@ -1746,8 +1746,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "signatures": {
-      "name": "signatures",
+    "signature_accounts": {
+      "name": "signature_accounts",
       "schema": "",
       "columns": {
         "signature": {
@@ -1756,10 +1756,49 @@
           "primaryKey": false,
           "notNull": true
         },
-        "queried_addr": {
-          "name": "queried_addr",
+        "account": {
+          "name": "account",
           "type": "varchar(44)",
           "primaryKey": false,
+          "notNull": true
+        },
+        "inserted_at": {
+          "name": "inserted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "account_index": {
+          "name": "account_index",
+          "columns": [
+            "account"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "signature_accounts_signature_account_pk": {
+          "name": "signature_accounts_signature_account_pk",
+          "columns": [
+            "signature",
+            "account"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "signatures": {
+      "name": "signatures",
+      "schema": "",
+      "columns": {
+        "signature": {
+          "name": "signature",
+          "type": "varchar(88)",
+          "primaryKey": true,
           "notNull": true
         },
         "slot": {
@@ -1814,25 +1853,10 @@
             "seq_num"
           ],
           "isUnique": false
-        },
-        "queried_addr_index": {
-          "name": "queried_addr_index",
-          "columns": [
-            "queried_addr"
-          ],
-          "isUnique": false
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "signatures_signature_queried_addr_pk": {
-          "name": "signatures_signature_queried_addr_pk",
-          "columns": [
-            "signature",
-            "queried_addr"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "signatures_seq_num_unique": {
           "name": "signatures_seq_num_unique",
@@ -3098,19 +3122,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "v0_4_merges_slot_signatures_slot_fk": {
-          "name": "v0_4_merges_slot_signatures_slot_fk",
-          "tableFrom": "v0_4_merges",
-          "tableTo": "signatures",
-          "columnsFrom": [
-            "slot"
-          ],
-          "columnsTo": [
-            "slot"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3448,19 +3459,6 @@
           ],
           "columnsTo": [
             "signature"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "v0_4_splits_slot_signatures_slot_fk": {
-          "name": "v0_4_splits_slot_signatures_slot_fk",
-          "tableFrom": "v0_4_splits",
-          "tableTo": "signatures",
-          "columnsFrom": [
-            "slot"
-          ],
-          "columnsTo": [
-            "slot"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
