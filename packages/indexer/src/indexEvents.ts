@@ -1,4 +1,4 @@
-import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath } from "@metadaoproject/futarchy/v0.4";
+import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath, SplitTokensEvent, MergeTokensEvent } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
@@ -150,15 +150,7 @@ export async function indexAmmEvents() {
       const events = parseEvents(ammClient.program, transactionResponse as VersionedTransactionResponse);
 
       for (const event of events) {
-        try {
-          await processAmmEvent(event, signature, transactionResponse);
-        } catch (error: unknown) {
-          logger.errorWithChatBotAlert([
-            error instanceof Error
-              ? `Error processing AMM event: ${error.message}`
-              : "Unknown error processing AMM event"
-          ]);
-        }
+        await processAmmEvent(event, signature, transactionResponse);
       }
     } 
   } catch (error: unknown) {
@@ -186,117 +178,117 @@ async function processAmmEvent(event: { name: string; data: AmmEvent }, signatur
   }
 }
 async function handleCreateAmmEvent(event: CreateAmmEvent) {
-  try {
-    await usingDb(async (db: DBConnection) => {
-      await insertTokenIfNotExists(db, event.lpMint);
-      await insertTokenIfNotExists(db, event.baseMint);
-      await insertTokenIfNotExists(db, event.quoteMint);
-      await insertMarketIfNotExists(db, {
-        marketAcct: event.common.amm.toBase58(),
-        baseMint: event.baseMint.toString(),
-        quoteMint: event.quoteMint.toString(),
-      });
-
-      await db.insert(schema.v0_4_amms).values({
-        ammAddr: event.common.amm.toString(),
-        lpMintAddr: event.lpMint.toString(),
-        createdAtSlot: BigInt(event.common.slot.toString()),
-        baseMintAddr: event.baseMint.toString(),
-        quoteMintAddr: event.quoteMint.toString(),
-        latestAmmSeqNumApplied: 0n,
-        baseReserves: 0n,
-        quoteReserves: 0n,
-      }).onConflictDoNothing();
+  await usingDb(async (db: DBConnection) => {
+    await insertTokenIfNotExists(db, event.lpMint);
+    await insertTokenIfNotExists(db, event.baseMint);
+    await insertTokenIfNotExists(db, event.quoteMint);
+    await insertMarketIfNotExists(db, {
+      marketAcct: event.common.amm.toBase58(),
+      baseMint: event.baseMint.toString(),
+      quoteMint: event.quoteMint.toString(),
     });
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error handling CreateAmmEvent: ${error.message}`
-        : "Unknown error handling CreateAmmEvent"
-    ]);
-  }
+
+    await db.insert(schema.v0_4_amms).values({
+      ammAddr: event.common.amm.toString(),
+      lpMintAddr: event.lpMint.toString(),
+      createdAtSlot: BigInt(event.common.slot.toString()),
+      baseMintAddr: event.baseMint.toString(),
+      quoteMintAddr: event.quoteMint.toString(),
+      latestAmmSeqNumApplied: 0n,
+      baseReserves: 0n,
+      quoteReserves: 0n,
+    }).onConflictDoNothing();
+  });
 }
 
 async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
-  try {
-    await usingDb(async (db: DBConnection) => {
-      const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
+  await usingDb(async (db: DBConnection) => {
+    const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
 
-      if (amm.length === 0) {
-        console.log("AMM not found", event.common.amm.toString());
-        return;
-      }
+    if (amm.length === 0) {
+      console.log("AMM not found", event.common.amm.toString());
+      return;
+    }
 
-      if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
-        console.log("Already applied", event.common.seqNum.toString());
-        return;
-      }
+    if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
+      console.log("Already applied", event.common.seqNum.toString());
+      return;
+    }
 
-      await insertPriceIfNotDuplicate(db, amm, event);
+    await insertPriceIfNotDuplicate(db, amm, event);
 
-      await db.update(schema.v0_4_amms).set({
-        baseReserves: BigInt(event.common.postBaseReserves.toString()),
-        quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
-        latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
-      }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
+    await db.update(schema.v0_4_amms).set({
+      baseReserves: BigInt(event.common.postBaseReserves.toString()),
+      quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
+      latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
+    }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
 
-      console.log("Updated AMM", event.common.amm.toString());
-    });
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error handling AddLiquidityEvent: ${error.message}`
-        : "Unknown error handling AddLiquidityEvent"
-    ]);
-  }
+    console.log("Updated AMM", event.common.amm.toString());
+  });
 }
 
 async function handleSwapEvent(event: SwapEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
-  try {
-    if (transactionResponse.blockTime === null || transactionResponse.blockTime === undefined) {
+  if (transactionResponse.blockTime === null || transactionResponse.blockTime === undefined) {
+    return;
+  };
+  await usingDb(async (db: DBConnection) => {
+    await db.insert(schema.v0_4_swaps).values({
+      signature: signature,
+      slot: BigInt(transactionResponse.slot),
+      // @ts-ignore - fixed above in the if statement
+      blockTime: new Date(transactionResponse.blockTime * 1000),
+      swapType: event.swapType.buy ? V04SwapType.Buy : V04SwapType.Sell,
+      ammAddr: event.common.amm.toString(),
+      userAddr: event.common.user.toString(),
+      inputAmount: event.inputAmount.toString(),
+      outputAmount: event.outputAmount.toString(),
+      ammSeqNum: BigInt(event.common.seqNum.toString())
+    }).onConflictDoNothing();
+
+    const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
+
+    if (amm.length === 0) {
+      console.log("AMM not found", event.common.amm.toString());
       return;
-    };
-    await usingDb(async (db: DBConnection) => {
-      await db.insert(schema.v0_4_swaps).values({
-        signature: signature,
-        slot: BigInt(transactionResponse.slot),
-        // @ts-ignore - fixed above in the if statement
-        blockTime: new Date(transactionResponse.blockTime * 1000),
-        swapType: event.swapType.buy ? V04SwapType.Buy : V04SwapType.Sell,
-        ammAddr: event.common.amm.toString(),
-        userAddr: event.common.user.toString(),
-        inputAmount: event.inputAmount.toString(),
-        outputAmount: event.outputAmount.toString(),
-        ammSeqNum: BigInt(event.common.seqNum.toString())
-      }).onConflictDoNothing();
+    }
 
-      const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
+    if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
+      console.log("Already applied", event.common.seqNum.toString());
+      return;
+    }
 
-      if (amm.length === 0) {
-        console.log("AMM not found", event.common.amm.toString());
-        return;
-      }
+    await insertPriceIfNotDuplicate(db, amm, event);
 
-      if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
-        console.log("Already applied", event.common.seqNum.toString());
-        return;
-      }
+    await db.update(schema.v0_4_amms).set({
+      baseReserves: BigInt(event.common.postBaseReserves.toString()),
+      quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
+      latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
+    }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
+  });
+}
 
-      await insertPriceIfNotDuplicate(db, amm, event);
+async function handleSplitEvent(event: SplitTokensEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+  await usingDb(async (db: DBConnection) => {
+    await db.insert(schema.v0_4_splits).values({
+      vaultAddr: event.vault,
+      vaultSeqNum: event.seqNum,
+      signature: signature,
+      slot: BigInt(transactionResponse.slot),
+      amount: BigInt(event.amount)
+    }).onConflictDoNothing();
+  });
+}
 
-      await db.update(schema.v0_4_amms).set({
-        baseReserves: BigInt(event.common.postBaseReserves.toString()),
-        quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
-        latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
-      }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
-    });
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error handling SwapEvent: ${error.message}`
-        : "Unknown error handling SwapEvent"
-    ]);
-  }
+async function handleMergeEvent(event: MergeTokensEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+  await usingDb(async (db: DBConnection) => {
+    await db.insert(schema.v0_4_merges).values({
+      vaultAddr: event.vault,
+      vaultSeqNum: event.seqNum,
+      signature: signature,
+      slot: BigInt(transactionResponse.slot),
+      amount: BigInt(event.amount)
+    }).onConflictDoNothing();
+  });
 }
 
 async function insertTokenIfNotExists(db: DBConnection, mintAcct: PublicKey) {
@@ -326,11 +318,20 @@ export async function indexVaultEvents() {
 
     const transactionResponses = await fetchTransactionResponses(eligibleSignatures);
 
-    const events = transactionResponses.flatMap(r => r ? parseEvents(conditionalVaultClient.vaultProgram, r) : []);
+    for (const [index, transactionResponse] of transactionResponses.entries()) {
+      if (!transactionResponse) {
+        console.log("No transaction response");
+        continue;
+      }
 
-    for (const event of events) {
-      await processVaultEvent(event);
-    }
+      const signature = eligibleSignatures[index].signature;
+      const events = parseEvents(ammClient.program, transactionResponse as VersionedTransactionResponse);
+
+      for (const event of events) {
+        await processVaultEvent(event, signature, transactionResponse);
+      }
+    } 
+
     //set last process slot
     await setLatestProcessedSlot(Number(eligibleSignatures[0].slot));
   } catch (error: unknown) {
@@ -342,7 +343,7 @@ export async function indexVaultEvents() {
   }
 }
 
-async function processVaultEvent(event: { name: string; data: ConditionalVaultEvent }) {
+async function processVaultEvent(event: { name: string; data: ConditionalVaultEvent }, signature: string, transactionResponse: VersionedTransactionResponse) {
   switch (event.name) {
     case "InitializeQuestionEvent":
       await handleInitializeQuestionEvent(event.data as InitializeQuestionEvent);
@@ -350,53 +351,43 @@ async function processVaultEvent(event: { name: string; data: ConditionalVaultEv
     case "InitializeConditionalVaultEvent":
       await handleInitializeConditionalVaultEvent(event.data as InitializeConditionalVaultEvent);
       break;
+    case "SplitTokensEvent":
+      await handleSplitEvent(event.data as SplitTokensEvent, signature, transactionResponse);
+      break;
+    case "MergeTokensEvent":
+      await handleMergeEvent(event.data as MergeTokensEvent, signature, transactionResponse);
+      break;
     default:
       console.log("Unknown Vault event", event);
   }
 }
 
 async function handleInitializeQuestionEvent(event: InitializeQuestionEvent) {
-  try {
-    await usingDb(async (db) => {
-      await db.insert(schema.v0_4_questions).values({
-        questionAddr: event.question.toString(),
-        isResolved: false,
-        oracleAddr: event.oracle.toString(),
-        numOutcomes: event.numOutcomes,
-        payoutNumerators: Array(event.numOutcomes).fill(0),
-        payoutDenominator: 0n,
-        questionId: event.questionId,
-      }).onConflictDoNothing();
-    });
-  } catch (error) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error handling InitializeQuestionEvent: ${error.message}`
-        : "Unknown error handling InitializeQuestionEvent"
-    ]);
-  }
+  await usingDb(async (db) => {
+    await db.insert(schema.v0_4_questions).values({
+      questionAddr: event.question.toString(),
+      isResolved: false,
+      oracleAddr: event.oracle.toString(),
+      numOutcomes: event.numOutcomes,
+      payoutNumerators: Array(event.numOutcomes).fill(0),
+      payoutDenominator: 0n,
+      questionId: event.questionId,
+    }).onConflictDoNothing();
+  });
 }
 
 async function handleInitializeConditionalVaultEvent(event: InitializeConditionalVaultEvent) {
-  try {
-    const vaultAddr = getVaultAddr(conditionalVaultClient.vaultProgram.programId, event.question, event.underlyingTokenMint)[0];
-    await usingDb(async (db) => {
-      await db.transaction(async (trx) => {
-        if (!await doesQuestionExist(trx, event)) {
-          return;
-        }
-        await insertTokenIfNotExists(trx, event.underlyingTokenMint);
-        await insertTokenAccountIfNotExists(trx, event);
-        await insertConditionalVault(trx, event, vaultAddr);
-      });
+  const vaultAddr = getVaultAddr(conditionalVaultClient.vaultProgram.programId, event.question, event.underlyingTokenMint)[0];
+  await usingDb(async (db) => {
+    await db.transaction(async (trx) => {
+      if (!await doesQuestionExist(trx, event)) {
+        return;
+      }
+      await insertTokenIfNotExists(trx, event.underlyingTokenMint);
+      await insertTokenAccountIfNotExists(trx, event);
+      await insertConditionalVault(trx, event, vaultAddr);
     });
-  } catch (error) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error handling InitializeConditionalVaultEvent: ${error.message}`
-        : "Unknown error handling InitializeConditionalVaultEvent"
-    ]);
-  }
+  });
 }
 
 async function doesQuestionExist(db: DBConnection, event: InitializeConditionalVaultEvent): Promise<boolean> {
@@ -450,52 +441,36 @@ async function insertMarketIfNotExists(db: DBConnection, market: Market) {
 }
 
 async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: AddLiquidityEvent | SwapEvent) {
-  try {
-    const existingPrice = await db.select().from(schema.prices).where(and(eq(schema.prices.marketAcct, event.common.amm.toBase58()), eq(schema.prices.updatedSlot, BigInt(event.common.slot.toString())))).limit(1);
-    if (existingPrice.length > 0) {
-      console.log("Price already exists", event.common.amm.toBase58(), BigInt(event.common.slot.toString()));
-      return;
-    }
-    // Get's the AMM details for the current price from liquidity event or swap event
-    const ammPrice = PriceMath.getAmmPriceFromReserves(event.common.postBaseReserves, event.common.postQuoteReserves);
-    const baseToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, amm[0].baseMintAddr)).limit(1);
-    const quoteToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, amm[0].quoteMintAddr)).limit(1);
-    const humanPrice = PriceMath.getHumanPrice(ammPrice, baseToken[0].decimals, quoteToken[0].decimals);
-
-    // Inserts the price into the prices table
-    await db.insert(schema.prices).values({
-      marketAcct: event.common.amm.toBase58(),
-      baseAmount: BigInt(event.common.postBaseReserves.toString()),
-      quoteAmount: BigInt(event.common.postQuoteReserves.toString()),
-      price: humanPrice.toString(),
-      updatedSlot: BigInt(event.common.slot.toString()),
-      createdBy: 'amm-market-indexer',
-      pricesType: PricesType.Conditional,
-    }).onConflictDoNothing();
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error inserting price: ${error.message}`
-        : "Unknown error inserting price"
-    ]);
+  const existingPrice = await db.select().from(schema.prices).where(and(eq(schema.prices.marketAcct, event.common.amm.toBase58()), eq(schema.prices.updatedSlot, BigInt(event.common.slot.toString())))).limit(1);
+  if (existingPrice.length > 0) {
+    console.log("Price already exists", event.common.amm.toBase58(), BigInt(event.common.slot.toString()));
+    return;
   }
+  // Get's the AMM details for the current price from liquidity event or swap event
+  const ammPrice = PriceMath.getAmmPriceFromReserves(event.common.postBaseReserves, event.common.postQuoteReserves);
+  const baseToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, amm[0].baseMintAddr)).limit(1);
+  const quoteToken = await db.select().from(schema.tokens).where(eq(schema.tokens.mintAcct, amm[0].quoteMintAddr)).limit(1);
+  const humanPrice = PriceMath.getHumanPrice(ammPrice, baseToken[0].decimals, quoteToken[0].decimals);
+
+  // Inserts the price into the prices table
+  await db.insert(schema.prices).values({
+    marketAcct: event.common.amm.toBase58(),
+    baseAmount: BigInt(event.common.postBaseReserves.toString()),
+    quoteAmount: BigInt(event.common.postQuoteReserves.toString()),
+    price: humanPrice.toString(),
+    updatedSlot: BigInt(event.common.slot.toString()),
+    createdBy: 'amm-market-indexer',
+    pricesType: PricesType.Conditional,
+  }).onConflictDoNothing();
 }
 
 async function insertConditionalVault(db: DBConnection, event: InitializeConditionalVaultEvent, vaultAddr: PublicKey) {
-  try {
-    await db.insert(schema.v0_4_conditional_vaults).values({
-      conditionalVaultAddr: vaultAddr.toString(),
-      questionAddr: event.question.toString(),
-      underlyingMintAcct: event.underlyingTokenMint.toString(),
-      underlyingTokenAcct: event.vaultUnderlyingTokenAccount.toString(),
-      pdaBump: event.pdaBump,
-      latestVaultSeqNumApplied: 0n,
-    }).onConflictDoNothing();
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error inserting conditional vault: ${error.message}`
-        : "Unknown error inserting conditional vault"
-    ]);
-  }
+  await db.insert(schema.v0_4_conditional_vaults).values({
+    conditionalVaultAddr: vaultAddr.toString(),
+    questionAddr: event.question.toString(),
+    underlyingMintAcct: event.underlyingTokenMint.toString(),
+    underlyingTokenAcct: event.vaultUnderlyingTokenAccount.toString(),
+    pdaBump: event.pdaBump,
+    latestVaultSeqNumApplied: 0n,
+  }).onConflictDoNothing();
 }
