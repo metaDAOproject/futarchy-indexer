@@ -77,6 +77,34 @@ array_relationships:
         table:
           name: user_deposits
           schema: public
+  - name: v04AmmsByLpMintAddr
+    using:
+      foreign_key_constraint_on:
+        column: lp_mint_addr
+        table:
+          name: v0_4_amms
+          schema: public
+  - name: v04AmmsByQuoteMintAddr
+    using:
+      foreign_key_constraint_on:
+        column: quote_mint_addr
+        table:
+          name: v0_4_amms
+          schema: public
+  - name: v0_4_amms
+    using:
+      foreign_key_constraint_on:
+        column: base_mint_addr
+        table:
+          name: v0_4_amms
+          schema: public
+  - name: v0_4_conditional_vaults
+    using:
+      foreign_key_constraint_on:
+        column: underlying_mint_acct
+        table:
+          name: v0_4_conditional_vaults
+          schema: public
 select_permissions:
   - role: anonymous
     permission:
