@@ -1,5 +1,5 @@
 import { indexAmmEvents, indexVaultEvents } from "./indexEvents.js";
-import { populateSignatures } from "./populateSignatures.js";
+import { backfill, frontfill } from "./populateSignatures.js";
 
 // NEW FUTARCHY INDEXER
 
@@ -41,15 +41,16 @@ async function main() {
   // await indexVaultEvents();
   // await indexAmmEvents();
 
+  await backfill();
   await Promise.all([
-    populateSignatures(),
+    frontfill(),
     setInterval(async () => {
       await Promise.all([
         indexAmmEvents(),
         indexVaultEvents(),
       ])
     }, 1000),
-  ])
+  ]);
   // await Promise.all([
   //   populateSignatures(),
   //   indexAmmEvents(),

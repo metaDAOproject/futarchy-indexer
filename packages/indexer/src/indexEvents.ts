@@ -1,5 +1,5 @@
 import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq, and, desc } from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
@@ -67,9 +67,22 @@ const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionRespo
 async function fetchEligibleSignatures(programId: string, limit: number) {
   try {
     return await usingDb(async (db) => {
-      return db.select()
+      let lastSlotIndexerQuery = await db.select()
+        .from(schema.indexers)
+        .where(eq(schema.indexers.name, "v0_4_amm_indexer"));
+      const indexerResult = await lastSlotIndexerQuery;
+      if (indexerResult.length === 0) throw Error("Indexer not found in indexers table");
+      const lastSlotProcessed = indexerResult[0].latestSlotProcessed;
+      
+      return db.select({signature: schema.signatures.signature, slot: schema.signatures.slot})
         .from(schema.signatures)
-        .where(eq(schema.signatures.queriedAddr, programId))
+        .innerJoin(schema.signature_accounts, eq(schema.signatures.signature, schema.signature_accounts.signature))
+        .where(
+          and(
+            eq(schema.signature_accounts.account, programId),
+            gt(schema.signatures.slot, lastSlotProcessed)
+          )
+        )
         .orderBy(desc(schema.signatures.slot))
         .limit(limit);
     });
@@ -99,10 +112,27 @@ async function fetchTransactionResponses(eligibleSignatures: { signature: string
   }
 }
 
+//set latestProcessedSlot in db
+async function setLatestProcessedSlot(slot: number) {
+  try {
+    await usingDb(async (db) => {
+      await db.update(schema.indexers)
+        .set({ latestSlotProcessed: BigInt(slot) })
+        .where(eq(schema.indexers.name, "v0_4_amm_indexer"))
+        .execute();
+    });
+  } catch (error: unknown) {
+    logger.errorWithChatBotAlert([
+      error instanceof Error
+        ? `Error setting latest processed slot: ${error.message}`
+        : "Unknown error setting latest processed slot"
+    ]);
+  }
+}
+
 export async function indexAmmEvents() {
   try {
     const eligibleSignatures = await fetchEligibleSignatures(AMM_PROGRAM_ID.toString(), 100);
-
     if (eligibleSignatures.length === 0) {
       console.log("No signatures for AMM events");
       return;
@@ -130,7 +160,7 @@ export async function indexAmmEvents() {
           ]);
         }
       }
-    }
+    } 
   } catch (error: unknown) {
     logger.errorWithChatBotAlert([
       error instanceof Error
@@ -224,7 +254,6 @@ async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
 async function handleSwapEvent(event: SwapEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
   try {
     if (transactionResponse.blockTime === null || transactionResponse.blockTime === undefined) {
-      logger.errorWithChatBotAlert(['Block time is undefined', JSON.stringify(transactionResponse)]);
       return;
     };
     await usingDb(async (db: DBConnection) => {
@@ -287,7 +316,7 @@ async function insertTokenIfNotExists(db: DBConnection, mintAcct: PublicKey) {
 
 export async function indexVaultEvents() {
   try {
-    const eligibleSignatures = await fetchEligibleSignatures(CONDITIONAL_VAULT_PROGRAM_ID.toString(), 100);
+    const eligibleSignatures = await fetchEligibleSignatures(AMM_PROGRAM_ID.toString(), 100);
 
     if (eligibleSignatures.length === 0) {
       console.log("No signatures for Vault events");
@@ -299,16 +328,10 @@ export async function indexVaultEvents() {
     const events = transactionResponses.flatMap(r => r ? parseEvents(conditionalVaultClient.vaultProgram, r) : []);
 
     for (const event of events) {
-      try {
-        await processVaultEvent(event);
-      } catch (error: unknown) {
-        logger.errorWithChatBotAlert([
-          error instanceof Error
-            ? `Error processing Vault event: ${error.message}`
-            : "Unknown error processing Vault event"
-        ]);
-      }
+      await processVaultEvent(event);
     }
+    //set last process slot
+    await setLatestProcessedSlot(Number(eligibleSignatures[0].slot));
   } catch (error: unknown) {
     logger.errorWithChatBotAlert([
       error instanceof Error

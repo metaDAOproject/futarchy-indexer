@@ -4,6 +4,7 @@ import { usingDb, schema, eq, asc, desc } from "@metadaoproject/indexer-db";
 import { TelegramBotAPI } from "./adapters/telegram-bot";
 import { Logger } from "./logger";
 import { all } from "axios";
+import { program } from "@coral-xyz/anchor/dist/cjs/native/system";
 
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
 
@@ -32,7 +33,6 @@ const backfillHistoricalSignatures = async (
     let oldestSignature;
     try {
       oldestSignature = await usingDb(async (db) => {
-        // TODO use an index on slot or some other performance optimization
         return await db.select({ signature: schema.signatures.signature })
           .from(schema.signatures)
           .orderBy(asc(schema.signatures.slot))
@@ -156,14 +156,32 @@ const insertNewSignatures = async (programId: PublicKey) => {
 
 const insertSignatures = async (signatures: ConfirmedSignatureInfo[], queriedAddr: PublicKey) => {
   try {
+    // let signatureInsertions = [];
+    // let signatureAcctInsertions = [];
+    // signatures.forEach(tx => {
+    //   signatureInsertions.push({
+    //     signature: tx.signature,
+    //     slot: BigInt(tx.slot),
+    //     didErr: tx.err !== null,
+    //     err: tx.err ? JSON.stringify(tx.err) : null,
+    //     blockTime: tx.blockTime ? new Date(tx.blockTime * 1000) : null,
+    //   });
+    //   signatureAcctInsertions.push({
+    //     signature: tx.signature,
+    //     account: queriedAddr.toString()
+    //   });
+    // });
     await usingDb(async (db) => {
       await db.insert(schema.signatures).values(signatures.map(tx => ({
         signature: tx.signature,
-        queriedAddr: queriedAddr.toString(),
         slot: BigInt(tx.slot),
         didErr: tx.err !== null,
         err: tx.err ? JSON.stringify(tx.err) : null,
         blockTime: tx.blockTime ? new Date(tx.blockTime * 1000) : null,
+      }))).onConflictDoNothing().execute();
+      await db.insert(schema.signature_accounts).values(signatures.map(tx => ({
+        signature: tx.signature,
+        account: queriedAddr.toString()
       }))).onConflictDoNothing().execute();
     });
   } catch (error: unknown) {
@@ -175,27 +193,58 @@ const insertSignatures = async (signatures: ConfirmedSignatureInfo[], queriedAdd
   }
 }
 
-const backfillAndSubscribe = async (programId: PublicKey) => {
-  try {
-    const backfilledSignatures = await backfillHistoricalSignatures(programId);
-    console.log(`backfilled ${backfilledSignatures.length} signatures for ${programId.toString()}`);
+// const backfillAndSubscribe = async (programId: PublicKey) => {
+//   try {
+//     const backfilledSignatures = await backfillHistoricalSignatures(programId);
+//     console.log(`backfilled ${backfilledSignatures.length} signatures for ${programId.toString()}`);
 
-    setInterval(async () => {
-      const newSignatures = await insertNewSignatures(programId);
-      console.log(`inserted up to ${newSignatures.length} new signatures for ${programId.toString()}`);
-    }, 1000);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      logger.errorWithChatBotAlert([`Error in backfillAndSubscribe for ${programId.toString()}: ${error.message}`]);
-    } else {
-      logger.errorWithChatBotAlert([`Unknown error in backfillAndSubscribe for ${programId.toString()}`]);
+//     setInterval(async () => {
+//       const newSignatures = await insertNewSignatures(programId);
+//       console.log(`inserted up to ${newSignatures.length} new signatures for ${programId.toString()}`);
+//     }, 1000);
+//   } catch (error: unknown) {
+//     if (error instanceof Error) {
+//       logger.errorWithChatBotAlert([`Error in backfillAndSubscribe for ${programId.toString()}: ${error.message}`]);
+//     } else {
+//       logger.errorWithChatBotAlert([`Unknown error in backfillAndSubscribe for ${programId.toString()}`]);
+//     }
+//   }
+// }
+const programIds = [CONDITIONAL_VAULT_PROGRAM_ID, AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID];
+export const backfill = async () => {
+  await Promise.all(programIds.map(async (programId) => {
+    try {
+      const backfilledSignatures = await backfillHistoricalSignatures(programId);
+      console.log(`backfilled ${backfilledSignatures.length} signatures for ${programId.toString()}`);
+    } catch (error) {
+      logger.errorWithChatBotAlert([
+        error instanceof Error ? 
+        `Error in backfill for ${programId.toString()}: ${error.message}` : 
+        `Unknown error in backfill for ${programId.toString()}`
+      ]);
     }
-  }
+  }));
 }
 
-export const populateSignatures = async () => {
-  const programIds = [CONDITIONAL_VAULT_PROGRAM_ID, AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID];
+export const frontfill = async () => {
+  await Promise.all(programIds.map(async (programId) => {
+    try {
+      setInterval(async () => {
+        const newSignatures = await insertNewSignatures(programId);
+        console.log(`inserted up to ${newSignatures.length} new signatures for ${programId.toString()}`);
+      }, 1000);
+    } catch (error) {
+      logger.errorWithChatBotAlert([
+        error instanceof Error ? 
+        `Error in backfill for ${programId.toString()}: ${error.message}` : 
+        `Unknown error in backfill for ${programId.toString()}`
+      ]);
+    }
+  }));
+}
 
-  // use promise.all so they all run concurrently
-  await Promise.all(programIds.map(programId => backfillAndSubscribe(programId)));
-};
+// export const populateSignatures = async () => {
+
+//   // use promise.all so they all run concurrently
+//   await Promise.all(programIds.map(programId => backfillAndSubscribe(programId)));
+// };
