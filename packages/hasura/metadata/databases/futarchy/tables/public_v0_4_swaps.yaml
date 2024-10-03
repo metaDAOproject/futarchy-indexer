@@ -1,19 +1,40 @@
 table:
   name: v0_4_swaps
   schema: public
+object_relationships:
+  - name: v0_4_merges
+    using:
+      manual_configuration:
+        column_mapping:
+          signature: signature
+        insertion_order: null
+        remote_table:
+          name: v0_4_merges
+          schema: public
+  - name: v0_4_splits
+    using:
+      manual_configuration:
+        column_mapping:
+          signature: signature
+        insertion_order: null
+        remote_table:
+          name: v0_4_splits
+          schema: public
 select_permissions:
   - role: anonymous
     permission:
       columns:
-        - input_amount
-        - output_amount
-        - slot
         - amm_addr
-        - signature
-        - swap_type
-        - user_addr
+        - amm_seq_num
         - block_time
         - created_at
+        - id
+        - input_amount
+        - output_amount
+        - signature
+        - slot
+        - swap_type
+        - user_addr
       filter: {}
       allow_aggregations: true
     comment: ""
