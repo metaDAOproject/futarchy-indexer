@@ -267,6 +267,7 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
         userAddr: event.common.user.toString(),
         inputAmount: event.inputAmount.toString(),
         outputAmount: event.outputAmount.toString(),
+        ammSeqNum: BigInt(event.common.seqNum.toString())
       }).onConflictDoNothing();
 
       const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
