@@ -1,4 +1,4 @@
-import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath, SplitTokensEvent, MergeTokensEvent } from "@metadaoproject/futarchy/v0.4";
+import { AddLiquidityEvent, AMM_PROGRAM_ID, AmmEvent, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath, SplitTokensEvent, MergeTokensEvent, RemoveLiquidityEvent } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
@@ -170,6 +170,9 @@ async function processAmmEvent(event: { name: string; data: AmmEvent }, signatur
     case "AddLiquidityEvent":
       await handleAddLiquidityEvent(event.data as AddLiquidityEvent);
       break;
+    case "RemoveLiquidityEvent":
+      await handleRemoveLiquidityEvent(event.data as RemoveLiquidityEvent);
+      break;
     case "SwapEvent":
       await handleSwapEvent(event.data as SwapEvent, signature, transactionResponse);
       break;
@@ -202,6 +205,32 @@ async function handleCreateAmmEvent(event: CreateAmmEvent) {
 }
 
 async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
+  await usingDb(async (db: DBConnection) => {
+    const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
+
+    if (amm.length === 0) {
+      console.log("AMM not found", event.common.amm.toString());
+      return;
+    }
+
+    if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
+      console.log("Already applied", event.common.seqNum.toString());
+      return;
+    }
+
+    await insertPriceIfNotDuplicate(db, amm, event);
+
+    await db.update(schema.v0_4_amms).set({
+      baseReserves: BigInt(event.common.postBaseReserves.toString()),
+      quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
+      latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
+    }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
+
+    console.log("Updated AMM", event.common.amm.toString());
+  });
+}
+
+async function handleRemoveLiquidityEvent(event: RemoveLiquidityEvent) {
   await usingDb(async (db: DBConnection) => {
     const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
 
@@ -440,7 +469,7 @@ async function insertMarketIfNotExists(db: DBConnection, market: Market) {
   }
 }
 
-async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: AddLiquidityEvent | SwapEvent) {
+async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: AddLiquidityEvent | SwapEvent | RemoveLiquidityEvent) {
   const existingPrice = await db.select().from(schema.prices).where(and(eq(schema.prices.marketAcct, event.common.amm.toBase58()), eq(schema.prices.updatedSlot, BigInt(event.common.slot.toString())))).limit(1);
   if (existingPrice.length > 0) {
     console.log("Price already exists", event.common.amm.toBase58(), BigInt(event.common.slot.toString()));
