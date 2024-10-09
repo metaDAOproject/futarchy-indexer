@@ -4,20 +4,20 @@ import { AlertChatBotInterface, TelegramBotAPI } from "./adapters/telegram-bot";
 const TELEGRAM_ALERT_CHAT_ID = process.env.TELEGRAM_ALERT_CHAT_ID ?? "";
 
 export class Logger {
-  private errorCounter;
-  private warnCounter;
+  // private errorCounter;
+  // private warnCounter;
   private chatBotApi: AlertChatBotInterface;
 
   constructor(chatBotApi: AlertChatBotInterface) {
-    this.errorCounter = new Counter({
-      name: "errors",
-      help: "number of errors",
-    });
+    // this.errorCounter = new Counter({
+    //   name: "errors",
+    //   help: "number of errors",
+    // });
 
-    this.warnCounter = new Counter({
-      name: "warnings",
-      help: "number of warnings",
-    });
+    // this.warnCounter = new Counter({
+    //   name: "warnings",
+    //   help: "number of warnings",
+    // });
     this.chatBotApi = chatBotApi;
   }
 
@@ -57,13 +57,13 @@ export class Logger {
 
   error(...data: any[]): void {
     console.error(this.formatData(data));
-    this.errorCounter.inc();
+    // this.errorCounter.inc();
   }
 
   errorWithChatBotAlert(...data: any[]): void {
     const formattedData = this.formatData(data);
     console.error(formattedData);
-    this.errorCounter.inc();
+    // this.errorCounter.inc();
     if (TELEGRAM_ALERT_CHAT_ID) {
       this.chatBotApi.sendMessage(TELEGRAM_ALERT_CHAT_ID, formattedData);
     }
@@ -71,7 +71,7 @@ export class Logger {
 
   warn(message: string): void {
     console.warn(message);
-    this.warnCounter.inc();
+    // this.warnCounter.inc();
   }
 }
 
