@@ -12,22 +12,8 @@
     {
       "idx": 1,
       "version": "5",
-      "when": 1727212825040,
-      "tag": "0001_chubby_omega_sentinel",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1727889402441,
-      "tag": "0002_dizzy_titanium_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1727913354219,
-      "tag": "0003_married_the_phantom",
+      "when": 1728663431496,
+      "tag": "0001_rainy_bloodstrike",
       "breakpoints": true
     }
   ]
