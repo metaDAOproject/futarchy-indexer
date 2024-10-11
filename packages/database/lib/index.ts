@@ -1,6 +1,6 @@
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schemaDefs from "./schema";
-import { Pool } from "pg";
+import { Pool, PoolClient } from "pg";
 import "dotenv/config";
 
 let connectionString = process.env.FUTARCHY_PG_URL;
@@ -23,10 +23,16 @@ export async function getClient() {
 
 export async function usingDb<T>(
   fn: (connection: NodePgDatabase<typeof schemaDefs>) => Promise<T>
-): Promise<T> {
-  const client = await pool.connect();
-  const connection = drizzle(pool, { schema: schemaDefs });
+): Promise<T | undefined> {
+  let client: PoolClient;
   try {
+    client = await pool.connect();
+  } catch (e) {
+    console.error(e);
+    return;
+  }
+  try {
+    const connection = drizzle(pool, { schema: schemaDefs });
     const result = await fn(connection);
     return result;
   } finally {

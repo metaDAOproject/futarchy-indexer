@@ -18,22 +18,23 @@ export async function startIndexers() {
 }
 
 export async function startAllIndexers() {
-  const allIndexers = await usingDb((db) =>
-    db
-      .select()
-      .from(schema.indexers)
-      .fullJoin(
-        schema.indexerAccountDependencies,
-        eq(schema.indexerAccountDependencies.name, schema.indexers.name)
-      )
-      .where(
-        eq(
-          schema.indexerAccountDependencies.status,
-          IndexerAccountDependencyStatus.Active
+  const allIndexers =
+    (await usingDb((db) =>
+      db
+        .select()
+        .from(schema.indexers)
+        .fullJoin(
+          schema.indexerAccountDependencies,
+          eq(schema.indexerAccountDependencies.name, schema.indexers.name)
         )
-      )
-      .execute()
-  );
+        .where(
+          eq(
+            schema.indexerAccountDependencies.status,
+            IndexerAccountDependencyStatus.Active
+          )
+        )
+        .execute()
+    )) ?? [];
 
   for (const indexerQueryRes of allIndexers) {
     await startIndexer(indexerQueryRes);
@@ -88,13 +89,14 @@ async function handleNewAccountToIndex(
     // skip disabled acct
     if (newRow.status === IndexerAccountDependencyStatus.Disabled) return;
 
-    const indexer = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.indexers)
-        .where(eq(schema.indexers.name, newRow.name))
-        .execute()
-    );
+    const indexer =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.indexers)
+          .where(eq(schema.indexers.name, newRow.name))
+          .execute()
+      )) ?? [];
     if (!indexer[0]) {
       console.warn(
         "new indexer dependency inserted that does not tie to an indexer"

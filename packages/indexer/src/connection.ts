@@ -4,7 +4,7 @@ import {
   FutarchyRPCClient,
   FutarchyIndexerClient,
 } from "@metadaoproject/futarchy-sdk";
-import { ConditionalVaultClient } from "@metadaoproject/futarchy";
+import { ConditionalVaultClient } from "@metadaoproject/futarchy/v0.3";
 
 export const RPC_ENDPOINT = process.env.RPC_ENDPOINT ?? "";
 export const INDEXER_URL = process.env.INDEXER_URL ?? "";
@@ -21,7 +21,8 @@ export const rpcReadClient = FutarchyRPCClient.make(provider, undefined);
 export const indexerReadClient = FutarchyIndexerClient.make(
   rpcReadClient,
   INDEXER_URL,
-  INDEXER_WSS_URL
+  INDEXER_WSS_URL,
+  ""
 );
 
 export const conditionalVaultClient = ConditionalVaultClient.createClient({

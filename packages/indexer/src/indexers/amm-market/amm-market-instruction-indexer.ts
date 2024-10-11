@@ -1,7 +1,7 @@
 import { VersionedTransactionResponse } from "@solana/web3.js";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { TransactionRecord } from "@metadaoproject/indexer-db/lib/schema";
-import { AMM_PROGRAM_ID } from "@metadaoproject/futarchy";
+import { AMM_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
 import { InstructionIndexer } from "../instruction-indexer";
 import {
   AmmInstructionIndexerError,

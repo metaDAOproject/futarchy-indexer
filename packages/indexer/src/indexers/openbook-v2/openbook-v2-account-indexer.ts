@@ -71,16 +71,17 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
         createdBy: "openbook-v2-account-indexer",
       };
 
-      const pricesInsertResult = await usingDb((db) =>
-        db
-          .insert(schema.prices)
-          .values(newOpenbookConditionaPrice)
-          .onConflictDoUpdate({
-            target: [schema.prices.createdAt, schema.prices.marketAcct],
-            set: newOpenbookConditionaPrice,
-          })
-          .returning({ marketAcct: schema.prices.marketAcct })
-      );
+      const pricesInsertResult =
+        (await usingDb((db) =>
+          db
+            .insert(schema.prices)
+            .values(newOpenbookConditionaPrice)
+            .onConflictDoUpdate({
+              target: [schema.prices.createdAt, schema.prices.marketAcct],
+              set: newOpenbookConditionaPrice,
+            })
+            .returning({ marketAcct: schema.prices.marketAcct })
+        )) ?? [];
 
       return Ok({ acct: pricesInsertResult[0].marketAcct });
     } catch (error) {
