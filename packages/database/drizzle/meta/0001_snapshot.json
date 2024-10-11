@@ -1,5 +1,5 @@
 {
-  "id": "a45dbbd9-59a1-43ad-a747-d8998fc5cd10",
+  "id": "01dc3a22-8fb9-4ce8-b122-6b26fb0a83e2",
   "prevId": "12ff8f1b-1044-4827-b918-9b5b421d14df",
   "version": "5",
   "dialect": "pg",
@@ -1746,8 +1746,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "signatures": {
-      "name": "signatures",
+    "signature_accounts": {
+      "name": "signature_accounts",
       "schema": "",
       "columns": {
         "signature": {
@@ -1756,10 +1756,49 @@
           "primaryKey": false,
           "notNull": true
         },
-        "queried_addr": {
-          "name": "queried_addr",
+        "account": {
+          "name": "account",
           "type": "varchar(44)",
           "primaryKey": false,
+          "notNull": true
+        },
+        "inserted_at": {
+          "name": "inserted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "account_index": {
+          "name": "account_index",
+          "columns": [
+            "account"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "signature_accounts_signature_account_pk": {
+          "name": "signature_accounts_signature_account_pk",
+          "columns": [
+            "signature",
+            "account"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "signatures": {
+      "name": "signatures",
+      "schema": "",
+      "columns": {
+        "signature": {
+          "name": "signature",
+          "type": "varchar(88)",
+          "primaryKey": true,
           "notNull": true
         },
         "slot": {
@@ -1814,25 +1853,10 @@
             "seq_num"
           ],
           "isUnique": false
-        },
-        "queried_addr_index": {
-          "name": "queried_addr_index",
-          "columns": [
-            "queried_addr"
-          ],
-          "isUnique": false
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "signatures_signature_queried_addr_pk": {
-          "name": "signatures_signature_queried_addr_pk",
-          "columns": [
-            "signature",
-            "queried_addr"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "signatures_seq_num_unique": {
           "name": "signatures_seq_num_unique",
@@ -3000,6 +3024,109 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "v0_4_merges": {
+      "name": "v0_4_merges",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vault_addr": {
+          "name": "vault_addr",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vault_seq_num": {
+          "name": "vault_seq_num",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signature": {
+          "name": "signature",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slot": {
+          "name": "slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "merge_vault_index": {
+          "name": "merge_vault_index",
+          "columns": [
+            "vault_addr"
+          ],
+          "isUnique": false
+        },
+        "merge_signature_index": {
+          "name": "merge_signature_index",
+          "columns": [
+            "signature"
+          ],
+          "isUnique": false
+        },
+        "merge_seq_num_vault_index": {
+          "name": "merge_seq_num_vault_index",
+          "columns": [
+            "vault_seq_num",
+            "vault_addr"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "v0_4_merges_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk": {
+          "name": "v0_4_merges_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk",
+          "tableFrom": "v0_4_merges",
+          "tableTo": "v0_4_conditional_vaults",
+          "columnsFrom": [
+            "vault_addr"
+          ],
+          "columnsTo": [
+            "conditional_vault_addr"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "v0_4_merges_signature_signatures_signature_fk": {
+          "name": "v0_4_merges_signature_signatures_signature_fk",
+          "tableFrom": "v0_4_merges",
+          "tableTo": "signatures",
+          "columnsFrom": [
+            "signature"
+          ],
+          "columnsTo": [
+            "signature"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "v0_4_metric_decisions": {
       "name": "v0_4_metric_decisions",
       "schema": "",
@@ -3027,6 +3154,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "recipient": {
+          "name": "recipient",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
         },
         "outcome_question_addr": {
           "name": "outcome_question_addr",
@@ -3060,6 +3194,27 @@
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "market_opened": {
+          "name": "market_opened",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "grant_awarded": {
+          "name": "grant_awarded",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "committee_evaluation": {
+          "name": "committee_evaluation",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -3209,14 +3364,123 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "v0_4_splits": {
+      "name": "v0_4_splits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vault_addr": {
+          "name": "vault_addr",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vault_seq_num": {
+          "name": "vault_seq_num",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signature": {
+          "name": "signature",
+          "type": "varchar(88)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slot": {
+          "name": "slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "split_vault_index": {
+          "name": "split_vault_index",
+          "columns": [
+            "vault_addr"
+          ],
+          "isUnique": false
+        },
+        "split_signature_index": {
+          "name": "split_signature_index",
+          "columns": [
+            "signature"
+          ],
+          "isUnique": false
+        },
+        "split_seq_num_vault_index": {
+          "name": "split_seq_num_vault_index",
+          "columns": [
+            "vault_seq_num",
+            "vault_addr"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "v0_4_splits_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk": {
+          "name": "v0_4_splits_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk",
+          "tableFrom": "v0_4_splits",
+          "tableTo": "v0_4_conditional_vaults",
+          "columnsFrom": [
+            "vault_addr"
+          ],
+          "columnsTo": [
+            "conditional_vault_addr"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "v0_4_splits_signature_signatures_signature_fk": {
+          "name": "v0_4_splits_signature_signatures_signature_fk",
+          "tableFrom": "v0_4_splits",
+          "tableTo": "signatures",
+          "columnsFrom": [
+            "signature"
+          ],
+          "columnsTo": [
+            "signature"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "v0_4_swaps": {
       "name": "v0_4_swaps",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
         "signature": {
           "name": "signature",
           "type": "varchar(88)",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "slot": {
@@ -3249,6 +3513,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "amm_seq_num": {
+          "name": "amm_seq_num",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
         "input_amount": {
           "name": "input_amount",
           "type": "bigint",
@@ -3269,7 +3539,30 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "amm_index": {
+          "name": "amm_index",
+          "columns": [
+            "amm_addr"
+          ],
+          "isUnique": false
+        },
+        "signature_index": {
+          "name": "signature_index",
+          "columns": [
+            "signature"
+          ],
+          "isUnique": false
+        },
+        "seq_num_amm_index": {
+          "name": "seq_num_amm_index",
+          "columns": [
+            "amm_seq_num",
+            "amm_addr"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
