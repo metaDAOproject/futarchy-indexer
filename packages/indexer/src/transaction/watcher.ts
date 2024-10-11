@@ -42,6 +42,7 @@ export enum WatcherBackfillError {
   TransactionParseFailure = "TransactionParseFailure",
   TransactionUpsertFailure = "TransactionUpsertFailure",
   WatcherUpdateFailure = "WatcherUpdateFailure",
+  WatcherNotFound = "WatcherNotFound",
   StartedWithPollingIntervalSet = "StartedWithPollingIntervalSet",
 }
 
@@ -194,16 +195,17 @@ class TransactionWatcher {
         `For acct ${acct}, using finalized slot of ${latestFinalizedSlot}`
       );
     }
-    const updateResult = await usingDb((db) =>
-      db
-        .update(schema.transactionWatchers)
-        .set({
-          checkedUpToSlot: newCheckedUpToSlot,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.transactionWatchers.acct, acct))
-        .returning({ acct: schema.transactionWatchers.acct })
-    );
+    const updateResult =
+      (await usingDb((db) =>
+        db
+          .update(schema.transactionWatchers)
+          .set({
+            checkedUpToSlot: newCheckedUpToSlot,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.transactionWatchers.acct, acct))
+          .returning({ acct: schema.transactionWatchers.acct })
+      )) ?? [];
     if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
       logger.error(
         `Failed to update tx watcher for acct ${acct} at end of backfill`
@@ -247,7 +249,10 @@ class TransactionWatcher {
           .where(eq(schema.transactionWatchers.acct, acct))
           .execute()
       )
-    )[0];
+    )?.[0];
+
+    if (!curWatcherRecord)
+      return Err({ type: WatcherBackfillError.WatcherNotFound });
     // TODO: we don't need to necessarily stop this watcher
     // just because of one txn slot being less than the checked up to slo
     // const { checkedUpToSlot } = curWatcherRecord;
@@ -257,13 +262,14 @@ class TransactionWatcher {
     //   this.stop();
     //   return Err({ type: WatcherBackfillError.SlotCheckHistoryMismatch });
     // }
-    const maybeCurTxRecord = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.transactions)
-        .where(eq(schema.transactions.txSig, signature))
-        .execute()
-    );
+    const maybeCurTxRecord =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.transactions)
+          .where(eq(schema.transactions.txSig, signature))
+          .execute()
+      )) ?? [];
     if (
       maybeCurTxRecord.length === 0 ||
       maybeCurTxRecord[0].serializerLogicVersion <
@@ -296,20 +302,21 @@ class TransactionWatcher {
     // need to set it to the prior tx's slot if that slot is less than the current slot.
     const newCheckedUpToSlot =
       slot > priorSlot ? priorSlot : this.checkedUpToSlot;
-    const updateResult = await usingDb((db) =>
-      db
-        .update(schema.transactionWatchers)
-        .set({
-          acct,
-          latestTxSig: signature,
-          firstTxSig: curWatcherRecord.firstTxSig ?? signature,
-          serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-          checkedUpToSlot: newCheckedUpToSlot,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.transactionWatchers.acct, acct))
-        .returning({ acct: schema.transactionWatchers.acct })
-    );
+    const updateResult =
+      (await usingDb((db) =>
+        db
+          .update(schema.transactionWatchers)
+          .set({
+            acct,
+            latestTxSig: signature,
+            firstTxSig: curWatcherRecord.firstTxSig ?? signature,
+            serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+            checkedUpToSlot: newCheckedUpToSlot,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.transactionWatchers.acct, acct))
+          .returning({ acct: schema.transactionWatchers.acct })
+      )) ?? [];
     if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
       logger.error(
         `Failed to update tx watcher for acct ${acct} on tx ${signature}`
@@ -373,18 +380,19 @@ class TransactionWatcher {
     this.backfilling = false;
     this.stopped = true;
     const acct = this.account.toBase58();
-    const updateResult = await usingDb((db) =>
-      db
-        .update(schema.transactionWatchers)
-        .set({
-          acct,
-          status: TransactionWatchStatus.Failed,
-          failureLog,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.transactionWatchers.acct, acct))
-        .returning({ acct: schema.transactionWatchers.acct })
-    );
+    const updateResult =
+      (await usingDb((db) =>
+        db
+          .update(schema.transactionWatchers)
+          .set({
+            acct,
+            status: TransactionWatchStatus.Failed,
+            failureLog,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.transactionWatchers.acct, acct))
+          .returning({ acct: schema.transactionWatchers.acct })
+      )) ?? [];
     if (updateResult.length !== 1 || updateResult[0].acct !== acct) {
       logger.errorWithChatBotAlert(
         `Failed to mark tx watcher for acct ${acct} as failed`
@@ -425,16 +433,17 @@ async function handleNewTransaction(
     serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
     mainIxType: getMainIxTypeFromTransaction(parsedTx),
   };
-  const upsertResult = await usingDb((db) =>
-    db
-      .insert(schema.transactions)
-      .values(transactionRecord)
-      .onConflictDoUpdate({
-        target: schema.transactions.txSig,
-        set: transactionRecord,
-      })
-      .returning({ txSig: schema.transactions.txSig })
-  );
+  const upsertResult =
+    (await usingDb((db) =>
+      db
+        .insert(schema.transactions)
+        .values(transactionRecord)
+        .onConflictDoUpdate({
+          target: schema.transactions.txSig,
+          set: transactionRecord,
+        })
+        .returning({ txSig: schema.transactions.txSig })
+    )) ?? [];
   if (upsertResult.length !== 1 || upsertResult[0].txSig !== signature) {
     logger.error(
       `Failed to upsert ${signature}. ${JSON.stringify(transactionRecord)}`
@@ -449,13 +458,14 @@ async function handleNewTransaction(
     slot,
     watcherAcct: acct,
   };
-  const insertRes = await usingDb((db) =>
-    db
-      .insert(schema.transactionWatcherTransactions)
-      .values(watcherTxRecord)
-      .onConflictDoNothing()
-      .returning({ acct: schema.transactionWatcherTransactions.watcherAcct })
-  );
+  const insertRes =
+    (await usingDb((db) =>
+      db
+        .insert(schema.transactionWatcherTransactions)
+        .values(watcherTxRecord)
+        .onConflictDoNothing()
+        .returning({ acct: schema.transactionWatcherTransactions.watcherAcct })
+    )) ?? [];
   if (insertRes.length > 0) {
     console.log("successfully inserted new t watch tx", insertRes[0].acct);
   }
@@ -470,7 +480,14 @@ async function handleNewTransaction(
 export function getMainIxTypeFromTransaction(
   tx: Transaction
 ): InstructionType | null {
-  if (tx.instructions.some((ix) => ix.name === "swap")) {
+  const hasSwap = tx.instructions.some((ix) => ix.name === "swap");
+  const hasMint = tx.instructions.some(
+    (ix) => ix.name === "mintConditionalTokens"
+  );
+  if (hasSwap && hasMint) {
+    return InstructionType.VaultMintAndAmmSwap;
+  }
+  if (hasSwap) {
     return InstructionType.AmmSwap;
   }
   if (tx.instructions.some((ix) => ix.name === "addLiquidity")) {
@@ -485,7 +502,7 @@ export function getMainIxTypeFromTransaction(
   if (tx.instructions.some((ix) => ix.name === "cancelOrder")) {
     return InstructionType.OpenbookCancelOrder;
   }
-  if (tx.instructions.some((ix) => ix.name === "mintConditionalTokens")) {
+  if (hasMint) {
     return InstructionType.VaultMintConditionalTokens;
   }
   if (tx.instructions.some((ix) => ix.name === "initializeProposal")) {
@@ -514,15 +531,16 @@ export function getMainIxTypeFromTransaction(
 export async function startTransactionWatchers() {
   async function getWatchers() {
     updatingWatchers = true;
-    const curWatchers = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.transactionWatchers)
-        .where(
-          eq(schema.transactionWatchers.status, TransactionWatchStatus.Active)
-        )
-        .execute()
-    );
+    const curWatchers =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.transactionWatchers)
+          .where(
+            eq(schema.transactionWatchers.status, TransactionWatchStatus.Active)
+          )
+          .execute()
+      )) ?? [];
     const curWatchersByAccount: Record<string, TransactionWatcherRecord> = {};
     const watchersToStart: Set<string> = new Set();
     const watchersToStop: Set<string> = new Set();
@@ -543,18 +561,19 @@ export async function startTransactionWatchers() {
           );
           watchers[acct]?.stop();
           delete watchers[acct];
-          const updated = await usingDb((db) =>
-            db
-              .update(schema.transactionWatchers)
-              .set({
-                serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-                latestTxSig: null,
-                checkedUpToSlot: BigInt(0),
-                updatedAt: new Date(),
-              })
-              .where(eq(schema.transactionWatchers.acct, acct))
-              .returning({ acct: schema.transactionWatchers.acct })
-          );
+          const updated =
+            (await usingDb((db) =>
+              db
+                .update(schema.transactionWatchers)
+                .set({
+                  serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
+                  latestTxSig: null,
+                  checkedUpToSlot: BigInt(0),
+                  updatedAt: new Date(),
+                })
+                .where(eq(schema.transactionWatchers.acct, acct))
+                .returning({ acct: schema.transactionWatchers.acct })
+            )) ?? [];
           if (updated.length !== 1 || updated[0].acct !== acct) {
             const error = new Error(
               `Failed to update ${acct} watcher. ${JSON.stringify(updated)}`

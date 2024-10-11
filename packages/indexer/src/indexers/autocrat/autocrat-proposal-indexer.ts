@@ -42,7 +42,7 @@ import { BN } from "@coral-xyz/anchor";
 import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm/sql";
 import { logger } from "../../logger";
-import { PriceMath } from "@metadaoproject/futarchy";
+import { PriceMath } from "@metadaoproject/futarchy/v0.3";
 import { UserPerformance, UserPerformanceTotals } from "../../types";
 import { alias } from "drizzle-orm/pg-core";
 
@@ -60,24 +60,27 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "5 * * * * *",
   index: async () => {
     try {
-      const { currentSlot, currentTime } = (
-        await usingDb((db) =>
-          db
-            .select({
-              currentSlot: schema.prices.updatedSlot,
-              currentTime: schema.prices.createdAt,
-            })
-            .from(schema.prices)
-            .orderBy(desc(schema.prices.updatedSlot))
-            .limit(1)
-            .execute()
-        )
-      )[0];
+      const { currentSlot, currentTime } =
+        (
+          await usingDb((db) =>
+            db
+              .select({
+                currentSlot: schema.prices.updatedSlot,
+                currentTime: schema.prices.createdAt,
+              })
+              .from(schema.prices)
+              .orderBy(desc(schema.prices.updatedSlot))
+              .limit(1)
+              .execute()
+          )
+        )?.[0] ?? {};
+
+      if (!currentSlot || !currentTime) return;
 
       logger.log("Autocrat proposal indexer");
-      const dbProposals: ProposalRecord[] = await usingDb((db) =>
-        db.select().from(schema.proposals).execute()
-      );
+      const dbProposals: ProposalRecord[] =
+        (await usingDb((db) => db.select().from(schema.proposals).execute())) ??
+        [];
 
       const protocolV0_3 = rpcReadClient.futarchyProtocols.find(
         (protocol) => protocol.deploymentVersion == "V0.3"
@@ -149,7 +152,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .execute()
         );
 
-        const dbDao: DaoRecord = (
+        const dbDao: DaoRecord | undefined = (
           await usingDb((db) =>
             db
               .select()
@@ -157,7 +160,10 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
               .where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58()))
               .execute()
           )
-        )[0];
+        )?.[0];
+
+        if (!dbDao) return;
+
         const dbProposal: ProposalRecord = {
           proposalAcct: proposal.publicKey.toString(),
           proposalNum: BigInt(proposal.account.number.toString()),
@@ -199,7 +205,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
       for (const onChainProposal of onChainProposals) {
         if (onChainProposal.account.state.pending) {
-          const dbDao: DaoRecord = (
+          const dbDao: DaoRecord | undefined = (
             await usingDb((db) =>
               db
                 .select()
@@ -212,7 +218,9 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
                 )
                 .execute()
             )
-          )[0];
+          )?.[0];
+
+          if (!dbDao) continue;
 
           const endSlot: BN = onChainProposal.account.slotEnqueued.add(
             new BN(dbDao.slotsPerProposal?.valueOf())
@@ -359,24 +367,25 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
         // check if markets are there, if they aren't insert them
         // Check if markets are there, if they aren't, insert them
-        const existingMarkets = await usingDb((db) =>
-          db
-            .select()
-            .from(schema.markets)
-            .where(
-              or(
-                eq(
-                  schema.markets.marketAcct,
-                  onChainProposal.account.passAmm.toString()
-                ),
-                eq(
-                  schema.markets.marketAcct,
-                  onChainProposal.account.failAmm.toString()
+        const existingMarkets =
+          (await usingDb((db) =>
+            db
+              .select()
+              .from(schema.markets)
+              .where(
+                or(
+                  eq(
+                    schema.markets.marketAcct,
+                    onChainProposal.account.passAmm.toString()
+                  ),
+                  eq(
+                    schema.markets.marketAcct,
+                    onChainProposal.account.failAmm.toString()
+                  )
                 )
               )
-            )
-            .execute()
-        );
+              .execute()
+          )) ?? [];
 
         if (
           !existingMarkets.some(
@@ -409,13 +418,14 @@ async function insertAssociatedAccountsDataForProposal(
   proposal: ProposalAccountWithKey,
   currentTime: Date
 ) {
-  const dao = await usingDb((db) =>
-    db
-      .select()
-      .from(schema.daos)
-      .where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58()))
-      .execute()
-  );
+  const dao =
+    (await usingDb((db) =>
+      db
+        .select()
+        .from(schema.daos)
+        .where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58()))
+        .execute()
+    )) ?? [];
 
   let daoDetails;
   if (dao.length > 0) {
@@ -648,23 +658,34 @@ async function calculateUserPerformance(
   const quoteTokens = alias(schema.tokens, "quote_tokens"); // NOTE: This should be USDC for now
   const baseTokens = alias(schema.tokens, "base_tokens");
   // calculate performance
-  const [proposal] = await usingDb((db) => {
-    return db
-      .select()
-      .from(schema.proposals)
-      .where(
-        eq(schema.proposals.proposalAcct, onChainProposal.publicKey.toString())
-      )
-      .leftJoin(schema.daos, eq(schema.proposals.daoAcct, schema.daos.daoAcct))
-      .leftJoin(quoteTokens, eq(schema.daos.quoteAcct, quoteTokens.mintAcct))
-      .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
-      .limit(1)
-      .execute();
-  });
+  const [proposal] =
+    (await usingDb((db) => {
+      return db
+        .select()
+        .from(schema.proposals)
+        .where(
+          eq(
+            schema.proposals.proposalAcct,
+            onChainProposal.publicKey.toString()
+          )
+        )
+        .leftJoin(
+          schema.daos,
+          eq(schema.proposals.daoAcct, schema.daos.daoAcct)
+        )
+        .leftJoin(quoteTokens, eq(schema.daos.quoteAcct, quoteTokens.mintAcct))
+        .leftJoin(baseTokens, eq(schema.daos.baseAcct, baseTokens.mintAcct))
+        .limit(1)
+        .execute();
+    })) ?? [];
+
+  if (!proposal) return;
 
   const { proposals, daos, quote_tokens, base_tokens } = proposal;
 
   let proposalDaoAcct = daos?.daoAcct;
+
+  if (!proposals) return;
 
   if (!proposalDaoAcct) {
     proposalDaoAcct = proposals.daoAcct;
@@ -674,18 +695,19 @@ async function calculateUserPerformance(
     console.error("No daoAcct found");
   }
 
-  const allOrders = await usingDb((db) => {
-    return db
-      .select()
-      .from(schema.orders)
-      .where(
-        inArray(schema.orders.marketAcct, [
-          proposals.passMarketAcct,
-          proposals.failMarketAcct,
-        ])
-      )
-      .execute();
-  });
+  const allOrders =
+    (await usingDb((db) => {
+      return db
+        .select()
+        .from(schema.orders)
+        .where(
+          inArray(schema.orders.marketAcct, [
+            proposals.passMarketAcct,
+            proposals.failMarketAcct,
+          ])
+        )
+        .execute();
+    })) ?? [];
 
   // Get the time for us to search across the price space for spot
   const proposalFinalizedAt = proposals.completedAt ?? new Date();
@@ -701,21 +723,22 @@ async function calculateUserPerformance(
   // TODO: Get spot price at proposal finalization or even current spot price
   // if the proposal is still active (this would be UNREALISED P&L)
   // TODO: If this is 0 we really need to throw and error and alert someone, we shouldn't have missing spot data
-  const spotPrice = await usingDb((db) => {
-    return db
-      .select()
-      .from(schema.prices)
-      .where(
-        and(
-          eq(schema.prices.marketAcct, base_tokens.mintAcct),
-          lte(schema.prices.createdAt, proposalFinalizedAt),
-          gt(schema.prices.createdAt, proposalFinalizedAtMinus2Minutes)
+  const spotPrice =
+    (await usingDb((db) => {
+      return db
+        .select()
+        .from(schema.prices)
+        .where(
+          and(
+            eq(schema.prices.marketAcct, base_tokens.mintAcct),
+            lte(schema.prices.createdAt, proposalFinalizedAt),
+            gt(schema.prices.createdAt, proposalFinalizedAtMinus2Minutes)
+          )
         )
-      )
-      .limit(1)
-      .orderBy(desc(schema.prices.createdAt))
-      .execute();
-  });
+        .limit(1)
+        .orderBy(desc(schema.prices.createdAt))
+        .execute();
+    })) ?? [];
 
   let actors = allOrders.reduce((current, next) => {
     const actor = next.actorAcct;

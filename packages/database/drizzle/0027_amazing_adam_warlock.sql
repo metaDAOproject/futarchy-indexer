@@ -1,1 +1,0 @@
-ALTER TABLE "prices" ALTER COLUMN "price" SET DATA TYPE numeric(40, 20);

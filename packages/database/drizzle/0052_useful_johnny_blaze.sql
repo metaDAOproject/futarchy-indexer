@@ -1,1 +1,0 @@
-ALTER TABLE "token_acct_balances" ADD COLUMN "delta" bigint DEFAULT 0 NOT NULL;

@@ -51,9 +51,8 @@ async function populateIndexerAccountDependencies() {
   }
 }
 async function populateTokenMintIndexerAccountDependencies() {
-  const mints: TokenRecord[] = await usingDb((db) =>
-    db.select().from(schema.tokens).execute()
-  );
+  const mints: TokenRecord[] =
+    (await usingDb((db) => db.select().from(schema.tokens).execute())) ?? [];
 
   for (const mint of mints) {
     const newTokenMintIndexerDep: IndexerAccountDependency = {
@@ -61,13 +60,14 @@ async function populateTokenMintIndexerAccountDependencies() {
       name: "token-mint-accounts",
       latestTxSigProcessed: null,
     };
-    const insertRes = await usingDb((db) =>
-      db
-        .insert(schema.indexerAccountDependencies)
-        .values([newTokenMintIndexerDep])
-        .onConflictDoNothing()
-        .returning({ acct: schema.indexerAccountDependencies.acct })
-    );
+    const insertRes =
+      (await usingDb((db) =>
+        db
+          .insert(schema.indexerAccountDependencies)
+          .values([newTokenMintIndexerDep])
+          .onConflictDoNothing()
+          .returning({ acct: schema.indexerAccountDependencies.acct })
+      )) ?? [];
     if (insertRes.length > 0) {
       console.log(
         "successfully populated indexer dependency for token mint account:",
@@ -80,13 +80,14 @@ async function populateTokenMintIndexerAccountDependencies() {
 }
 
 async function populateAmmMarketIndexerAccountDependencies() {
-  const ammMarkets = await usingDb((db) =>
-    db
-      .select()
-      .from(schema.markets)
-      .where(and(eq(schema.markets.marketType, MarketType.FUTARCHY_AMM)))
-      .execute()
-  );
+  const ammMarkets =
+    (await usingDb((db) =>
+      db
+        .select()
+        .from(schema.markets)
+        .where(and(eq(schema.markets.marketType, MarketType.FUTARCHY_AMM)))
+        .execute()
+    )) ?? [];
 
   for (const ammMarket of ammMarkets) {
     const newAmmIndexerDep: IndexerAccountDependency = {
@@ -105,17 +106,18 @@ async function populateAmmMarketIndexerAccountDependencies() {
       latestTxSigProcessed: null,
     };
 
-    const ammInsertResult = await usingDb((db) =>
-      db
-        .insert(schema.indexerAccountDependencies)
-        .values([
-          newAmmIndexerDep,
-          newAmmIntervalIndexerDep,
-          newAmmLogsSubscribeIndexerDep,
-        ])
-        .onConflictDoNothing()
-        .returning({ acct: schema.indexerAccountDependencies.acct })
-    );
+    const ammInsertResult =
+      (await usingDb((db) =>
+        db
+          .insert(schema.indexerAccountDependencies)
+          .values([
+            newAmmIndexerDep,
+            newAmmIntervalIndexerDep,
+            newAmmLogsSubscribeIndexerDep,
+          ])
+          .onConflictDoNothing()
+          .returning({ acct: schema.indexerAccountDependencies.acct })
+      )) ?? [];
     if (ammInsertResult.length > 0) {
       console.log(
         "successfully populated indexer dependency for amm market account:",
@@ -128,26 +130,28 @@ async function populateAmmMarketIndexerAccountDependencies() {
 }
 
 async function populateOpenbookMarketIndexerAccountDependencies() {
-  const indexerAccountsQuery = await usingDb((db) =>
-    db
-      .select({ acct: schema.indexerAccountDependencies.acct })
-      .from(schema.indexerAccountDependencies)
-  );
-  const openbookMarkets = await usingDb((db) =>
-    db
-      .select()
-      .from(schema.markets)
-      .where(
-        and(
-          eq(schema.markets.marketType, MarketType.OPEN_BOOK_V2),
-          notInArray(
-            schema.markets.marketAcct,
-            indexerAccountsQuery.map<string>((ai) => ai.acct)
+  const indexerAccountsQuery =
+    (await usingDb((db) =>
+      db
+        .select({ acct: schema.indexerAccountDependencies.acct })
+        .from(schema.indexerAccountDependencies)
+    )) ?? [];
+  const openbookMarkets =
+    (await usingDb((db) =>
+      db
+        .select()
+        .from(schema.markets)
+        .where(
+          and(
+            eq(schema.markets.marketType, MarketType.OPEN_BOOK_V2),
+            notInArray(
+              schema.markets.marketAcct,
+              indexerAccountsQuery.map<string>((ai) => ai.acct)
+            )
           )
         )
-      )
-      .execute()
-  );
+        .execute()
+    )) ?? [];
 
   for (const openbookMarket of openbookMarkets) {
     const newopenbookIndexerDep: IndexerAccountDependency = {
@@ -156,12 +160,13 @@ async function populateOpenbookMarketIndexerAccountDependencies() {
       latestTxSigProcessed: null,
     };
 
-    const openbookInsertResult = await usingDb((db) =>
-      db
-        .insert(schema.indexerAccountDependencies)
-        .values(newopenbookIndexerDep)
-        .returning({ acct: schema.indexerAccountDependencies.acct })
-    );
+    const openbookInsertResult =
+      (await usingDb((db) =>
+        db
+          .insert(schema.indexerAccountDependencies)
+          .values(newopenbookIndexerDep)
+          .returning({ acct: schema.indexerAccountDependencies.acct })
+      )) ?? [];
     if (openbookInsertResult.length > 0) {
       logger.log(
         "successfully populated indexer dependency for openbook market account:",
@@ -184,18 +189,19 @@ enum PopulateSpotPriceMarketErrors {
 }
 
 async function populateSpotPriceMarketIndexerAccountDependencies() {
-  const baseDaoTokens = await usingDb((db) =>
-    db
-      .select()
-      .from(schema.tokens)
-      .where(
-        and(
-          notIlike(schema.tokens.name, "%proposal%"),
-          notInArray(schema.tokens.symbol, ["USDC", "mUSDC"])
+  const baseDaoTokens =
+    (await usingDb((db) =>
+      db
+        .select()
+        .from(schema.tokens)
+        .where(
+          and(
+            notIlike(schema.tokens.name, "%proposal%"),
+            notInArray(schema.tokens.symbol, ["USDC", "mUSDC"])
+          )
         )
-      )
-      .execute()
-  );
+        .execute()
+    )) ?? [];
 
   // Loop through each token to find its corresponding USDC market address
   for (const token of baseDaoTokens) {
@@ -227,26 +233,32 @@ async function populateJupQuoteIndexerAndMarket(token: {
     }
 
     // it is supported, so let's continue on
-    const [usdcToken] = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.tokens)
-        .where(eq(schema.tokens.symbol, "USDC"))
-        .execute()
-    );
+    const [usdcToken] =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.tokens)
+          .where(eq(schema.tokens.symbol, "USDC"))
+          .execute()
+      )) ?? [];
+    if (!usdcToken)
+      return Err({
+        type: JupiterQuoteIndexingError.GeneralJupiterQuoteIndexError,
+      });
 
     const baseTokenDependency: IndexerAccountDependency = {
       acct: mintAcct,
       name: "jupiter-quotes",
     };
 
-    const insertRes = await usingDb((db) =>
-      db
-        .insert(schema.indexerAccountDependencies)
-        .values(baseTokenDependency)
-        .onConflictDoNothing()
-        .returning({ acct: schema.indexerAccountDependencies.acct })
-    );
+    const insertRes =
+      (await usingDb((db) =>
+        db
+          .insert(schema.indexerAccountDependencies)
+          .values(baseTokenDependency)
+          .onConflictDoNothing()
+          .returning({ acct: schema.indexerAccountDependencies.acct })
+      )) ?? [];
 
     if (insertRes.length > 0) {
       console.log(
@@ -273,13 +285,14 @@ async function populateJupQuoteIndexerAndMarket(token: {
       createdAt: new Date(),
     };
 
-    const marketInserRes = await usingDb((db) =>
-      db
-        .insert(schema.markets)
-        .values(jupMarket)
-        .onConflictDoNothing()
-        .returning({ acct: schema.markets.marketAcct })
-    );
+    const marketInserRes =
+      (await usingDb((db) =>
+        db
+          .insert(schema.markets)
+          .values(jupMarket)
+          .onConflictDoNothing()
+          .returning({ acct: schema.markets.marketAcct })
+      )) ?? [];
 
     if (marketInserRes.length > 0) {
       console.log(
@@ -307,26 +320,30 @@ async function populateBirdEyePricesIndexerAndMarket(token: {
 }) {
   const { mintAcct } = token;
   try {
-    const [usdcToken] = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.tokens)
-        .where(eq(schema.tokens.symbol, "USDC"))
-        .execute()
-    );
+    const [usdcToken] =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.tokens)
+          .where(eq(schema.tokens.symbol, "USDC"))
+          .execute()
+      )) ?? [];
+
+    if (!usdcToken) return;
 
     const baseTokenDependency: IndexerAccountDependency = {
       acct: mintAcct,
       name: "birdeye-prices",
     };
 
-    const insertRes = await usingDb((db) =>
-      db
-        .insert(schema.indexerAccountDependencies)
-        .values(baseTokenDependency)
-        .onConflictDoNothing()
-        .returning({ acct: schema.indexerAccountDependencies.acct })
-    );
+    const insertRes =
+      (await usingDb((db) =>
+        db
+          .insert(schema.indexerAccountDependencies)
+          .values(baseTokenDependency)
+          .onConflictDoNothing()
+          .returning({ acct: schema.indexerAccountDependencies.acct })
+      )) ?? [];
 
     if (insertRes.length > 0) {
       console.log(
@@ -353,13 +370,14 @@ async function populateBirdEyePricesIndexerAndMarket(token: {
       createdAt: new Date(),
     };
 
-    const marketInserRes = await usingDb((db) =>
-      db
-        .insert(schema.markets)
-        .values(birdeyeMarket)
-        .onConflictDoNothing()
-        .returning({ acct: schema.markets.marketAcct })
-    );
+    const marketInserRes =
+      (await usingDb((db) =>
+        db
+          .insert(schema.markets)
+          .values(birdeyeMarket)
+          .onConflictDoNothing()
+          .returning({ acct: schema.markets.marketAcct })
+      )) ?? [];
 
     if (marketInserRes.length > 0) {
       console.log(
@@ -380,76 +398,76 @@ async function populateBirdEyePricesIndexerAndMarket(token: {
  * NOT BEING USED FOR NOW. DOESN'T SUPPORT MANY PRICES WE NEED.
  * @param token
  */
-async function populateOrcaWhirlpoolMarket(token: {
-  symbol: string;
-  name: string;
-  imageUrl: string | null;
-  mintAcct: string;
-  supply: bigint;
-  decimals: number;
-  updatedAt: Date;
-}) {
-  try {
-    const [usdcToken] = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.tokens)
-        .where(eq(schema.tokens.symbol, "USDC"))
-        .execute()
-    );
+// async function populateOrcaWhirlpoolMarket(token: {
+//   symbol: string;
+//   name: string;
+//   imageUrl: string | null;
+//   mintAcct: string;
+//   supply: bigint;
+//   decimals: number;
+//   updatedAt: Date;
+// }) {
+//   try {
+//     const [usdcToken] = await usingDb((db) =>
+//       db
+//         .select()
+//         .from(schema.tokens)
+//         .where(eq(schema.tokens.symbol, "USDC"))
+//         .execute()
+//     );
 
-    const pda = PDAUtil.getWhirlpool(
-      ORCA_WHIRLPOOL_PROGRAM_ID,
-      ORCA_WHIRLPOOLS_CONFIG,
-      new PublicKey(token.mintAcct),
-      // new PublicKey(usdcToken[0].mintAcct),
-      new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
-      128
-    );
+//     const pda = PDAUtil.getWhirlpool(
+//       ORCA_WHIRLPOOL_PROGRAM_ID,
+//       ORCA_WHIRLPOOLS_CONFIG,
+//       new PublicKey(token.mintAcct),
+//       // new PublicKey(usdcToken[0].mintAcct),
+//       new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+//       128
+//     );
 
-    const ctx = WhirlpoolContext.from(
-      connection,
-      readonlyWallet,
-      ORCA_WHIRLPOOL_PROGRAM_ID
-    );
-    const client = buildWhirlpoolClient(ctx);
-    const pool = await client.getPool(pda.publicKey);
-    console.log("orca pool", pool);
+//     const ctx = WhirlpoolContext.from(
+//       connection,
+//       readonlyWallet,
+//       ORCA_WHIRLPOOL_PROGRAM_ID
+//     );
+//     const client = buildWhirlpoolClient(ctx);
+//     const pool = await client.getPool(pda.publicKey);
+//     console.log("orca pool", pool);
 
-    const orcaWhirlpoolMarket: MarketRecord = {
-      asksTokenAcct: token.mintAcct,
-      baseLotSize: BigInt(10 ** token.decimals),
-      baseMakerFee: 0,
-      baseMintAcct: token.mintAcct,
-      baseTakerFee: 0,
-      bidsTokenAcct: usdcToken.mintAcct,
-      createTxSig: "",
-      marketAcct: pool.getAddress().toString(),
-      marketType: MarketType.ORCA_WHIRLPOOL,
-      quoteLotSize: BigInt(10 ** usdcToken.decimals),
-      quoteMakerFee: 0,
-      quoteMintAcct: usdcToken.mintAcct,
-      quoteTakerFee: 0,
-      quoteTickSize: BigInt(0),
-    };
+//     const orcaWhirlpoolMarket: MarketRecord = {
+//       asksTokenAcct: token.mintAcct,
+//       baseLotSize: BigInt(10 ** token.decimals),
+//       baseMakerFee: 0,
+//       baseMintAcct: token.mintAcct,
+//       baseTakerFee: 0,
+//       bidsTokenAcct: usdcToken.mintAcct,
+//       createTxSig: "",
+//       marketAcct: pool.getAddress().toString(),
+//       marketType: MarketType.ORCA_WHIRLPOOL,
+//       quoteLotSize: BigInt(10 ** usdcToken.decimals),
+//       quoteMakerFee: 0,
+//       quoteMintAcct: usdcToken.mintAcct,
+//       quoteTakerFee: 0,
+//       quoteTickSize: BigInt(0),
+//     };
 
-    const insertRes = await usingDb((db) =>
-      db
-        .insert(schema.markets)
-        .values(orcaWhirlpoolMarket)
-        .onConflictDoNothing()
-        .returning({ acct: schema.markets.marketAcct })
-    );
+//     const insertRes = await usingDb((db) =>
+//       db
+//         .insert(schema.markets)
+//         .values(orcaWhirlpoolMarket)
+//         .onConflictDoNothing()
+//         .returning({ acct: schema.markets.marketAcct })
+//     );
 
-    if (insertRes.length > 0) {
-      console.log(
-        "successfully inserted whirlpool market for tracking",
-        insertRes[0].acct
-      );
-    }
-  } catch (error) {
-    logger.error(
-      `Error fetching market address for USDC/${token.symbol}: ${error}`
-    );
-  }
-}
+//     if (insertRes.length > 0) {
+//       console.log(
+//         "successfully inserted whirlpool market for tracking",
+//         insertRes[0].acct
+//       );
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Error fetching market address for USDC/${token.symbol}: ${error}`
+//     );
+//   }
+// }

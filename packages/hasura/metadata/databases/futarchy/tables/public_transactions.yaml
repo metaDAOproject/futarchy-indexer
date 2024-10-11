@@ -56,8 +56,12 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
-        - failed
         - slot
+        - failed
+        - main_ix_type
         - tx_sig
+        - serializer_logic_version
+        - payload
+        - block_time
       filter: {}
     comment: ""

@@ -34,7 +34,7 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
         }
       }
 
-      const dbMint: TokenRecord = (
+      const dbMint: TokenRecord | undefined = (
         await usingDb((db) =>
           db
             .select()
@@ -42,7 +42,9 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
             .where(eq(schema.tokens.mintAcct, mint.toString()))
             .execute()
         )
-      )[0];
+      )?.[0];
+
+      if (!dbMint) return;
 
       if (dbMint.supply !== storedMint.supply) {
         await usingDb((db) =>

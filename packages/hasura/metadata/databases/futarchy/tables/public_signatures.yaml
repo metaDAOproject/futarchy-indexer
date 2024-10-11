@@ -1,0 +1,18 @@
+table:
+  name: signatures
+  schema: public
+array_relationships:
+  - name: v0_4_merges
+    using:
+      foreign_key_constraint_on:
+        column: signature
+        table:
+          name: v0_4_merges
+          schema: public
+  - name: v0_4_splits
+    using:
+      foreign_key_constraint_on:
+        column: signature
+        table:
+          name: v0_4_splits
+          schema: public
