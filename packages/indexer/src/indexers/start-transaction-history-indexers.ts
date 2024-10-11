@@ -26,28 +26,29 @@ export async function startTransactionHistoryIndexer(
   );
   if (implementation && dependentAccount && dependentAccount.acct) {
     // query for all transactions for this acct with slots higher than this indexer
-    const transactions = await usingDb((db) => {
-      return db
-        .select()
-        .from(schema.transactions)
-        .fullJoin(
-          schema.transactionWatcherTransactions,
-          eq(
-            schema.transactionWatcherTransactions.txSig,
-            schema.transactions.txSig
-          )
-        )
-        .where(
-          and(
+    const transactions =
+      (await usingDb((db) => {
+        return db
+          .select()
+          .from(schema.transactions)
+          .fullJoin(
+            schema.transactionWatcherTransactions,
             eq(
-              schema.transactionWatcherTransactions.watcherAcct,
-              dependentAccount.acct
-            ),
-            gte(schema.transactions.slot, indexer.latestSlotProcessed)
+              schema.transactionWatcherTransactions.txSig,
+              schema.transactions.txSig
+            )
           )
-        )
-        .execute();
-    });
+          .where(
+            and(
+              eq(
+                schema.transactionWatcherTransactions.watcherAcct,
+                dependentAccount.acct
+              ),
+              gte(schema.transactions.slot, indexer.latestSlotProcessed)
+            )
+          )
+          .execute();
+      })) ?? [];
 
     await indexExistingTxs(transactions, implementation, indexer);
   }
@@ -66,17 +67,18 @@ async function indexExistingTxs(
       const res = await implementation.indexTransactionSig(tx.transactions);
       if (res.success) {
         // update latest slot for indexer
-        const updateResult = await usingDb((db) =>
-          db
-            .update(schema.indexers)
-            .set({
-              latestSlotProcessed: tx.transactions?.slot,
-            })
-            .where(eq(schema.indexers.name, indexer.name))
-            .returning({
-              latestSlotProcessed: schema.indexers.latestSlotProcessed,
-            })
-        );
+        const updateResult =
+          (await usingDb((db) =>
+            db
+              .update(schema.indexers)
+              .set({
+                latestSlotProcessed: tx.transactions?.slot,
+              })
+              .where(eq(schema.indexers.name, indexer.name))
+              .returning({
+                latestSlotProcessed: schema.indexers.latestSlotProcessed,
+              })
+          )) ?? [];
         if (updateResult.length > 0) {
           console.log(
             `successfully updated indexer "${indexer.name}" to slot ${updateResult[0].latestSlotProcessed}`
@@ -98,19 +100,23 @@ async function handleNewTxs(msg: {
 }) {
   const { transactions: tx, transaction_watcher_transactions: watcherTx } = msg;
   // query for the any indexer account dependencies based on the watcher acct, and then query for the indexer implementation based on that, then you are up and running
-  const indexerQueryRes = await usingDb((db) => {
-    return db
-      .select()
-      .from(schema.indexerAccountDependencies)
-      .fullJoin(
-        schema.indexers,
-        eq(schema.indexers.name, schema.indexerAccountDependencies.name)
-      )
-      .where(
-        eq(schema.indexerAccountDependencies.acct, watcherTx?.watcherAcct ?? "")
-      )
-      .execute();
-  });
+  const indexerQueryRes =
+    (await usingDb((db) => {
+      return db
+        .select()
+        .from(schema.indexerAccountDependencies)
+        .fullJoin(
+          schema.indexers,
+          eq(schema.indexers.name, schema.indexerAccountDependencies.name)
+        )
+        .where(
+          eq(
+            schema.indexerAccountDependencies.acct,
+            watcherTx?.watcherAcct ?? ""
+          )
+        )
+        .execute();
+    })) ?? [];
   if (indexerQueryRes.length === 0) {
     console.log(
       "skipping processing new tx, no indexer query result. Tx Sig:",

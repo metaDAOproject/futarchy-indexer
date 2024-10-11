@@ -22,9 +22,8 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
   index: async () => {
     try {
       // Fetches all daos from the database
-      const dbDaos: DaoRecord[] = await usingDb((db) =>
-        db.select().from(schema.daos).execute()
-      );
+      const dbDaos: DaoRecord[] =
+        (await usingDb((db) => db.select().from(schema.daos).execute())) ?? [];
       const onChainDaos = await rpcReadClient.daos.fetchAllDaos();
 
       const daosToInsert: Dao[] = [];

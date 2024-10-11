@@ -86,13 +86,14 @@ export const fetchQuoteFromJupe = async (
   acct: string
 ): Promise<[number, number | undefined] | null> => {
   try {
-    const baseToken = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.tokens)
-        .where(eq(schema.tokens.mintAcct, acct))
-        .execute()
-    );
+    const baseToken =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.tokens)
+          .where(eq(schema.tokens.mintAcct, acct))
+          .execute()
+      )) ?? [];
 
     // Define the output mint based on the input token
     const quoteMint =
@@ -100,13 +101,14 @@ export const fetchQuoteFromJupe = async (
         ? "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
         : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
-    const quoteToken = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.tokens)
-        .where(eq(schema.tokens.mintAcct, quoteMint))
-        .execute()
-    );
+    const quoteToken =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.tokens)
+          .where(eq(schema.tokens.mintAcct, quoteMint))
+          .execute()
+      )) ?? [];
 
     const amountVal = 1 * 10 ** baseToken[0].decimals;
 

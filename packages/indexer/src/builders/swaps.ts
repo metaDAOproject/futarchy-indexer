@@ -40,16 +40,17 @@ export class SwapPersistable {
 
   async persist() {
     try {
-      const upsertResult = await usingDb((db) =>
-        db
-          .insert(schema.transactions)
-          .values(this.transactionRecord)
-          .onConflictDoUpdate({
-            target: schema.transactions.txSig,
-            set: this.transactionRecord,
-          })
-          .returning({ txSig: schema.transactions.txSig })
-      );
+      const upsertResult =
+        (await usingDb((db) =>
+          db
+            .insert(schema.transactions)
+            .values(this.transactionRecord)
+            .onConflictDoUpdate({
+              target: schema.transactions.txSig,
+              set: this.transactionRecord,
+            })
+            .returning({ txSig: schema.transactions.txSig })
+        )) ?? [];
       if (
         upsertResult.length !== 1 ||
         upsertResult[0].txSig !== this.transactionRecord.txSig
@@ -60,13 +61,14 @@ export class SwapPersistable {
           )}`
         );
       }
-      const orderInsertRes = await usingDb((db) =>
-        db
-          .insert(schema.orders)
-          .values(this.ordersRecord)
-          .onConflictDoNothing()
-          .returning({ txSig: schema.takes.orderTxSig })
-      );
+      const orderInsertRes =
+        (await usingDb((db) =>
+          db
+            .insert(schema.orders)
+            .values(this.ordersRecord)
+            .onConflictDoNothing()
+            .returning({ txSig: schema.takes.orderTxSig })
+        )) ?? [];
       if (orderInsertRes.length > 0) {
         console.log(
           "successfully inserted swap order record",
@@ -78,13 +80,14 @@ export class SwapPersistable {
         ${this.ordersRecord.orderTxSig}`
         );
       }
-      const takeInsertRes = await usingDb((db) =>
-        db
-          .insert(schema.takes)
-          .values(this.takesRecord)
-          .onConflictDoNothing()
-          .returning({ txSig: schema.takes.orderTxSig })
-      );
+      const takeInsertRes =
+        (await usingDb((db) =>
+          db
+            .insert(schema.takes)
+            .values(this.takesRecord)
+            .onConflictDoNothing()
+            .returning({ txSig: schema.takes.orderTxSig })
+        )) ?? [];
       if (takeInsertRes.length > 0) {
         logger.log(
           `successfully inserted swap take record.
@@ -110,13 +113,14 @@ export class SwapBuilder {
   ): Promise<Result<SwapPersistable, TaggedUnion>> {
     try {
       // first check to see if swap is already persisted
-      const swapOrder = await usingDb((db) =>
-        db
-          .select()
-          .from(schema.orders)
-          .where(eq(schema.orders.orderTxSig, signature))
-          .execute()
-      );
+      const swapOrder =
+        (await usingDb((db) =>
+          db
+            .select()
+            .from(schema.orders)
+            .where(eq(schema.orders.orderTxSig, signature))
+            .execute()
+        )) ?? [];
       if (swapOrder.length > 0) {
         return Err({ type: SwapPersistableError.AlreadyPersistedSwap });
       }
@@ -266,34 +270,37 @@ export class SwapBuilder {
     // determine price
     // NOTE: This is estimated given the output is a min expected value
     // default is input / output (buying a token with USDC or whatever)
-    const marketAcctRecord = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.markets)
-        .where(eq(schema.markets.marketAcct, marketAcct.pubkey))
-        .execute()
-    );
+    const marketAcctRecord =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.markets)
+          .where(eq(schema.markets.marketAcct, marketAcct.pubkey))
+          .execute()
+      )) ?? [];
     if (marketAcctRecord.length === 0) {
       return Err({ type: AmmInstructionIndexerError.MissingMarket });
     }
-    const baseToken = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.tokens)
-        .where(eq(schema.tokens.mintAcct, marketAcctRecord[0].baseMintAcct))
-        .execute()
-    );
+    const baseToken =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.tokens)
+          .where(eq(schema.tokens.mintAcct, marketAcctRecord[0].baseMintAcct))
+          .execute()
+      )) ?? [];
     if (baseToken.length === 0) {
       return Err({ type: AmmInstructionIndexerError.MissingMarket });
     }
-    const quoteToken = await usingDb((db) =>
-      db
-        .select()
-        .from(schema.tokens)
-        .where(eq(schema.tokens.mintAcct, marketAcctRecord[0].quoteMintAcct))
-        .limit(1)
-        .execute()
-    );
+    const quoteToken =
+      (await usingDb((db) =>
+        db
+          .select()
+          .from(schema.tokens)
+          .where(eq(schema.tokens.mintAcct, marketAcctRecord[0].quoteMintAcct))
+          .limit(1)
+          .execute()
+      )) ?? [];
     if (baseToken.length === 0) {
       return Err({ type: AmmInstructionIndexerError.MissingMarket });
     }
