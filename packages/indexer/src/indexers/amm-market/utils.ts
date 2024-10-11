@@ -1,6 +1,6 @@
 import { BN } from "@coral-xyz/anchor";
 import { BN_0, enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
-import { PriceMath } from "@metadaoproject/futarchy";
+import { PriceMath } from "@metadaoproject/futarchy/v0.3";
 import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import {
@@ -64,8 +64,8 @@ export async function indexAmmMarketAccountWithContext(
       updatedSlot: context
         ? BigInt(context.slot)
         : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
-        lastObservation: ammMarketAccount.oracle.lastObservation.toNumber(),
-        lastPrice: ammMarketAccount.oracle.lastPrice.toNumber()
+      lastObservation: ammMarketAccount.oracle.lastObservation.toNumber(),
+      lastPrice: ammMarketAccount.oracle.lastPrice.toNumber(),
     };
 
     // TODO batch commits across inserts - maybe with event queue
