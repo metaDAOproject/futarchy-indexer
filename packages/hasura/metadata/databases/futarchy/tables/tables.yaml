@@ -7,7 +7,6 @@
 - "!include public_indexers.yaml"
 - "!include public_makes.yaml"
 - "!include public_markets.yaml"
-- "!include public_new_prices.yaml"
 - "!include public_orders.yaml"
 - "!include public_prices.yaml"
 - "!include public_prices_chart_data.yaml"
