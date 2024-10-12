@@ -1,6 +1,6 @@
 import { BN } from "@coral-xyz/anchor";
 import { BN_0, enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
-import { PriceMath } from "@metadaoproject/futarchy/v0.3";
+import { PriceMath } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import {
