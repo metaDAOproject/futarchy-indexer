@@ -21,7 +21,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: themetadao/indexer
+          images: metadaoproject/indexer
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
@@ -29,7 +29,7 @@ jobs:
           context: .
           file: packages/indexer/Dockerfile
           push: true
-          tags: themetadao/indexer:main
+          tags: metadaoproject/indexer:main
           labels: ${{ steps.meta.outputs.labels }}
 
   redeploy_app:
