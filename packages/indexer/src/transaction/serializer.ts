@@ -378,8 +378,24 @@ function getIxWithDisplay(
   if (!idl) {
     return null;
   }
-  const coder = new BorshInstructionCoder(idl);
+  let coder: BorshInstructionCoder | null = null;
   let decodedIx: AnchorInstruction | null = null;
+
+  // Added because of this error:
+  // User defined types not provided
+  // TypeError: field.type is not an Object. (evaluating '"vec" in field.type')
+  try {
+    coder = new BorshInstructionCoder(idl);
+  } catch (e) {
+    logger.error("error with initializing coder", e);
+    return null;
+  }
+
+  if (!coder) {
+    logger.error("no coder can't continue");
+    return null;
+  }
+
   try {
     decodedIx = coder.decode(Buffer.from(instruction.data));
   } catch (e) {
