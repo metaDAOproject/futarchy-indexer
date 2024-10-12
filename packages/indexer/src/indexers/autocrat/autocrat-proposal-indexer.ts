@@ -42,7 +42,7 @@ import { BN } from "@coral-xyz/anchor";
 import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm/sql";
 import { logger } from "../../logger";
-import { PriceMath } from "@metadaoproject/futarchy/v0.3";
+import { PriceMath } from "@metadaoproject/futarchy/v0.4";
 import { UserPerformance, UserPerformanceTotals } from "../../types";
 import { alias } from "drizzle-orm/pg-core";
 

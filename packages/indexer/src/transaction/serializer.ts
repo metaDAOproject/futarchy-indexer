@@ -379,7 +379,14 @@ function getIxWithDisplay(
     return null;
   }
   const coder = new BorshInstructionCoder(idl);
-  const decodedIx = coder.decode(Buffer.from(instruction.data));
+  let decodedIx: AnchorInstruction | null = null;
+  try {
+    decodedIx = coder.decode(Buffer.from(instruction.data));
+  } catch (e) {
+    logger.error("error with coder decoding of instruction:", e);
+    return null;
+  }
+
   if (!decodedIx) {
     return null;
   }
