@@ -16,5 +16,6 @@ select_permissions:
         - prices_type
         - price
         - created_at
+        - created_by
       filter: {}
     comment: ""
