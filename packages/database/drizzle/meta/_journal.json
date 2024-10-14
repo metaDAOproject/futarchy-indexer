@@ -15,6 +15,13 @@
       "when": 1728663431496,
       "tag": "0001_rainy_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1728870208419,
+      "tag": "0002_slow_randall",
+      "breakpoints": true
     }
   ]
 }

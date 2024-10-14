@@ -978,6 +978,7 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   })
     .notNull()
     .default(sql`now()`),
+  scoreTerm: text("score_term").notNull().default("effective"),
 });
 
 // TODO rename `created_at` to `inserted_at`
