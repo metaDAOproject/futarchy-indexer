@@ -237,13 +237,13 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
           // Setup time to add to the date..
           const timeLeftSecondsEstimate = (slotDifference.toNumber() * 400) / 1000 // MS to seconds
-          const timeLeftMinutesEstimate = timeLeftSecondsEstimate / 60 // MS to seconds to minutes
-          const timeLeftHoursEstimate = timeLeftMinutesEstimate / 60
+          // const timeLeftMinutesEstimate = timeLeftSecondsEstimate / 60 // MS to seconds to minutes
+          // const timeLeftHoursEstimate = timeLeftMinutesEstimate / 60
 
           const endedAt = new Date(currentTime.toUTCString());
-          endedAt.setHours(endedAt.getHours() + timeLeftHoursEstimate);
-          endedAt.setMinutes(endedAt.getMinutes() + timeLeftMinutesEstimate);
-          endedAt.setSeconds(endedAt.getSeconds() + timeLeftSecondsEstimate);
+          // endedAt.setHours(endedAt.getHours() + timeLeftHoursEstimate);
+          // endedAt.setMinutes(endedAt.getMinutes() + timeLeftMinutesEstimate);
+          endedAt.setSeconds(endedAt.getSeconds() + timeLeftSecondsEstimate); // setSeconds accepts float and will increase to hours etc.
 
           await usingDb((db) =>
             db
