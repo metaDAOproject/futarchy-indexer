@@ -46,4 +46,4 @@ jobs:
           -X POST \
           -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
           -H "Content-Type: application/json" \
-          --data "{\"query\":\"mutation { deploymentRedeploy(id: \\\"${{ secrets.RAILWAY_DEPLOYMENT_ID }}\\\") { status } }\"}" \
+          --data '{"query": "mutation serviceInstanceDeploy($serviceId: String!, $environmentId: String!) {\n  serviceInstanceDeploy(serviceId: $serviceId, environmentId: $environmentId)\n}\n", "variables": { "environmentId": "0942e3fe-8ec3-49b4-b8fb-26eb10b6e08f", "serviceId": "783719dc-3c30-437d-a3a9-b1aeb1d5c487" } }'
