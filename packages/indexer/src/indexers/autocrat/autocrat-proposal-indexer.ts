@@ -222,25 +222,28 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
           if (!dbDao) continue;
 
-          const endSlot: BN = onChainProposal.account.slotEnqueued.add(
-            new BN(dbDao.slotsPerProposal?.valueOf())
-          );
+          // Setup for calculating time left
+          const initialSlot = new BN(onChainProposal.account.slotEnqueued.toString());
 
-          const slotDifference = onChainProposal.account.slotEnqueued
-            .add(new BN(dbDao.slotsPerProposal?.valueOf()))
-            .sub(new BN(currentSlot));
+          const slotsPerProposal = new BN(dbDao.slotsPerProposal?.toString());
 
-          const lowHoursEstimate = Math.floor(
-            (slotDifference.toNumber() * 400) / 1000 / 60 / 60
-          );
+          //const endSlot: BN = initialSlot.add(slotsPerProposal);
+          
+          const currentSlotBN = new BN(currentSlot.toString());
 
-          // Our check to ensure we're actually updating the time correctly.
-          if (currentSlot <= endSlot.toNumber() && lowHoursEstimate <= 0) {
-            console.error("Issue with slot update contact administrator");
-          }
+          const slotDifference = initialSlot
+            .add(slotsPerProposal)
+            .sub(currentSlotBN);
+
+          // Setup time to add to the date..
+          const timeLeftSecondsEstimate = (slotDifference.toNumber() * 400) / 1000 // MS to seconds
+          // const timeLeftMinutesEstimate = timeLeftSecondsEstimate / 60 // MS to seconds to minutes
+          // const timeLeftHoursEstimate = timeLeftMinutesEstimate / 60
 
           const endedAt = new Date(currentTime.toUTCString());
-          endedAt.setHours(endedAt.getHours() + lowHoursEstimate);
+          // endedAt.setHours(endedAt.getHours() + timeLeftHoursEstimate);
+          // endedAt.setMinutes(endedAt.getMinutes() + timeLeftMinutesEstimate);
+          endedAt.setSeconds(endedAt.getSeconds() + timeLeftSecondsEstimate); // setSeconds accepts float and will increase to hours etc.
 
           await usingDb((db) =>
             db
