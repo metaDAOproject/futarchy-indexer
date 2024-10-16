@@ -39,5 +39,6 @@ select_permissions:
         - recipient
         - title
         - score_term
+        - score_unit
       filter: {}
     comment: ""
