@@ -979,6 +979,15 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
     .notNull()
     .default(sql`now()`),
   scoreTerm: text("score_term").notNull().default("effective"),
+  scoreUnit: text("score_unit"),
+  scoreMaxValue: numeric("score_max_value", {
+    precision: 40,
+    scale: 20,
+  }),
+  scoreMinValue: numeric("score_min_value", {
+    precision: 40,
+    scale: 20,
+  }),
 });
 
 // TODO rename `created_at` to `inserted_at`
