@@ -40,5 +40,7 @@ select_permissions:
         - title
         - score_term
         - score_unit
+        - score_max_value
+        - score_min_value
       filter: {}
     comment: ""
