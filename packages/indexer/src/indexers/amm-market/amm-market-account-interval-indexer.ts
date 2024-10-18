@@ -1,9 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
-import { Err, Ok } from "../../match";
+import { Err, Ok, Result } from "../../match";
 import { indexAmmMarketAccountWithContext } from "./utils";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
 import { connection } from "../../connection";
 import { logger } from "../../logger";
+import { AmmMarketAccountIndexingErrors } from "./utils";
 
 export enum AmmAccountIntervalIndexerError {
   General = "General",
@@ -41,7 +42,23 @@ export const AmmMarketAccountIntervalFetchIndexer: IntervalFetchIndexer = {
       }
       return res;
     } catch (e) {
-      logger.errorWithChatBotAlert("general error with indexing amm market account info:", e);
+      if (
+        e instanceof Object &&
+        'success' in e &&
+        !e.success &&
+        'error' in e &&
+        typeof e.error === 'object' &&
+        e.error !== null &&
+        'type' in e.error
+      ) {
+        if (e.error.type === AmmMarketAccountIndexingErrors.AmmV4TwapIndexError) {
+          logger.error("failed to index amm twap for v4 amm", acct);
+        } else {
+          logger.errorWithChatBotAlert("general error with indexing amm market account info interval fetcher:", e);
+        }
+      } else {
+        logger.errorWithChatBotAlert("general error with indexing amm market account info interval fetcher:", e);
+      }
       return Err({ type: AmmAccountIntervalIndexerError.General });
     }
   },

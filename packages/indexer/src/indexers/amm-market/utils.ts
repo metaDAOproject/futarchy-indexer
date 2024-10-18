@@ -16,6 +16,8 @@ import { getHumanPrice } from "../../usecases/math";
 export enum AmmMarketAccountIndexingErrors {
   AmmTwapIndexError = "AmmTwapIndexError",
   MarketMissingError = "MarketMissingError",
+  AmmV4TwapIndexError = "AmmV4TwapIndexError",
+  AmmTwapPriceError = "AmmTwapPriceError",
 }
 
 export async function indexAmmMarketAccountWithContext(
@@ -45,7 +47,7 @@ export async function indexAmmMarketAccountWithContext(
         .where(eq(schema.markets.marketAcct, account.toBase58()))
         .execute()
     );
-    if (market.length === 0) {
+    if (market === undefined || market.length === 0) {
       return Err({ type: AmmMarketAccountIndexingErrors.MarketMissingError });
     }
 
@@ -54,12 +56,19 @@ export async function indexAmmMarketAccountWithContext(
         ammMarketAccount.createdAtSlot
       )
     );
+
+    const proposalAcct = market[0].proposalAcct;
+
+    if (proposalAcct === null) {
+      logger.error("failed to index amm twap for v4 amm", account.toBase58());
+      return Err({ type: AmmMarketAccountIndexingErrors.AmmV4TwapIndexError });
+    }
     const twapNumber: number = twapCalculation.toNumber();
     const newTwap: TwapRecord = {
       curTwap: BigInt(twapNumber),
       marketAcct: account.toBase58(),
       observationAgg: ammMarketAccount.oracle.aggregator.toString(),
-      proposalAcct: market[0].proposalAcct ?? "",
+      proposalAcct: proposalAcct,
       // alternatively, we could pass in the context of the update here
       updatedSlot: context
         ? BigInt(context.slot)
@@ -77,9 +86,9 @@ export async function indexAmmMarketAccountWithContext(
         .returning({ marketAcct: schema.twaps.marketAcct })
     );
 
-    if (twapUpsertResult.length === 0) {
+    if (twapUpsertResult === undefined || twapUpsertResult.length === 0) {
       logger.error("failed to upsert twap");
-      return Err({ type: "AmmTwapIndexError" });
+      return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapIndexError });
     }
   }
 
@@ -116,9 +125,9 @@ export async function indexAmmMarketAccountWithContext(
       })
       .returning({ marketAcct: schema.prices.marketAcct })
   );
-  if (pricesInsertResult.length === 0) {
+  if (pricesInsertResult === undefined || pricesInsertResult.length === 0) {
     logger.error("failed to index amm price", newAmmConditionaPrice.marketAcct);
-    return Err({ type: "AmmIndexPriceError" });
+    return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError  });
   }
 
   return Ok(`successfully indexed amm: ${account.toBase58()}`);
