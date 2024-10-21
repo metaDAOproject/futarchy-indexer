@@ -151,7 +151,7 @@ export class SwapBuilder {
 
         const transactionRecord: TransactionRecord = {
           txSig: signature,
-          slot: BigInt(ctx.slot),
+          slot: ctx.slot.toString(),
           blockTime: new Date(tx.blockTime * 1000), // TODO need to verify if this is correct
           failed: tx.err !== undefined,
           payload: serialize(tx),
@@ -322,17 +322,17 @@ export class SwapBuilder {
 
     const swapOrder: OrdersRecord = {
       marketAcct: marketAcct.pubkey,
-      orderBlock: BigInt(tx.slot),
+      orderBlock: tx.slot.toString(),
       orderTime: now,
       orderTxSig: signature,
       quotePrice: price.toString(),
       actorAcct: userAcct.pubkey,
       // TODO: If and only if the transaction is SUCCESSFUL does this value equal this..
-      filledBaseAmount: BigInt(baseAmount.toNumber()),
+      filledBaseAmount: baseAmount.toString(),
       isActive: false,
       side: side,
       // TODO: If transaction is failed then this is the output amount...
-      unfilledBaseAmount: BigInt(0),
+      unfilledBaseAmount: "0",
       updatedAt: now,
     };
 
@@ -340,8 +340,8 @@ export class SwapBuilder {
       marketAcct: marketAcct.pubkey,
       // This will always be the DAO / proposal base token, so while it may be NICE to have a key
       // to use to reference on data aggregate, it's not directly necessary.
-      baseAmount: BigInt(baseAmount.toNumber()), // NOTE: This is always the base token given we have a BASE / QUOTE relationship
-      orderBlock: BigInt(tx.slot),
+      baseAmount: baseAmount.toString(), // NOTE: This is always the base token given we have a BASE / QUOTE relationship
+      orderBlock: tx.slot.toString(),
       orderTime: now,
       orderTxSig: signature,
       quotePrice: price.toString(),

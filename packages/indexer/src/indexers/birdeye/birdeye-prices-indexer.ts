@@ -58,7 +58,7 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
         pricesType: PricesType.Spot,
         createdBy: "birdeye-prices-indexer",
         // TODO: Fudge, birdeye doesn't have this so we might need to figure out something.. maybe just call the RPC
-        updatedSlot: BigInt(0),
+        updatedSlot: "0",
       };
 
       const insertPriceRes = await usingDb((db) =>

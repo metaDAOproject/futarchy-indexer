@@ -63,18 +63,18 @@ export async function indexAmmMarketAccountWithContext(
       logger.error("failed to index amm twap for v4 amm", account.toBase58());
       return Err({ type: AmmMarketAccountIndexingErrors.AmmV4TwapIndexError });
     }
-    const twapNumber: number = twapCalculation.toNumber();
+    const twapNumber: string = twapCalculation.toString();
     const newTwap: TwapRecord = {
-      curTwap: BigInt(twapNumber),
+      curTwap: twapNumber,
       marketAcct: account.toBase58(),
       observationAgg: ammMarketAccount.oracle.aggregator.toString(),
       proposalAcct: proposalAcct,
       // alternatively, we could pass in the context of the update here
       updatedSlot: context
-        ? BigInt(context.slot)
-        : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
-      lastObservation: ammMarketAccount.oracle.lastObservation.toNumber(),
-      lastPrice: ammMarketAccount.oracle.lastPrice.toNumber(),
+        ? context.slot.toString()
+        : ammMarketAccount.oracle.lastUpdatedSlot.toString(),
+      lastObservation: ammMarketAccount.oracle.lastObservation.toString(),
+      lastPrice: ammMarketAccount.oracle.lastPrice.toString(),
     };
 
     // TODO batch commits across inserts - maybe with event queue
@@ -106,13 +106,13 @@ export async function indexAmmMarketAccountWithContext(
   const newAmmConditionaPrice: PricesRecord = {
     marketAcct: account.toBase58(),
     updatedSlot: context
-      ? BigInt(context.slot)
-      : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
+      ? context.slot.toString()
+      : ammMarketAccount.oracle.lastUpdatedSlot.toString(),
     price: conditionalMarketSpotPrice.toString(),
     pricesType: PricesType.Conditional,
     createdBy: "amm-market-indexer",
-    baseAmount: BigInt(ammMarketAccount.baseAmount.toNumber()),
-    quoteAmount: BigInt(ammMarketAccount.quoteAmount.toNumber()),
+    baseAmount: ammMarketAccount.baseAmount.toString(),
+    quoteAmount: ammMarketAccount.quoteAmount.toString(),
   };
 
   const pricesInsertResult = await usingDb((db) =>

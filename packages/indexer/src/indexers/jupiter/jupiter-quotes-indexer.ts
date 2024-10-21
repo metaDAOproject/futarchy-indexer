@@ -30,7 +30,7 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
         price: price.toString(),
         pricesType: PricesType.Spot,
         createdBy: "jupiter-quotes-indexer",
-        updatedSlot: BigInt(slot ?? 0),
+        updatedSlot: slot?.toString() ?? "0",
       };
 
       const insertPriceRes = await usingDb((db) =>
@@ -164,6 +164,7 @@ export const fetchQuoteFromJupe = async (
         bidRes.status,
         bidRes.statusText
       );
+      // TODO: We should really back the f-off here after like 10 times...
       return null;
     }
 

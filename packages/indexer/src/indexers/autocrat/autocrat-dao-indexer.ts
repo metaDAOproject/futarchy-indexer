@@ -59,13 +59,14 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
           connection,
           new PublicKey(dao.baseToken.publicKey)
         );
+
         // Puts the base tokens into the DB before we try to insert the dao
         let token: TokenRecord = {
           symbol: dao.baseToken.symbol,
           name: dao.baseToken.name ? dao.baseToken.name : dao.baseToken.symbol,
           decimals: dao.baseToken.decimals,
           mintAcct: dao.baseToken.publicKey,
-          supply: baseTokenMint.supply,
+          supply: baseTokenMint.supply.toString(),
           updatedAt: new Date(),
         };
 
@@ -78,29 +79,29 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
           programAcct: dao.protocol.autocrat.programId.toString(),
           baseAcct: dao.baseToken.publicKey,
           quoteAcct: dao.quoteToken.publicKey,
-          slotsPerProposal: BigInt(dao.daoAccount.slotsPerProposal.toString()),
+          slotsPerProposal: dao.daoAccount.slotsPerProposal.toString(),
           treasuryAcct: dao.daoAccount.treasury.toBase58(),
-          minBaseFutarchicLiquidity: BigInt(
+          minBaseFutarchicLiquidity: 
             dao.daoAccount.minBaseFutarchicLiquidity
-              ? dao.daoAccount.minBaseFutarchicLiquidity.toNumber()
+              ? dao.daoAccount.minBaseFutarchicLiquidity.toString()
               : 0
-          ),
-          minQuoteFutarchicLiquidity: BigInt(
+          ,
+          minQuoteFutarchicLiquidity:
             dao.daoAccount.minQuoteFutarchicLiquidity
-              ? dao.daoAccount.minQuoteFutarchicLiquidity.toNumber()
+              ? dao.daoAccount.minQuoteFutarchicLiquidity.toString()
               : 0
-          ),
+          ,
           passThresholdBps: BigInt(dao.daoAccount.passThresholdBps),
-          twapInitialObservation: BigInt(
+          twapInitialObservation: 
             dao.daoAccount.twapInitialObservation
-              ? dao.daoAccount.twapInitialObservation.toNumber()
+              ? dao.daoAccount.twapInitialObservation.toString()
               : 0
-          ),
-          twapMaxObservationChangePerUpdate: BigInt(
+          ,
+          twapMaxObservationChangePerUpdate: 
             dao.daoAccount.twapMaxObservationChangePerUpdate
-              ? dao.daoAccount.twapMaxObservationChangePerUpdate.toNumber()
+              ? dao.daoAccount.twapMaxObservationChangePerUpdate.toString()
               : 0
-          ),
+          ,
         };
         // After we have the token in the DB, we can now insert the dao
         await usingDb((db) =>

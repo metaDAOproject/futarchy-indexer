@@ -28,7 +28,7 @@ export type InstructionIndexer<IDL extends InstructionIDL> = {
   >;
   indexTransactionSig(transaction: {
     txSig: string;
-    slot: bigint;
+    slot: string;
     blockTime: Date;
     failed: boolean;
     payload: string;
