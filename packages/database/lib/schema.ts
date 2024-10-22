@@ -254,8 +254,7 @@ export const twaps = pgTable(
       .references(() => markets.marketAcct)
       .notNull(),
     proposalAcct: pubkey("proposal_acct")
-      .references(() => proposals.proposalAcct)
-      .notNull(),
+      .references(() => proposals.proposalAcct),
     updatedSlot: biggerSlot("updated_slot").notNull(),
     // max u128 value is 340282366920938463463374607431768211455 (39 digits)
     // the account field is u128 https://github.com/metaDAOproject/openbook-twap/blob/82690c33a091b82e908843a14ad1a571dfba12b1/programs/openbook-twap/src/lib.rs#L52
