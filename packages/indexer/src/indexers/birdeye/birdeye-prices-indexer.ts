@@ -1,7 +1,8 @@
-import { schema, usingDb } from "@metadaoproject/indexer-db";
+import { and, eq, schema, usingDb } from "@metadaoproject/indexer-db";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
 import { Err, Ok } from "../../match";
 import {
+  IndexerAccountDependencyStatus,
   PricesRecord,
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
@@ -42,6 +43,15 @@ export const BirdeyePricesIndexer: IntervalFetchIndexer = {
           "error fetching from birdeye tokenPriceJson:",
           tokenPriceJson
         );
+        if (tokenPriceJson.message === "Unauthorized") {
+          logger.error("birdeye api key is incorrect");
+          const stopBirdeyeRes = await usingDb((db) =>
+            db.update(schema.indexerAccountDependencies).set({ status: IndexerAccountDependencyStatus.Disabled }).where(and(eq(schema.indexerAccountDependencies.acct, acct), eq(schema.indexerAccountDependencies.name, "birdeye-prices"))).execute()
+          );
+          if((stopBirdeyeRes?.rowCount ?? 0) > 0) {
+            logger.error("birdeye dependency disabled");
+          }
+        }
         return Err({ type: BirdeyePricesIndexingError.BirdeyeFetchError });
       }
 
@@ -88,4 +98,5 @@ type BirdeyePricesRes = {
     updateHumanTime: string;
   };
   success: boolean;
+  message?: string;
 };

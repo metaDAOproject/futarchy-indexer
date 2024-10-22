@@ -8,6 +8,8 @@ import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
 import {
   OrderSide,
   OrdersRecord,
+  // PricesRecord,
+  // PricesType,
   TakesRecord,
   TransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
@@ -28,14 +30,17 @@ export class SwapPersistable {
   private ordersRecord: OrdersRecord;
   private takesRecord: TakesRecord;
   private transactionRecord: TransactionRecord;
+  //private priceRecord: PricesRecord;
   constructor(
     ordersRecord: OrdersRecord,
     takesRecord: TakesRecord,
-    transactionRecord: TransactionRecord
+    transactionRecord: TransactionRecord,
+    //priceRecord: PricesRecord
   ) {
     this.ordersRecord = ordersRecord;
     this.takesRecord = takesRecord;
     this.transactionRecord = transactionRecord;
+    //this.priceRecord = priceRecord;
   }
 
   async persist() {
@@ -61,6 +66,25 @@ export class SwapPersistable {
           )}`
         );
       }
+      // const priceInsertRes =
+      //   (await usingDb((db) =>
+      //     db
+      //       .insert(schema.prices)
+      //       .values(this.priceRecord)
+      //       .onConflictDoNothing()
+      //       .returning({ marketAcct: schema.prices.marketAcct, updatedSlot: schema.prices.updatedSlot })
+      //   )) ?? [];
+      //   if (
+      //     priceInsertRes.length !== 1 ||
+      //     (priceInsertRes[0].marketAcct !== this.priceRecord.marketAcct &&
+      //       priceInsertRes[0].updatedSlot !== this.priceRecord.updatedSlot)
+      //   ) {
+      //     logger.warn(
+      //       `Failed to insert price ${this.priceRecord.marketAcct}. ${JSON.stringify(
+      //         this.priceRecord
+      //       )}`
+      //     );
+      //   }
       const orderInsertRes =
         (await usingDb((db) =>
           db
@@ -159,7 +183,17 @@ export class SwapBuilder {
           mainIxType: getMainIxTypeFromTransaction(tx),
         };
 
-        return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord));
+        // TODO: This needs smore work before it's ready
+        // const priceRecord: PricesRecord = {
+        //   marketAcct: swapOrder.marketAcct,
+        //   updatedSlot: ctx.slot.toString(),
+        //   createdAt: transactionRecord.blockTime,
+        //   // TODO: This doesn't have base and quote... So could be an issue..
+        //   price: swapTake.quotePrice,
+        //   pricesType: PricesType.Conditional,
+        // }
+
+        return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord)); // priceRecord
       }
       return Err({ type: SwapPersistableError.NonSwapTransaction });
     } catch (e: any) {

@@ -1,7 +1,8 @@
-import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, and } from "@metadaoproject/indexer-db";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
 import { Err, Ok } from "../../match";
 import {
+  IndexerAccountDependencyStatus,
   PricesRecord,
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
@@ -130,6 +131,15 @@ export const fetchQuoteFromJupe = async (
         askRes.status,
         askRes.statusText
       );
+      if (askRes.status === 400) {
+        logger.error("jupiter request is malformed");
+        const stopJupiterRes = await usingDb((db) =>
+          db.update(schema.indexerAccountDependencies).set({ status: IndexerAccountDependencyStatus.Disabled }).where(and(eq(schema.indexerAccountDependencies.acct, acct), eq(schema.indexerAccountDependencies.name, "jupiter-quotes"))).execute()
+        );
+        if((stopJupiterRes?.rowCount ?? 0) > 0) {
+          logger.error("jupiter dependency disabled");
+        }
+      }
       return null;
     }
 
@@ -164,6 +174,15 @@ export const fetchQuoteFromJupe = async (
         bidRes.status,
         bidRes.statusText
       );
+      if (bidRes.status === 400) {
+        logger.error("jupiter request is malformed");
+        const stopJupiterRes = await usingDb((db) =>
+          db.update(schema.indexerAccountDependencies).set({ status: IndexerAccountDependencyStatus.Disabled }).where(and(eq(schema.indexerAccountDependencies.acct, acct), eq(schema.indexerAccountDependencies.name, "jupiter-quotes"))).execute()
+        );
+        if((stopJupiterRes?.rowCount ?? 0) > 0) {
+          logger.error("jupiter dependency disabled");
+        }
+      }
       // TODO: We should really back the f-off here after like 10 times...
       return null;
     }

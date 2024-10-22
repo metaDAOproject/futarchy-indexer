@@ -59,10 +59,10 @@ export async function indexAmmMarketAccountWithContext(
 
     const proposalAcct = market[0].proposalAcct;
 
-    if (proposalAcct === null) {
-      logger.error("failed to index amm twap for v4 amm", account.toBase58());
-      return Err({ type: AmmMarketAccountIndexingErrors.AmmV4TwapIndexError });
-    }
+    // if (proposalAcct === null) {
+    //   logger.error("failed to index amm twap for v4 amm", account.toBase58());
+    //   return Err({ type: AmmMarketAccountIndexingErrors.AmmV4TwapIndexError });
+    // }
     const twapNumber: string = twapCalculation.toString();
     const newTwap: TwapRecord = {
       curTwap: twapNumber,
