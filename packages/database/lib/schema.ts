@@ -151,21 +151,12 @@ export const proposals = pgTable("proposals", {
   ),
   durationInSlots: biggerSlot("duration_in_slots"),
   passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
-  twapInitialObservation: bigint("twap_initial_observation", {
-    mode: "bigint",
-  }),
-  twapMaxObservationChangePerUpdate: bigint(
-    "twap_max_observation_change_per_update",
-    {
-      mode: "bigint",
-    }
+  twapInitialObservation: biggerTokenAmount("twap_initial_observation"),
+  twapMaxObservationChangePerUpdate: biggerTokenAmount(
+    "twap_max_observation_change_per_update"
   ),
-  minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", {
-    mode: "bigint",
-  }),
-  minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", {
-    mode: "bigint",
-  }),
+  minQuoteFutarchicLiquidity: biggerTokenAmount("min_quote_futarchic_liquidity"),
+  minBaseFutarchicLiquidity: biggerTokenAmount("min_base_futarchic_liquidity"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .default(sql`now()`)
     .notNull(),

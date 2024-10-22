@@ -125,7 +125,7 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
         );
       });
 
-      return Ok({ acct: "urmom" });
+      return Ok({ acct: "Updated daos" });
     } catch (err) {
       logger.errorWithChatBotAlert(err);
       return Err({ type: AutocratDaoIndexerError.GeneralError });

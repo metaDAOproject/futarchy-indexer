@@ -229,7 +229,7 @@ export class SwapBuilder {
 
     const userBasePreBalanceWithPotentialMint =
       side === OrderSide.ASK
-        ? userBasePreBalance + BigInt(Number(mintAmount))
+        ? userBasePreBalance +BigInt(Number(mintAmount))
         : userBaseAcctWithBalances?.preTokenBalance?.amount;
 
     const userBasePostBalance =
@@ -261,8 +261,8 @@ export class SwapBuilder {
 
     if (
       !!tx.err &&
-      quoteAmount.toNumber() === 0 &&
-      baseAmount.toNumber() === 0
+      quoteAmount.toString() === "0" &&
+      baseAmount.toString() === "0"
     ) {
       return Err({ type: AmmInstructionIndexerError.FailedSwap });
     }
@@ -306,9 +306,10 @@ export class SwapBuilder {
     }
 
     const ammPrice =
-      quoteAmount.toNumber() && baseAmount.toNumber()
+      quoteAmount.toString() && baseAmount.toString()
         ? quoteAmount.mul(new BN(10).pow(new BN(12))).div(baseAmount)
         : new BN(0);
+
     const price = getHumanPrice(
       ammPrice,
       baseToken[0].decimals,

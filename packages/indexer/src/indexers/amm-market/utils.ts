@@ -92,17 +92,35 @@ export async function indexAmmMarketAccountWithContext(
     }
   }
 
-  const priceFromReserves = PriceMath.getAmmPriceFromReserves(
-    ammMarketAccount?.baseAmount,
-    ammMarketAccount?.quoteAmount
-  );
+  let priceFromReserves: BN;
 
-  // indexing the conditional market price
-  const conditionalMarketSpotPrice = getHumanPrice(
-    priceFromReserves,
-    baseToken.decimals!!,
-    quoteToken.decimals!!
-  );
+  if (ammMarketAccount.baseAmount.toString() === "0" || ammMarketAccount.baseAmount.toString() === "0") {
+    logger.error("NO RESERVES", ammMarketAccount);
+    return Ok("no price from reserves");
+  }
+
+  try {
+    priceFromReserves = PriceMath.getAmmPriceFromReserves(
+      ammMarketAccount.baseAmount,
+      ammMarketAccount.quoteAmount
+    );
+  } catch (e) {
+    logger.error("failed to get price from reserves", e);
+    return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError });
+  }
+
+  let conditionalMarketSpotPrice: number;
+  try {
+    conditionalMarketSpotPrice = getHumanPrice(
+      priceFromReserves,
+      baseToken.decimals!!,
+      quoteToken.decimals!!
+    );
+  } catch (e) {
+    logger.error("failed to get human price", e);
+    return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError });
+  }
+
   const newAmmConditionaPrice: PricesRecord = {
     marketAcct: account.toBase58(),
     updatedSlot: context

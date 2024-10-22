@@ -61,7 +61,7 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
         );
       }
 
-      return Ok({ acct: "urmom" });
+      return Ok({ acct: "Update the token record" });
     } catch (err) {
       logger.errorWithChatBotAlert(err);
       return Err({ type: TokenMintIndexerError.GeneralError });
