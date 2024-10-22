@@ -8,6 +8,8 @@ import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
 import {
   OrderSide,
   OrdersRecord,
+  // PricesRecord,
+  // PricesType,
   TakesRecord,
   TransactionRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
@@ -28,14 +30,17 @@ export class SwapPersistable {
   private ordersRecord: OrdersRecord;
   private takesRecord: TakesRecord;
   private transactionRecord: TransactionRecord;
+  //private priceRecord: PricesRecord;
   constructor(
     ordersRecord: OrdersRecord,
     takesRecord: TakesRecord,
-    transactionRecord: TransactionRecord
+    transactionRecord: TransactionRecord,
+    //priceRecord: PricesRecord
   ) {
     this.ordersRecord = ordersRecord;
     this.takesRecord = takesRecord;
     this.transactionRecord = transactionRecord;
+    //this.priceRecord = priceRecord;
   }
 
   async persist() {
@@ -61,6 +66,25 @@ export class SwapPersistable {
           )}`
         );
       }
+      // const priceInsertRes =
+      //   (await usingDb((db) =>
+      //     db
+      //       .insert(schema.prices)
+      //       .values(this.priceRecord)
+      //       .onConflictDoNothing()
+      //       .returning({ marketAcct: schema.prices.marketAcct, updatedSlot: schema.prices.updatedSlot })
+      //   )) ?? [];
+      //   if (
+      //     priceInsertRes.length !== 1 ||
+      //     (priceInsertRes[0].marketAcct !== this.priceRecord.marketAcct &&
+      //       priceInsertRes[0].updatedSlot !== this.priceRecord.updatedSlot)
+      //   ) {
+      //     logger.warn(
+      //       `Failed to insert price ${this.priceRecord.marketAcct}. ${JSON.stringify(
+      //         this.priceRecord
+      //       )}`
+      //     );
+      //   }
       const orderInsertRes =
         (await usingDb((db) =>
           db
@@ -140,6 +164,11 @@ export class SwapBuilder {
         const mintIx = tx.instructions?.find(
           (i) => i.name === "mintConditionalTokens"
         );
+        const mergeIx = tx.instructions?.find((i) => i.name === "mergeConditionalTokensForUnderlyingTokens");
+        if (mergeIx && mintIx) {
+          console.error("ARB TRANSACTION DETECTED")
+          return Err({ type: SwapPersistableError.ArbTransactionError });
+        }
         const result = await this.buildOrderFromSwapIx(swapIx, tx, mintIx);
         if (!result.success) {
           return Err(result.error);
@@ -151,7 +180,7 @@ export class SwapBuilder {
 
         const transactionRecord: TransactionRecord = {
           txSig: signature,
-          slot: BigInt(ctx.slot),
+          slot: ctx.slot.toString(),
           blockTime: new Date(tx.blockTime * 1000), // TODO need to verify if this is correct
           failed: tx.err !== undefined,
           payload: serialize(tx),
@@ -159,7 +188,17 @@ export class SwapBuilder {
           mainIxType: getMainIxTypeFromTransaction(tx),
         };
 
-        return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord));
+        // TODO: This needs smore work before it's ready
+        // const priceRecord: PricesRecord = {
+        //   marketAcct: swapOrder.marketAcct,
+        //   updatedSlot: ctx.slot.toString(),
+        //   createdAt: transactionRecord.blockTime,
+        //   // TODO: This doesn't have base and quote... So could be an issue..
+        //   price: swapTake.quotePrice,
+        //   pricesType: PricesType.Conditional,
+        // }
+
+        return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord)); // priceRecord
       }
       return Err({ type: SwapPersistableError.NonSwapTransaction });
     } catch (e: any) {
@@ -229,7 +268,7 @@ export class SwapBuilder {
 
     const userBasePreBalanceWithPotentialMint =
       side === OrderSide.ASK
-        ? userBasePreBalance + BigInt(Number(mintAmount))
+        ? userBasePreBalance +BigInt(Number(mintAmount))
         : userBaseAcctWithBalances?.preTokenBalance?.amount;
 
     const userBasePostBalance =
@@ -261,8 +300,8 @@ export class SwapBuilder {
 
     if (
       !!tx.err &&
-      quoteAmount.toNumber() === 0 &&
-      baseAmount.toNumber() === 0
+      quoteAmount.toString() === "0" &&
+      baseAmount.toString() === "0"
     ) {
       return Err({ type: AmmInstructionIndexerError.FailedSwap });
     }
@@ -306,9 +345,10 @@ export class SwapBuilder {
     }
 
     const ammPrice =
-      quoteAmount.toNumber() && baseAmount.toNumber()
+      quoteAmount.toString() && baseAmount.toString()
         ? quoteAmount.mul(new BN(10).pow(new BN(12))).div(baseAmount)
         : new BN(0);
+
     const price = getHumanPrice(
       ammPrice,
       baseToken[0].decimals,
@@ -322,17 +362,17 @@ export class SwapBuilder {
 
     const swapOrder: OrdersRecord = {
       marketAcct: marketAcct.pubkey,
-      orderBlock: BigInt(tx.slot),
+      orderBlock: tx.slot.toString(),
       orderTime: now,
       orderTxSig: signature,
       quotePrice: price.toString(),
       actorAcct: userAcct.pubkey,
       // TODO: If and only if the transaction is SUCCESSFUL does this value equal this..
-      filledBaseAmount: BigInt(baseAmount.toNumber()),
+      filledBaseAmount: baseAmount.toString(),
       isActive: false,
       side: side,
       // TODO: If transaction is failed then this is the output amount...
-      unfilledBaseAmount: BigInt(0),
+      unfilledBaseAmount: "0",
       updatedAt: now,
     };
 
@@ -340,8 +380,8 @@ export class SwapBuilder {
       marketAcct: marketAcct.pubkey,
       // This will always be the DAO / proposal base token, so while it may be NICE to have a key
       // to use to reference on data aggregate, it's not directly necessary.
-      baseAmount: BigInt(baseAmount.toNumber()), // NOTE: This is always the base token given we have a BASE / QUOTE relationship
-      orderBlock: BigInt(tx.slot),
+      baseAmount: baseAmount.toString(), // NOTE: This is always the base token given we have a BASE / QUOTE relationship
+      orderBlock: tx.slot.toString(),
       orderTime: now,
       orderTxSig: signature,
       quotePrice: price.toString(),

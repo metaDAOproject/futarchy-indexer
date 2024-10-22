@@ -16,6 +16,8 @@ import { getHumanPrice } from "../../usecases/math";
 export enum AmmMarketAccountIndexingErrors {
   AmmTwapIndexError = "AmmTwapIndexError",
   MarketMissingError = "MarketMissingError",
+  AmmV4TwapIndexError = "AmmV4TwapIndexError",
+  AmmTwapPriceError = "AmmTwapPriceError",
 }
 
 export async function indexAmmMarketAccountWithContext(
@@ -45,7 +47,7 @@ export async function indexAmmMarketAccountWithContext(
         .where(eq(schema.markets.marketAcct, account.toBase58()))
         .execute()
     );
-    if (market.length === 0) {
+    if (market === undefined || market.length === 0) {
       return Err({ type: AmmMarketAccountIndexingErrors.MarketMissingError });
     }
 
@@ -54,18 +56,25 @@ export async function indexAmmMarketAccountWithContext(
         ammMarketAccount.createdAtSlot
       )
     );
-    const twapNumber: number = twapCalculation.toNumber();
+
+    const proposalAcct = market[0].proposalAcct;
+
+    // if (proposalAcct === null) {
+    //   logger.error("failed to index amm twap for v4 amm", account.toBase58());
+    //   return Err({ type: AmmMarketAccountIndexingErrors.AmmV4TwapIndexError });
+    // }
+    const twapNumber: string = twapCalculation.toString();
     const newTwap: TwapRecord = {
-      curTwap: BigInt(twapNumber),
+      curTwap: twapNumber,
       marketAcct: account.toBase58(),
       observationAgg: ammMarketAccount.oracle.aggregator.toString(),
-      proposalAcct: market[0].proposalAcct ?? "",
+      proposalAcct: proposalAcct,
       // alternatively, we could pass in the context of the update here
       updatedSlot: context
-        ? BigInt(context.slot)
-        : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
-      lastObservation: ammMarketAccount.oracle.lastObservation.toNumber(),
-      lastPrice: ammMarketAccount.oracle.lastPrice.toNumber(),
+        ? context.slot.toString()
+        : ammMarketAccount.oracle.lastUpdatedSlot.toString(),
+      lastObservation: ammMarketAccount.oracle.lastObservation.toString(),
+      lastPrice: ammMarketAccount.oracle.lastPrice.toString(),
     };
 
     // TODO batch commits across inserts - maybe with event queue
@@ -77,33 +86,51 @@ export async function indexAmmMarketAccountWithContext(
         .returning({ marketAcct: schema.twaps.marketAcct })
     );
 
-    if (twapUpsertResult.length === 0) {
+    if (twapUpsertResult === undefined || twapUpsertResult.length === 0) {
       logger.error("failed to upsert twap");
-      return Err({ type: "AmmTwapIndexError" });
+      return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapIndexError });
     }
   }
 
-  const priceFromReserves = PriceMath.getAmmPriceFromReserves(
-    ammMarketAccount?.baseAmount,
-    ammMarketAccount?.quoteAmount
-  );
+  let priceFromReserves: BN;
 
-  // indexing the conditional market price
-  const conditionalMarketSpotPrice = getHumanPrice(
-    priceFromReserves,
-    baseToken.decimals!!,
-    quoteToken.decimals!!
-  );
+  if (ammMarketAccount.baseAmount.toString() === "0" || ammMarketAccount.baseAmount.toString() === "0") {
+    logger.error("NO RESERVES", ammMarketAccount);
+    return Ok("no price from reserves");
+  }
+
+  try {
+    priceFromReserves = PriceMath.getAmmPriceFromReserves(
+      ammMarketAccount.baseAmount,
+      ammMarketAccount.quoteAmount
+    );
+  } catch (e) {
+    logger.error("failed to get price from reserves", e);
+    return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError });
+  }
+
+  let conditionalMarketSpotPrice: number;
+  try {
+    conditionalMarketSpotPrice = getHumanPrice(
+      priceFromReserves,
+      baseToken.decimals!!,
+      quoteToken.decimals!!
+    );
+  } catch (e) {
+    logger.error("failed to get human price", e);
+    return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError });
+  }
+
   const newAmmConditionaPrice: PricesRecord = {
     marketAcct: account.toBase58(),
     updatedSlot: context
-      ? BigInt(context.slot)
-      : BigInt(ammMarketAccount.oracle.lastUpdatedSlot.toNumber()),
+      ? context.slot.toString()
+      : ammMarketAccount.oracle.lastUpdatedSlot.toString(),
     price: conditionalMarketSpotPrice.toString(),
     pricesType: PricesType.Conditional,
     createdBy: "amm-market-indexer",
-    baseAmount: BigInt(ammMarketAccount.baseAmount.toNumber()),
-    quoteAmount: BigInt(ammMarketAccount.quoteAmount.toNumber()),
+    baseAmount: ammMarketAccount.baseAmount.toString(),
+    quoteAmount: ammMarketAccount.quoteAmount.toString(),
   };
 
   const pricesInsertResult = await usingDb((db) =>
@@ -116,9 +143,9 @@ export async function indexAmmMarketAccountWithContext(
       })
       .returning({ marketAcct: schema.prices.marketAcct })
   );
-  if (pricesInsertResult.length === 0) {
+  if (pricesInsertResult === undefined || pricesInsertResult.length === 0) {
     logger.error("failed to index amm price", newAmmConditionaPrice.marketAcct);
-    return Err({ type: "AmmIndexPriceError" });
+    return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError  });
   }
 
   return Ok(`successfully indexed amm: ${account.toBase58()}`);

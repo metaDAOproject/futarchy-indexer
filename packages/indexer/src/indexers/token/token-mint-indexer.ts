@@ -44,13 +44,13 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
         )
       )?.[0];
 
-      if (!dbMint) return;
+      if (!dbMint) return Err({ type: TokenMintIndexerError.NotFoundError });
 
-      if (dbMint.supply !== storedMint.supply) {
+      if (dbMint.supply !== storedMint.supply.toString()) {
         await usingDb((db) =>
           db
             .update(schema.tokens)
-            .set({ supply: storedMint.supply, updatedAt: new Date() })
+            .set({ supply: storedMint.supply.toString(), updatedAt: new Date() })
             .where(eq(schema.tokens.mintAcct, mint.toString()))
             .execute()
         );
@@ -61,7 +61,7 @@ export const TokenMintIndexer: IntervalFetchIndexer = {
         );
       }
 
-      return Ok({ acct: "urmom" });
+      return Ok({ acct: "Update the token record" });
     } catch (err) {
       logger.errorWithChatBotAlert(err);
       return Err({ type: TokenMintIndexerError.GeneralError });

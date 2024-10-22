@@ -40,11 +40,12 @@ import {
 } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
 import { gte } from "drizzle-orm";
-import { desc } from "drizzle-orm/sql";
+import { desc } from "drizzle-orm";
 import { logger } from "../../logger";
-import { PriceMath } from "@metadaoproject/futarchy/v0.4";
+import { PriceMath, ProposalAccount } from "@metadaoproject/futarchy/v0.3";
 import { UserPerformance, UserPerformanceTotals } from "../../types";
 import { alias } from "drizzle-orm/pg-core";
+import { bigint } from "drizzle-orm/mysql-core";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -69,7 +70,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
                 currentTime: schema.prices.createdAt,
               })
               .from(schema.prices)
-              .orderBy(desc(schema.prices.updatedSlot))
+              .orderBy(sql`${schema.prices.updatedSlot} DESC`)
               .limit(1)
               .execute()
           )
@@ -105,6 +106,10 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         proposalsToInsert.map((proposal) => proposal.publicKey.toString())
       );
 
+      if(!onChainProposals.length) return Err({ type: AutocratDaoIndexerError.NothingToInsertError });
+
+      if(!proposalsToInsert.length) return Ok({ acct: "Nothing to insert, we're okay" });
+
       proposalsToInsert.map(async (proposal) => {
         const storedBaseVault = await conditionalVaultClient.getVault(
           proposal.account.baseVault
@@ -112,6 +117,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         const storedQuoteVault = await conditionalVaultClient.getVault(
           proposal.account.quoteVault
         );
+
 
         const basePass: PublicKey =
           storedBaseVault.conditionalOnFinalizeTokenMint;
@@ -151,13 +157,22 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .onConflictDoNothing()
             .execute()
         );
+        
+        const proposalAcct = proposal.account;
+        const daoAcct = proposalAcct.dao;
+        if(!daoAcct) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
+        const passAmm = proposalAcct.passAmm;
+        const failAmm = proposalAcct.failAmm;
+        if(!passAmm || !failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+        
 
         const dbDao: DaoRecord | undefined = (
           await usingDb((db) =>
             db
               .select()
               .from(schema.daos)
-              .where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58()))
+              .where(eq(schema.daos.daoAcct, daoAcct.toBase58()))
               .execute()
           )
         )?.[0];
@@ -168,27 +183,27 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           proposalAcct: proposal.publicKey.toString(),
           proposalNum: BigInt(proposal.account.number.toString()),
           autocratVersion: 0.3,
-          daoAcct: proposal.account.dao.toString(),
+          daoAcct: daoAcct.toString(),
           proposerAcct: proposal.account.proposer.toString(),
           status: ProposalStatus.Pending,
           descriptionURL: proposal.account.descriptionUrl,
-          initialSlot: BigInt(proposal.account.slotEnqueued.toString()),
-          passMarketAcct: proposal.account.passAmm.toString(),
-          failMarketAcct: proposal.account.failAmm.toString(),
+          initialSlot: proposal.account.slotEnqueued.toString(),
+          passMarketAcct: passAmm.toString(),
+          failMarketAcct: failAmm.toString(),
           baseVault: proposal.account.baseVault.toString(),
           quoteVault: proposal.account.quoteVault.toString(),
-          endSlot: BigInt(
+          endSlot: 
             proposal.account.slotEnqueued
               .add(new BN(dbDao.slotsPerProposal?.toString()))
               .toString()
-          ),
+          ,
           durationInSlots: dbDao.slotsPerProposal,
-          minBaseFutarchicLiquidity: dbDao.minBaseFutarchicLiquidity,
-          minQuoteFutarchicLiquidity: dbDao.minQuoteFutarchicLiquidity,
+          minBaseFutarchicLiquidity: dbDao.minBaseFutarchicLiquidity ?? null,
+          minQuoteFutarchicLiquidity: dbDao.minQuoteFutarchicLiquidity ?? null,
           passThresholdBps: dbDao.passThresholdBps,
-          twapInitialObservation: dbDao.twapInitialObservation,
+          twapInitialObservation: dbDao.twapInitialObservation ?? null,
           twapMaxObservationChangePerUpdate:
-            dbDao.twapMaxObservationChangePerUpdate,
+            dbDao.twapMaxObservationChangePerUpdate ?? null,
         };
 
         await usingDb((db) =>
@@ -205,6 +220,10 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
       for (const onChainProposal of onChainProposals) {
         if (onChainProposal.account.state.pending) {
+
+          const daoAcct = onChainProposal.account.dao;
+          if(!daoAcct) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
           const dbDao: DaoRecord | undefined = (
             await usingDb((db) =>
               db
@@ -213,7 +232,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
                 .where(
                   eq(
                     schema.daos.daoAcct,
-                    onChainProposal.account.dao.toBase58()
+                    daoAcct.toBase58()
                   )
                 )
                 .execute()
@@ -255,14 +274,14 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
                 autocratVersion: 0.3,
                 status: ProposalStatus.Pending,
                 descriptionURL: onChainProposal.account.descriptionUrl,
-                initialSlot: BigInt(
+                initialSlot: 
                   onChainProposal.account.slotEnqueued.toString()
-                ),
-                endSlot: BigInt(
+                ,
+                endSlot: 
                   onChainProposal.account.slotEnqueued
                     .add(new BN(dbDao.slotsPerProposal?.toString()))
                     .toString()
-                ),
+                ,
                 updatedAt: sql`NOW()`,
               })
               .where(
@@ -271,7 +290,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
                     schema.proposals.proposalAcct,
                     onChainProposal.publicKey.toString()
                   ),
-                  gte(schema.proposals.endSlot, currentSlot),
+                  sql`CAST(${schema.proposals.endSlot} AS NUMERIC) >= CAST(${currentSlot.toString()} AS NUMERIC)`,
                   isNull(schema.proposals.completedAt)
                 )
               )
@@ -370,6 +389,10 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
         // check if markets are there, if they aren't insert them
         // Check if markets are there, if they aren't, insert them
+        const passAmm = onChainProposal.account.passAmm;
+        const failAmm = onChainProposal.account.failAmm;
+        if(!passAmm || !failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
         const existingMarkets =
           (await usingDb((db) =>
             db
@@ -379,11 +402,11 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
                 or(
                   eq(
                     schema.markets.marketAcct,
-                    onChainProposal.account.passAmm.toString()
+                    passAmm.toString()
                   ),
                   eq(
                     schema.markets.marketAcct,
-                    onChainProposal.account.failAmm.toString()
+                    failAmm.toString()
                   )
                 )
               )
@@ -393,11 +416,11 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
         if (
           !existingMarkets.some(
             (market) =>
-              market.marketAcct === onChainProposal.account.passAmm.toString()
+              market.marketAcct === passAmm.toString()
           ) ||
           !existingMarkets.some(
             (market) =>
-              market.marketAcct === onChainProposal.account.failAmm.toString()
+              market.marketAcct === failAmm.toString()
           )
         ) {
           await insertAssociatedAccountsDataForProposal(
@@ -409,7 +432,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
       logger.log("updated proposal and vault states");
 
-      return Ok({ acct: "urmom" });
+      return Ok({ acct: "Update proposal and vault states" });
     } catch (err) {
       logger.error("error with proposal indexer:", err);
       return Err({ type: AutocratDaoIndexerError.GeneralError });
@@ -421,12 +444,16 @@ async function insertAssociatedAccountsDataForProposal(
   proposal: ProposalAccountWithKey,
   currentTime: Date
 ) {
+
+  const daoAcct = proposal.account.dao;
+  if(!daoAcct) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
   const dao =
     (await usingDb((db) =>
       db
         .select()
         .from(schema.daos)
-        .where(eq(schema.daos.daoAcct, proposal.account.dao.toBase58()))
+        .where(eq(schema.daos.daoAcct, daoAcct.toBase58()))
         .execute()
     )) ?? [];
 
@@ -524,7 +551,7 @@ async function insertAssociatedAccountsDataForProposal(
       name: metadata.name && !metadata.isFallback ? metadata.name : defaultName,
       decimals: metadata.decimals,
       mintAcct: token.toString(),
-      supply: storedMint.supply,
+      supply: storedMint.supply.toString(),
       imageUrl: imageUrl ? imageUrl : "",
       updatedAt: currentTime,
     };
@@ -546,6 +573,7 @@ async function insertAssociatedAccountsDataForProposal(
     [quotePass, proposal.account.passAmm],
     [quoteFail, proposal.account.failAmm],
   ]) {
+    if(!mint || !owner) continue;
     let tokenAcct: TokenAcctRecord = {
       mintAcct: mint.toString(),
       updatedAt: currentTime,
@@ -554,7 +582,7 @@ async function insertAssociatedAccountsDataForProposal(
       amount: await getAccount(
         provider.connection,
         getAssociatedTokenAddressSync(mint, owner, true)
-      ).then((account) => account.amount),
+      ).then((account) => account.amount.toString()),
     };
     tokenAcctsToInsert.push(tokenAcct);
   }
@@ -573,6 +601,7 @@ async function insertAssociatedAccountsDataForProposal(
     [quotePass, proposal.account.passAmm],
     [quoteFail, proposal.account.failAmm],
   ]) {
+    if(!mint || !owner) continue;
     let tokenAcct: TokenAcctRecord = {
       mintAcct: mint.toString(),
       updatedAt: currentTime,
@@ -581,7 +610,7 @@ async function insertAssociatedAccountsDataForProposal(
       amount: await getAccount(
         provider.connection,
         getAssociatedTokenAddressSync(mint, owner, true)
-      ).then((account) => account.amount),
+      ).then((account) => account.amount.toString()),
     };
     tokenAcctsToInsert.push(tokenAcct);
   }
@@ -594,6 +623,8 @@ async function insertAssociatedAccountsDataForProposal(
       .execute()
   );
 
+  if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
   let passMarket: MarketRecord = {
     marketAcct: proposal.account.passAmm.toString(),
     proposalAcct: proposal.publicKey.toString(),
@@ -601,9 +632,9 @@ async function insertAssociatedAccountsDataForProposal(
     createTxSig: "",
     baseMintAcct: storedBaseVault.conditionalOnFinalizeTokenMint.toString(),
     quoteMintAcct: storedQuoteVault.conditionalOnFinalizeTokenMint.toString(),
-    baseLotSize: 1n,
-    quoteLotSize: 1n,
-    quoteTickSize: 1n,
+    baseLotSize: "1",
+    quoteLotSize: "1",
+    quoteTickSize: "1",
     bidsTokenAcct: getAssociatedTokenAddressSync(
       quotePass,
       proposal.account.passAmm,
@@ -627,9 +658,9 @@ async function insertAssociatedAccountsDataForProposal(
     createTxSig: "",
     baseMintAcct: storedBaseVault.conditionalOnRevertTokenMint.toString(),
     quoteMintAcct: storedQuoteVault.conditionalOnRevertTokenMint.toString(),
-    baseLotSize: 1n,
-    quoteLotSize: 1n,
-    quoteTickSize: 1n,
+    baseLotSize: "1",
+    quoteLotSize: "1",
+    quoteTickSize: "1",
     bidsTokenAcct: getAssociatedTokenAddressSync(
       quoteFail,
       proposal.account.failAmm,
@@ -910,3 +941,4 @@ async function calculateUserPerformance(
     });
   }
 }
+

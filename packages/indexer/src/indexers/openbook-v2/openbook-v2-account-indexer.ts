@@ -59,15 +59,15 @@ export const OpenbookV2MarketAccountUpdateIndexer: AccountInfoIndexer = {
       // update the latest slot here
       const newOpenbookConditionaPrice: PricesRecord = {
         marketAcct: account.toString(),
-        updatedSlot: BigInt(context.slot),
+        updatedSlot: context.slot.toString(),
         price: midPrice.toString(),
         pricesType: PricesType.Conditional,
-        baseAmount: BigInt(
-          market.marketInstance.account.baseDepositTotal.toNumber()
-        ),
-        quoteAmount: BigInt(
-          market.marketInstance.account.quoteDepositTotal.toNumber()
-        ),
+        baseAmount: 
+          market.marketInstance.account.baseDepositTotal.toString()
+        ,
+        quoteAmount: 
+          market.marketInstance.account.quoteDepositTotal.toString()
+        ,
         createdBy: "openbook-v2-account-indexer",
       };
 

@@ -1,4 +1,4 @@
-import { BN } from "@coral-xyz/anchor";
+
 import {
   IndexerImplementation,
   IndexerType,
@@ -8,7 +8,7 @@ export type IndexerWithAccountDeps = {
   indexers: {
     name: string;
     implementation: IndexerImplementation;
-    latestSlotProcessed: bigint;
+    latestSlotProcessed: string;
     indexerType: IndexerType;
   } | null;
   indexer_account_dependencies: {

@@ -36,8 +36,14 @@ const transaction = (columnName: string) =>
 const tokenAmount = (columnName: string) =>
   bigint(columnName, { mode: "bigint" });
 
+const biggerTokenAmount = (columnName: string) => numeric(columnName);
+
 const block = (columnName: string) => bigint(columnName, { mode: "bigint" });
 const slot = (columnName: string) => bigint(columnName, { mode: "bigint" });
+
+const biggerBlock = (columnName: string) => numeric(columnName);
+
+const biggerSlot = (columnName: string) => numeric(columnName);
 
 export enum MarketType {
   OPEN_BOOK_V2 = "openbookv2",
@@ -100,24 +106,13 @@ export const daos = pgTable(
     quoteAcct: pubkey("quote_acct").references(() => tokens.mintAcct),
     treasuryAcct: pubkey("treasury_acct").unique(),
     // This is keyed for proposals and initialized when dao is created.
-    slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }),
+    slotsPerProposal: numeric("slots_per_proposal"),
     // TODO: should we add proposal count???
     passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
-    twapInitialObservation: bigint("twap_initial_observation", {
-      mode: "bigint",
-    }),
-    twapMaxObservationChangePerUpdate: bigint(
-      "twap_max_observation_change_per_update",
-      {
-        mode: "bigint",
-      }
-    ),
-    minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", {
-      mode: "bigint",
-    }),
-    minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", {
-      mode: "bigint",
-    }),
+    twapInitialObservation: numeric("twap_initial_observation"),
+    twapMaxObservationChangePerUpdate: numeric("twap_max_observation_change_per_update"),
+    minQuoteFutarchicLiquidity: numeric("min_quote_futarchic_liquidity"),
+    minBaseFutarchicLiquidity: numeric("min_base_futarchic_liquidity"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
@@ -139,9 +134,9 @@ export const proposals = pgTable("proposals", {
   // NOTE: We can infer this THROUGH dao...
   autocratVersion: doublePrecision("autocrat_version").notNull(),
   proposerAcct: pubkey("proposer_acct").notNull(),
-  initialSlot: slot("initial_slot").notNull(),
+  initialSlot: biggerSlot("initial_slot").notNull(),
   // NOTE: We can add the dao slots_per_proposal to the initial_slot to get this
-  endSlot: slot("end_slot"),
+  endSlot: biggerSlot("end_slot"),
   status: pgEnum("status", ProposalStatus).notNull(),
   descriptionURL: varchar("description_url"),
   pricingModelPassAcct: pubkey("pricing_model_pass_acct"),
@@ -154,23 +149,14 @@ export const proposals = pgTable("proposals", {
   quoteVault: pubkey("quote_vault").references(
     () => conditionalVaults.condVaultAcct
   ),
-  durationInSlots: slot("duration_in_slots"),
+  durationInSlots: biggerSlot("duration_in_slots"),
   passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
-  twapInitialObservation: bigint("twap_initial_observation", {
-    mode: "bigint",
-  }),
-  twapMaxObservationChangePerUpdate: bigint(
-    "twap_max_observation_change_per_update",
-    {
-      mode: "bigint",
-    }
+  twapInitialObservation: biggerTokenAmount("twap_initial_observation"),
+  twapMaxObservationChangePerUpdate: biggerTokenAmount(
+    "twap_max_observation_change_per_update"
   ),
-  minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", {
-    mode: "bigint",
-  }),
-  minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", {
-    mode: "bigint",
-  }),
+  minQuoteFutarchicLiquidity: biggerTokenAmount("min_quote_futarchic_liquidity"),
+  minBaseFutarchicLiquidity: biggerTokenAmount("min_base_futarchic_liquidity"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .default(sql`now()`)
     .notNull(),
@@ -202,9 +188,9 @@ export const markets = pgTable("markets", {
     .references(() => tokens.mintAcct)
     .notNull(),
 
-  baseLotSize: tokenAmount("base_lot_size").notNull(),
-  quoteLotSize: tokenAmount("quote_lot_size").notNull(),
-  quoteTickSize: tokenAmount("quote_tick_size").notNull(),
+  baseLotSize: biggerTokenAmount("base_lot_size").notNull(),
+  quoteLotSize: biggerTokenAmount("quote_lot_size").notNull(),
+  quoteTickSize: biggerTokenAmount("quote_tick_size").notNull(),
 
   // Monitoring the total supply on either side of the market
   // (helpful in case of AMMs where LPs are not tracked in the makes table)
@@ -225,8 +211,8 @@ export const markets = pgTable("markets", {
   quoteTakerFee: smallint("quote_taker_fee").notNull(),
 
   // When market becomes active or inactive
-  activeSlot: slot("active_slot"),
-  inactiveSlot: slot("inactive_slot"),
+  activeSlot: biggerSlot("active_slot"),
+  inactiveSlot: biggerSlot("inactive_slot"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
@@ -243,9 +229,9 @@ export const prices = pgTable(
     marketAcct: pubkey("market_acct")
       .references(() => markets.marketAcct)
       .notNull(),
-    updatedSlot: slot("updated_slot").notNull(),
-    baseAmount: tokenAmount("base_amount"),
-    quoteAmount: tokenAmount("quote_amount"),
+    updatedSlot: biggerSlot("updated_slot").notNull(),
+    baseAmount: biggerTokenAmount("base_amount"),
+    quoteAmount: biggerTokenAmount("quote_amount"),
     price: numeric("price", {
       precision: 40,
       scale: 20,
@@ -268,9 +254,8 @@ export const twaps = pgTable(
       .references(() => markets.marketAcct)
       .notNull(),
     proposalAcct: pubkey("proposal_acct")
-      .references(() => proposals.proposalAcct)
-      .notNull(),
-    updatedSlot: slot("updated_slot").notNull(),
+      .references(() => proposals.proposalAcct),
+    updatedSlot: biggerSlot("updated_slot").notNull(),
     // max u128 value is 340282366920938463463374607431768211455 (39 digits)
     // the account field is u128 https://github.com/metaDAOproject/openbook-twap/blob/82690c33a091b82e908843a14ad1a571dfba12b1/programs/openbook-twap/src/lib.rs#L52
     observationAgg: numeric("observation_agg", {
@@ -285,7 +270,7 @@ export const twaps = pgTable(
       precision: 40,
       scale: 0,
     }),
-    curTwap: tokenAmount("token_amount").notNull(),
+    curTwap: biggerTokenAmount("token_amount").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
@@ -314,7 +299,7 @@ export const transactions = pgTable(
   "transactions",
   {
     txSig: transaction("tx_sig").primaryKey(),
-    slot: slot("slot").notNull(),
+    slot: biggerSlot("slot").notNull(),
     blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
     failed: boolean("failed").notNull(),
     payload: text("payload").notNull(),
@@ -350,7 +335,7 @@ export const transactionWatchers = pgTable("transaction_watchers", {
    * This may be significantly higher than the slot of the latest signature. The invariant here
    * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
    */
-  checkedUpToSlot: slot("checked_up_to_slot").notNull(),
+  checkedUpToSlot: biggerSlot("checked_up_to_slot").notNull(),
   serializerLogicVersion: smallint("serializer_logic_version").notNull(),
   description: text("description").notNull(),
   status: pgEnum("status", TransactionWatchStatus)
@@ -369,7 +354,7 @@ export const transactionWatcherTransactions = pgTable(
     txSig: transaction("tx_sig")
       .references(() => transactions.txSig)
       .notNull(),
-    slot: slot("slot").notNull(),
+    slot: biggerSlot("slot").notNull(),
   },
   (table) => ({
     pk: primaryKey(table.watcherAcct, table.txSig),
@@ -400,7 +385,7 @@ export enum IndexerType {
 export const indexers = pgTable("indexers", {
   name: varchar("name", { length: 100 }).primaryKey(),
   implementation: pgEnum("implementation", IndexerImplementation).notNull(),
-  latestSlotProcessed: slot("latest_slot_processed").notNull(),
+  latestSlotProcessed: biggerSlot("latest_slot_processed").notNull(),
   indexerType: pgEnum("indexer_type", IndexerType).notNull(),
 });
 
@@ -440,7 +425,7 @@ export enum TokenAcctStatus {
 // or META circulating supply by taking total META supply minus the treasury's account
 export const tokenAccts = pgTable("token_accts", {
   // ATA PGA
-  amount: tokenAmount("amount").notNull(),
+  amount: biggerTokenAmount("amount").notNull(),
   mintAcct: pubkey("mint_acct")
     .references(() => tokens.mintAcct)
     .notNull(),
@@ -463,14 +448,14 @@ export const tokenAcctBalances = pgTable(
       .references(() => tokens.mintAcct)
       .notNull(),
     ownerAcct: pubkey("owner_acct").notNull(),
-    amount: tokenAmount("amount").notNull(),
+    amount: biggerTokenAmount("amount").notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    delta: tokenAmount("delta")
+    delta: biggerTokenAmount("delta")
       .notNull()
       .default(sql`0`),
-    slot: slot("slot"),
+    slot: biggerSlot("slot"),
     txSig: transaction("tx_sig").references(() => transactions.txSig),
   },
   (table) => ({
@@ -492,7 +477,7 @@ export const tokens = pgTable("tokens", {
   mintAcct: pubkey("mint_acct").primaryKey(),
   name: varchar("name", { length: 30 }).notNull(),
   symbol: varchar("symbol", { length: 10 }).notNull(),
-  supply: tokenAmount("supply").notNull(),
+  supply: biggerTokenAmount("supply").notNull(),
   decimals: smallint("decimals").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   imageUrl: varchar("image_url"),
@@ -521,19 +506,19 @@ export const orders = pgTable(
     // Starts true, switches to false on cancellation or full fill
     isActive: boolean("is_active").notNull(),
 
-    unfilledBaseAmount: tokenAmount("unfilled_base_amount").notNull(),
-    filledBaseAmount: tokenAmount("filled_base_amount").notNull(),
+    unfilledBaseAmount: biggerTokenAmount("unfilled_base_amount").notNull(),
+    filledBaseAmount: biggerTokenAmount("filled_base_amount").notNull(),
     quotePrice: numeric("quote_price", {
       precision: 40,
       scale: 20,
     }).notNull(),
 
-    orderBlock: block("order_block").notNull(),
+    orderBlock: biggerBlock("order_block").notNull(),
     orderTime: timestamp("order_time", { withTimezone: true }).notNull(),
 
     // Only present on order cancel
     cancelTxSig: transaction("cancel_tx_sig"),
-    cancelBlock: block("cancel_block"),
+    cancelBlock: biggerBlock("cancel_block"),
     cancelTime: timestamp("cancel_time", { withTimezone: true }),
   },
   (table) => ({
@@ -555,9 +540,9 @@ export const makes = pgTable(
     isActive: boolean("is_active").notNull(),
 
     // Represents unfilled volume
-    unfilledBaseAmount: tokenAmount("unfilled_base_amount").notNull(),
+    unfilledBaseAmount: biggerTokenAmount("unfilled_base_amount").notNull(),
     // Starts at 0, increases as more is filled
-    filledBaseAmount: tokenAmount("filled_base_amount").notNull(),
+    filledBaseAmount: biggerTokenAmount("filled_base_amount").notNull(),
     quotePrice: numeric("quote_price", {
       precision: 40,
       scale: 20,
@@ -577,7 +562,7 @@ export const takes = pgTable(
     orderTxSig: transaction("order_tx_sig")
       .references(() => orders.orderTxSig)
       .primaryKey(),
-    baseAmount: tokenAmount("base_amount").notNull(),
+    baseAmount: biggerTokenAmount("base_amount").notNull(),
     quotePrice: numeric("quote_price", {
       precision: 40,
       scale: 20,
@@ -598,7 +583,7 @@ export const takes = pgTable(
     marketAcct: pubkey("market_acct")
       .references(() => markets.marketAcct)
       .notNull(),
-    orderBlock: block("order_block").notNull(),
+    orderBlock: biggerBlock("order_block").notNull(),
     orderTime: timestamp("order_time", { withTimezone: true }).notNull(),
   },
   (table) => ({
@@ -621,17 +606,17 @@ export const candles = pgTable(
     // Repeats every duration
     timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
     // (base token amount)
-    volume: tokenAmount("volume").notNull(),
+    volume: biggerTokenAmount("volume").notNull(),
     // Nullable in case where there were no trades
     // (quote token amounts)
-    open: tokenAmount("open"),
-    high: tokenAmount("high"),
-    low: tokenAmount("low"),
-    close: tokenAmount("close"),
+    open: biggerTokenAmount("open"),
+    high: biggerTokenAmount("high"),
+    low: biggerTokenAmount("low"),
+    close: biggerTokenAmount("close"),
     // time-weighted average of the candle. If candle was empty, set to prior close
-    candleAverage: tokenAmount("candle_average").notNull(),
+    candleAverage: biggerTokenAmount("candle_average").notNull(),
     // Nullable in case market is not a futarchy market
-    condMarketTwap: tokenAmount("cond_market_twap"),
+    condMarketTwap: biggerTokenAmount("cond_market_twap"),
   },
   (table) => ({
     pk: primaryKey(table.marketAcct, table.candleDuration, table.timestamp),
@@ -903,7 +888,7 @@ export const signatures = pgTable(
   "signatures",
   {
     signature: transaction("signature").primaryKey(),
-    slot: slot("slot").notNull(),
+    slot: biggerSlot("slot").notNull(),
     didErr: boolean("did_err").notNull(),
     err: text("err"),
     blockTime: timestamp("block_time", { withTimezone: true }),
@@ -920,7 +905,7 @@ export const signatures = pgTable(
 
 export const v0_4_amms = pgTable("v0_4_amms", {
   ammAddr: pubkey("amm_addr").primaryKey(),
-  createdAtSlot: slot("created_at_slot").notNull(),
+  createdAtSlot: biggerSlot("created_at_slot").notNull(),
   lpMintAddr: pubkey("lp_mint_addr")
     .notNull()
     .references(() => tokens.mintAcct),
@@ -978,6 +963,16 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   })
     .notNull()
     .default(sql`now()`),
+  scoreTerm: text("score_term").notNull().default("effective"),
+  scoreUnit: text("score_unit"),
+  scoreMaxValue: numeric("score_max_value", {
+    precision: 40,
+    scale: 20,
+  }),
+  scoreMinValue: numeric("score_min_value", {
+    precision: 40,
+    scale: 20,
+  }),
 });
 
 // TODO rename `created_at` to `inserted_at`
@@ -985,14 +980,14 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
 export const v0_4_swaps = pgTable("v0_4_swaps", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),
   signature: transaction("signature").notNull(),
-  slot: slot("slot").notNull(),
+  slot: biggerSlot("slot").notNull(),
   blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
   swapType: pgEnum("swap_type", V04SwapType).notNull(),
   ammAddr: pubkey("amm_addr").notNull(),
   userAddr: pubkey("user_addr").notNull(),
   ammSeqNum: bigint("amm_seq_num", { mode: "bigint" }).notNull(),
-  inputAmount: tokenAmount("input_amount").notNull(),
-  outputAmount: tokenAmount("output_amount").notNull(),
+  inputAmount: biggerTokenAmount("input_amount").notNull(),
+  outputAmount: biggerTokenAmount("output_amount").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
@@ -1010,7 +1005,7 @@ export const v0_4_splits = pgTable(
     vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
     vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
     signature: transaction("signature").notNull().references(() => signatures.signature),
-    slot: slot("slot").notNull(),
+    slot: biggerSlot("slot").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -1028,7 +1023,7 @@ export const v0_4_merges = pgTable("v0_4_merges", {
   vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
   vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
   signature: transaction("signature").notNull().references(() => signatures.signature),
-  slot: slot("slot").notNull(),
+  slot: biggerSlot("slot").notNull(),
   amount: bigint("amount", { mode: "bigint" }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -1077,7 +1072,7 @@ export const v0_4_conditional_vaults = pgTable("v0_4_conditional_vaults", {
 // TODO: This is commented out give these are timescale views, but I wanted to include them
 export const twapChartData = pgView("twap_chart_data", {
   interv: timestamp("interv", { withTimezone: true }),
-  tokenAmount: tokenAmount("token_amount"),
+  tokenAmount: biggerTokenAmount("token_amount"),
   marketAcct: pubkey("market_acct")
     .notNull()
     .references(() => markets.marketAcct),
@@ -1098,8 +1093,8 @@ export const pricesChartData = pgView("prices_chart_data", {
     precision: 40,
     scale: 20,
   }).notNull(),
-  baseAmount: tokenAmount("base_amount"),
-  quoteAmount: tokenAmount("quote_amount"),
+  baseAmount: biggerTokenAmount("base_amount"),
+  quoteAmount: biggerTokenAmount("quote_amount"),
   pricesType: pgEnum("prices_type", PricesType).notNull(),
   marketAcct: pubkey("market_acct")
     .notNull()
@@ -1179,7 +1174,7 @@ export const userDeposits = pgTable("user_deposits", {
     .notNull()
     .references(() => users.userAcct),
 
-  tokenAmount: tokenAmount("token_amount").notNull(),
+  tokenAmount: biggerTokenAmount("token_amount").notNull(),
 
   mintAcct: pubkey("mint_acct")
     .references(() => tokens.mintAcct)
