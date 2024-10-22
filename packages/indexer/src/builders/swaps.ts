@@ -164,6 +164,11 @@ export class SwapBuilder {
         const mintIx = tx.instructions?.find(
           (i) => i.name === "mintConditionalTokens"
         );
+        const mergeIx = tx.instructions?.find((i) => i.name === "mergeConditionalTokensForUnderlyingTokens");
+        if (mergeIx && mintIx) {
+          console.error("ARB TRANSACTION DETECTED")
+          return Err({ type: SwapPersistableError.ArbTransactionError });
+        }
         const result = await this.buildOrderFromSwapIx(swapIx, tx, mintIx);
         if (!result.success) {
           return Err(result.error);
