@@ -21,7 +21,7 @@ function throwInvariantViolation(
 
 export async function getTransactionHistory(
   account: PublicKey,
-  largerThanSlot: bigint,
+  largerThanSlot: string,
   range?: { after?: string; before?: string }
 ): Promise<TransactionMeta[]> {
   const { after, before } = range ?? {};

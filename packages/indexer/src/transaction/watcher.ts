@@ -56,7 +56,7 @@ class TransactionWatcher {
   private account: PublicKey;
   private description: string;
   private latestTxSig: string | undefined;
-  private checkedUpToSlot: bigint;
+  private checkedUpToSlot: string;
   private logicVersion: number;
   private pollerIntervalId: ReturnType<typeof setInterval> | undefined;
   private rpcWebsocket: number | undefined;
@@ -187,10 +187,10 @@ class TransactionWatcher {
     // EDIT: encountered above bug so trying to resolve by switching to finalized slot rather than confirmed.
     // EDIT: even switching to finalized didn't really work. This logic needs rethinking
     const newCheckedUpToSlot =
-      this.checkedUpToSlot > latestFinalizedSlot
+      BigInt(this.checkedUpToSlot) > latestFinalizedSlot
         ? this.checkedUpToSlot
-        : latestFinalizedSlot;
-    if (newCheckedUpToSlot === latestFinalizedSlot) {
+        : latestFinalizedSlot.toString();
+    if (newCheckedUpToSlot === latestFinalizedSlot.toString()) {
       console.log(
         `For acct ${acct}, using finalized slot of ${latestFinalizedSlot}`
       );
@@ -200,7 +200,7 @@ class TransactionWatcher {
         db
           .update(schema.transactionWatchers)
           .set({
-            checkedUpToSlot: newCheckedUpToSlot,
+            checkedUpToSlot: newCheckedUpToSlot.toString(),
             updatedAt: new Date(),
           })
           .where(eq(schema.transactionWatchers.acct, acct))
@@ -301,7 +301,7 @@ class TransactionWatcher {
     // We can't set the checked up to slot as the current tx's slot, since there might be a tx after this one on the same slot. So we instead
     // need to set it to the prior tx's slot if that slot is less than the current slot.
     const newCheckedUpToSlot =
-      slot > priorSlot ? priorSlot : this.checkedUpToSlot;
+      BigInt(slot) > BigInt(priorSlot) ? priorSlot : this.checkedUpToSlot;
     const updateResult =
       (await usingDb((db) =>
         db
@@ -311,7 +311,7 @@ class TransactionWatcher {
             latestTxSig: signature,
             firstTxSig: curWatcherRecord.firstTxSig ?? signature,
             serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
-            checkedUpToSlot: newCheckedUpToSlot,
+            checkedUpToSlot: newCheckedUpToSlot.toString(),
             updatedAt: new Date(),
           })
           .where(eq(schema.transactionWatchers.acct, acct))
@@ -344,7 +344,7 @@ class TransactionWatcher {
       try {
         const txSignatures = await getTransactionHistory(
           this.account,
-          this.checkedUpToSlot,
+          this.checkedUpToSlot.toString(),
           { after: this.latestTxSig }
         );
 
@@ -426,7 +426,7 @@ async function handleNewTransaction(
 ) {
   const transactionRecord: TransactionRecord = {
     txSig: signature,
-    slot,
+    slot: slot.toString(),
     blockTime: new Date(parsedTx.blockTime * 1000), // TODO need to verify if this is correct
     failed: parsedTx.err !== undefined,
     payload: serialize(parsedTx),
@@ -455,7 +455,7 @@ async function handleNewTransaction(
   //       be a no-op in the happy path
   const watcherTxRecord: TransactionWatcherTransactionRecord = {
     txSig: signature,
-    slot,
+    slot: slot.toString(),
     watcherAcct: acct,
   };
   const insertRes =
@@ -568,7 +568,7 @@ export async function startTransactionWatchers() {
                 .set({
                   serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
                   latestTxSig: null,
-                  checkedUpToSlot: BigInt(0),
+                  checkedUpToSlot: "0",
                   updatedAt: new Date(),
                 })
                 .where(eq(schema.transactionWatchers.acct, acct))
