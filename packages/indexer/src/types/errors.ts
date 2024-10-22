@@ -9,4 +9,5 @@ export enum SwapPersistableError {
   AlreadyPersistedSwap = "AlreadyPersistedSwap",
   NonSwapTransaction = "NonSwapTransaction",
   TransactionParseError = "TransactionParseError",
+  ArbTransactionError = "ArbTransactionError",
 }
