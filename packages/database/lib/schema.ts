@@ -559,9 +559,9 @@ export const makes = pgTable(
 export const takes = pgTable(
   "takes",
   {
+    takeId: uuid("take_id").notNull().defaultRandom().primaryKey(),
     orderTxSig: transaction("order_tx_sig")
-      .references(() => orders.orderTxSig)
-      .primaryKey(),
+      .references(() => orders.orderTxSig),
     baseAmount: biggerTokenAmount("base_amount").notNull(),
     quotePrice: numeric("quote_price", {
       precision: 40,
@@ -571,7 +571,6 @@ export const takes = pgTable(
     takerQuoteFee: tokenAmount("taker_quote_fee")
       .notNull()
       .default(0 as unknown as bigint),
-
     // Maker fields will be NULL on pure AMMs
     makerOrderTxSig: transaction("maker_order_tx_sig").references(
       () => makes.orderTxSig
