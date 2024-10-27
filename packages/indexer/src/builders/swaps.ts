@@ -66,6 +66,28 @@ export class SwapPersistable {
           )}`
         );
       }
+      // Insert user if they aren't already in the database
+      const insertUsersResult = (await usingDb((db) =>
+          db
+            .insert(schema.users)
+            .values({ userAcct: this.ordersRecord.actorAcct })
+            .onConflictDoNothing()
+            .returning({ userAcct: schema.users.userAcct })
+        )) ?? [];
+      if (
+        insertUsersResult.length !== 1 ||
+        insertUsersResult[0].userAcct !== this.ordersRecord.actorAcct
+      ) {
+        logger.warn(
+          `Failed to upsert user ${this.ordersRecord.actorAcct}. ${JSON.stringify(
+            this.ordersRecord
+          )}`
+        );
+        if(insertUsersResult.length <= 0) {
+          logger.warn(`User already exists in db: ${this.ordersRecord.actorAcct}`);
+        }
+      }
+      
       // const priceInsertRes =
       //   (await usingDb((db) =>
       //     db
@@ -164,11 +186,14 @@ export class SwapBuilder {
         const mintIx = tx.instructions?.find(
           (i) => i.name === "mintConditionalTokens"
         );
+        // What if there's more than one?
         const mergeIx = tx.instructions?.find((i) => i.name === "mergeConditionalTokensForUnderlyingTokens");
+        
         if (mergeIx && mintIx) {
           console.error("ARB TRANSACTION DETECTED")
           return Err({ type: SwapPersistableError.ArbTransactionError });
         }
+        
         const result = await this.buildOrderFromSwapIx(swapIx, tx, mintIx);
         if (!result.success) {
           return Err(result.error);
@@ -344,16 +369,23 @@ export class SwapBuilder {
       return Err({ type: AmmInstructionIndexerError.MissingMarket });
     }
 
-    const ammPrice =
-      quoteAmount.toString() && baseAmount.toString()
-        ? quoteAmount.mul(new BN(10).pow(new BN(12))).div(baseAmount)
-        : new BN(0);
+    let price: number | null = null;
+  
+    if (quoteAmount.toString() && baseAmount.toString()) {
+      console.log(quoteAmount.toString(), baseAmount.toString());
+      try{
+        const ammPrice = quoteAmount.mul(new BN(10).pow(new BN(12))).div(baseAmount)
 
-    const price = getHumanPrice(
-      ammPrice,
-      baseToken[0].decimals,
-      quoteToken[0].decimals
-    );
+        price = getHumanPrice(
+          ammPrice,
+          baseToken[0].decimals,
+          quoteToken[0].decimals
+        );
+      } catch (e) {
+        logger.error("error getting price", e);
+        return Err({ type: SwapPersistableError.GeneralError });
+      }
+    }
     // TODO: Need to likely handle rounding.....
     // index a swap here
 
@@ -365,7 +397,7 @@ export class SwapBuilder {
       orderBlock: tx.slot.toString(),
       orderTime: now,
       orderTxSig: signature,
-      quotePrice: price.toString(),
+      quotePrice: price?.toString() ?? "0",
       actorAcct: userAcct.pubkey,
       // TODO: If and only if the transaction is SUCCESSFUL does this value equal this..
       filledBaseAmount: baseAmount.toString(),
@@ -384,7 +416,7 @@ export class SwapBuilder {
       orderBlock: tx.slot.toString(),
       orderTime: now,
       orderTxSig: signature,
-      quotePrice: price.toString(),
+      quotePrice: price?.toString() ?? "0",
       // TODO: this is coded into the market, in the case of our AMM, it's 1%
       // this fee is based on the INPUT value (so if we're buying its USDC, selling its TOKEN)
       takerBaseFee: BigInt(0),

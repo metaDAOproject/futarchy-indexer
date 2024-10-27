@@ -57,6 +57,13 @@
       "when": 1729556995543,
       "tag": "0007_dark_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1729791097640,
+      "tag": "0008_stormy_spirit",
+      "breakpoints": true
     }
   ]
 }

@@ -5,38 +5,81 @@ import "dotenv/config";
 
 let connectionString = process.env.FUTARCHY_PG_URL;
 
-const pool = new Pool({
+// Add retry configuration
+const RETRY_ATTEMPTS = 5;
+const INITIAL_RETRY_DELAY = 100; // Start with shorter delay
+const MAX_RETRY_DELAY = 2000;    // Max backoff delay
+const ACQUIRE_TIMEOUT = 10000;   // 10 second timeout for acquiring connection
+
+// Add connection pool configuration
+const poolConfig = {
   connectionString: connectionString,
-  // https://stackoverflow.com/a/73997522
-  // I noticed that there was always a connection timeout error after 9 loops of the startWatchers interval;
-  // it repeats every 5 seconds and immediately after service start.
-  // That's a consistent error after 40 seconds. So I'm seeing if idle timeout of 20 seconds works. I suspect it won't though
-  // since the connection is never idle for more than 5 seconds and yet we still get a connection error.
-  min: 0,
-  idleTimeoutMillis: 20 * 1000,
-  max: 1000,
+  min: 20,
+  max: 1000, // Reduced from 1000 to a more reasonable number
+  idleTimeoutMillis: 30 * 1000,
+  connectionTimeoutMillis: 5000,
+  // Add error handling for the pool
+  async errorHandler(err: Error) {
+    console.error('Pool error:', err);
+  }
+};
+
+const pool = new Pool(poolConfig);
+
+// Add pool error listeners
+pool.on('error', (err) => {
+  console.error('Unexpected pool error:', err);
 });
 
 export async function getClient() {
   return pool.connect();
 }
 
+// Modified usingDb function with retry logic
 export async function usingDb<T>(
   fn: (connection: NodePgDatabase<typeof schemaDefs>) => Promise<T>
 ): Promise<T | undefined> {
-  let client: PoolClient;
-  try {
-    client = await pool.connect();
-  } catch (e) {
-    console.error(e);
-    return;
-  }
-  try {
-    const connection = drizzle(pool, { schema: schemaDefs });
-    const result = await fn(connection);
-    return result;
-  } finally {
-    client.release();
+  let client: PoolClient | undefined;
+  let attempts = 0;
+
+  while (attempts < RETRY_ATTEMPTS) {
+    try {
+      // Add timeout to connection acquisition
+      const acquirePromise = pool.connect();
+      client = await Promise.race([
+        acquirePromise,
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Connection acquisition timeout')), ACQUIRE_TIMEOUT)
+        )
+      ]);
+
+      const connection = drizzle(pool, { schema: schemaDefs });
+      const result = await fn(connection);
+      return result;
+    } catch (e) {
+      attempts++;
+      if (attempts === RETRY_ATTEMPTS) {
+        console.error('Final database connection attempt failed:', e);
+        throw e;
+      }
+      
+      // Exponential backoff with jitter
+      const delay = Math.min(
+        INITIAL_RETRY_DELAY * Math.pow(2, attempts - 1) + Math.random() * 100,
+        MAX_RETRY_DELAY
+      );
+      
+      console.warn(
+        `Database connection attempt ${attempts} failed, retrying in ${delay}ms:`,
+        e instanceof Error ? e.message : e
+      );
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 }
 
