@@ -110,6 +110,11 @@ export const fetchQuoteFromJupe = async (
           .where(eq(schema.tokens.mintAcct, quoteMint))
           .execute()
       )) ?? [];
+    
+    if (baseToken.length === 0 || quoteToken.length === 0) {
+      console.log("quote or base token not found in db for jupiter quotes indexer", acct);
+      return null;
+    }
 
     const amountVal = 1 * 10 ** baseToken[0].decimals;
 
