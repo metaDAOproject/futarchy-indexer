@@ -83,6 +83,9 @@ export class SwapPersistable {
             this.ordersRecord
           )}`
         );
+        if(insertUsersResult.length <= 0) {
+          logger.warn(`User already exists in db: ${this.ordersRecord.actorAcct}`);
+        }
       }
       
       // const priceInsertRes =
