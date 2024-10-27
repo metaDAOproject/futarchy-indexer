@@ -10,4 +10,5 @@ export enum SwapPersistableError {
   NonSwapTransaction = "NonSwapTransaction",
   TransactionParseError = "TransactionParseError",
   ArbTransactionError = "ArbTransactionError",
+  PriceError = "PriceError",
 }

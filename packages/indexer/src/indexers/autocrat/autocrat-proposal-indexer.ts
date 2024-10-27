@@ -76,7 +76,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           )
         )?.[0] ?? {};
 
-      if (!currentSlot || !currentTime) return;
+      console.log("currentSlot", currentSlot);
+      if (!currentSlot || !currentTime) return Err({ type: AutocratDaoIndexerError.MissingParamError });
 
       logger.log("Autocrat proposal indexer");
       const dbProposals: ProposalRecord[] =
@@ -94,7 +95,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       for (const proposal of onChainProposals) {
         if (
           !dbProposals.find((dbProposal) =>
-            new PublicKey(dbProposal.proposalAcct).equals(proposal.publicKey)
+            new PublicKey(dbProposal.proposalAcct).equals(proposal.publicKey) &&
+            dbProposal.endedAt === null
           )
         ) {
           proposalsToInsert.push(proposal);

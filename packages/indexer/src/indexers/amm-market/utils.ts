@@ -18,6 +18,7 @@ export enum AmmMarketAccountIndexingErrors {
   MarketMissingError = "MarketMissingError",
   AmmV4TwapIndexError = "AmmV4TwapIndexError",
   AmmTwapPriceError = "AmmTwapPriceError",
+  AmmTwapNoInsertError = "AmmTwapNoInsertError",
 }
 
 export async function indexAmmMarketAccountWithContext(
@@ -77,24 +78,29 @@ export async function indexAmmMarketAccountWithContext(
       lastPrice: ammMarketAccount.oracle.lastPrice.toString(),
     };
 
+    try{
     // TODO batch commits across inserts - maybe with event queue
-    const twapUpsertResult = await usingDb((db) =>
-      db
-        .insert(schema.twaps)
-        .values(newTwap)
-        .onConflictDoNothing()
-        .returning({ marketAcct: schema.twaps.marketAcct })
-    );
+      const twapUpsertResult = await usingDb((db) =>
+        db
+          .insert(schema.twaps)
+          .values(newTwap)
+          .onConflictDoNothing()
+          .returning({ marketAcct: schema.twaps.marketAcct })
+      );
 
-    if (twapUpsertResult === undefined || twapUpsertResult.length === 0) {
-      logger.error("failed to upsert twap");
-      return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapIndexError });
+      if (twapUpsertResult === undefined || twapUpsertResult.length === 0) {
+        logger.error("failed to upsert twap", newTwap);
+        // return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapNoInsertError });
+      }
+    } catch (e) {
+      logger.error("failed to upsert twap", e);
+      return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapNoInsertError });
     }
   }
 
   let priceFromReserves: BN;
 
-  if (ammMarketAccount.baseAmount.toString() === "0" || ammMarketAccount.baseAmount.toString() === "0") {
+  if (ammMarketAccount.baseAmount.toNumber() === 0 || ammMarketAccount.baseAmount.toNumber() === 0) {
     logger.error("NO RESERVES", ammMarketAccount);
     return Ok("no price from reserves");
   }
