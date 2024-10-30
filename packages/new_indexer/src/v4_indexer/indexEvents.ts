@@ -21,12 +21,14 @@ type DBConnection = any; // TODO: Fix typing..
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
 
-const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionResponse: VersionedTransactionResponse | TransactionResponse): { name: string; data: any }[] => {
-  const events: { name: string; data: any }[] = [];
+const parseEvents = (transactionResponse: VersionedTransactionResponse | TransactionResponse): { ammEvents: any, vaultEvents: any } => {
+  const ammEvents: { name: string; data: any }[] = [];
+  const vaultEvents: { name: string; data: any }[] = [];
   try {
     const inner: CompiledInnerInstruction[] =
       transactionResponse?.meta?.innerInstructions ?? [];
-    const idlProgramId = program.programId;
+    const ammIdlProgramId = ammClient.programId;
+    const vaultIdlProgramId = conditionalVaultClient.vaultProgram.programId;
     for (let i = 0; i < inner.length; i++) {
       for (let j = 0; j < inner[i].instructions.length; j++) {
         const ix = inner[i].instructions[j];
@@ -34,22 +36,36 @@ const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionRespo
           transactionResponse?.transaction.message.staticAccountKeys[
           ix.programIdIndex
           ];
-        if (
-          programPubkey === undefined ||
-          !programPubkey.equals(idlProgramId)
-        ) {
-          // we are at instructions that does not match the linked program
+        if (!programPubkey) {
+          console.log("No program pubkey");
           continue;
         }
 
-        const ixData = anchor.utils.bytes.bs58.decode(
-          ix.data
-        );
-        const eventData = anchor.utils.bytes.base64.encode(ixData.slice(8));
-        const event = program.coder.events.decode(eventData);
-        // console.log(event)
-        if (event) {
-          events.push(event);
+        // get which program the instruction belongs to
+        let program: Program;
+        if (programPubkey.equals(ammIdlProgramId)) {
+          program = ammClient.program;
+          const ixData = anchor.utils.bytes.bs58.decode(
+            ix.data
+          );
+          const eventData = anchor.utils.bytes.base64.encode(ixData.slice(8));
+          const event = program.coder.events.decode(eventData);
+          // console.log(event)
+          if (event) {
+            ammEvents.push(event);
+          }
+        } else if (programPubkey.equals(vaultIdlProgramId)) {
+          const ixData = anchor.utils.bytes.bs58.decode(
+            ix.data
+          );
+          const eventData = anchor.utils.bytes.base64.encode(ixData.slice(8));
+          const event = program.coder.events.decode(eventData);
+          // console.log(event)
+          if (event) {
+            vaultEvents.push(event);
+          }
+        } else {
+          console.log("Unknown program pubkey", programPubkey.toBase58());
         }
       }
     }
@@ -61,7 +77,10 @@ const parseEvents = <T extends anchor.Idl>(program: Program<T>, transactionRespo
     ]);
   }
 
-  return events;
+  return {
+    ammEvents,
+    vaultEvents
+  };
 }
 
 async function fetchEligibleSignatures(programId: string, limit: number) {
@@ -159,6 +178,28 @@ export async function indexAmmEvents() {
         ? `Error in indexAmmEvents: ${error.message}`
         : "Unknown error in indexAmmEvents"
     ]);
+  }
+}
+
+export async function processSignature(signature: string, programId: PublicKey) {
+  if (programId.equals(AMM_PROGRAM_ID) || programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
+    const transactionResponse = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
+    if (!transactionResponse) {
+      console.log("No transaction response");
+      return;
+    }
+
+    const events = parseEvents(transactionResponse);
+    const ammEvents = events.ammEvents;
+    const vaultEvents = events.vaultEvents;
+
+    Promise.all(ammEvents.map(async (event) => {
+      await processAmmEvent(event, signature, transactionResponse);
+    }));
+
+    Promise.all(vaultEvents.map(async (event) => {
+      await processVaultEvent(event, signature, transactionResponse);
+    }));
   }
 }
 
