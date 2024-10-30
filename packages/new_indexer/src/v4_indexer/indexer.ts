@@ -74,27 +74,32 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
   };
 }
 
-export async function processSignature(signature: string, programId: PublicKey) {
+//indexes signature
+export async function index(signature: string, programId: PublicKey) {
   try {
-    if (programId.equals(AMM_PROGRAM_ID) || programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
-      const transactionResponse = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
-      if (!transactionResponse) {
-        console.log("No transaction response");
-        return;
-      }
-
-      const events = parseEvents(transactionResponse);
-      const ammEvents = events.ammEvents;
-      const vaultEvents = events.vaultEvents;
-
-      Promise.all(ammEvents.map(async (event) => {
-        await processAmmEvent(event, signature, transactionResponse);
-      }));
-
-      Promise.all(vaultEvents.map(async (event) => {
-        await processVaultEvent(event, signature, transactionResponse);
-      }));
+    if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
+      //autocrat program id, we aren't indexing these for now
+      console.log("Unknown program id: ", programId.toBase58());
+      return;
+    } 
+    const transactionResponse = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
+    if (!transactionResponse) {
+      console.log("No transaction response");
+      return;
     }
+
+    const events = parseEvents(transactionResponse);
+    const ammEvents = events.ammEvents;
+    const vaultEvents = events.vaultEvents;
+
+    Promise.all(ammEvents.map(async (event) => {
+      await processAmmEvent(event, signature, transactionResponse);
+    }));
+
+    Promise.all(vaultEvents.map(async (event) => {
+      await processVaultEvent(event, signature, transactionResponse);
+    }));
+    
   } catch (error) {
     logger.errorWithChatBotAlert([
       error instanceof Error
