@@ -6,7 +6,9 @@ import { IndexerImplementation } from "@metadaoproject/indexer-db/lib/schema";
 import { AccountLogsIndexer } from "./account-logs-indexer";
 import { AmmMarketLogsSubscribeIndexer } from "./amm-market/amm-market-logs-subscribe-indexer";
 import { logger } from "../logger";
-import { processSignature } from "./v4_indexer/indexer";
+import { index as indexV4 } from "./v4_indexer/indexer";
+import { index as indexV3 } from "./v3_indexer/indexer";
+
 
 async function processLogs(logs: Logs, programId: PublicKey) {
   //check if programId is v3 or v4
@@ -21,11 +23,11 @@ async function processLogs(logs: Logs, programId: PublicKey) {
 
 async function processLogsV4(logs: Logs, programId: PublicKey) {
   let signature = logs.signature;
-  await processSignature(signature);
+  await indexV4(signature, programId);
 }
 
 async function processLogsV3(logs: Logs, programId: PublicKey) {
-  
+  await indexV3(logs, programId);
 } 
 
 //subscribes to logs for a given account
