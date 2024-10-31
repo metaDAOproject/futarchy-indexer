@@ -1,32 +1,20 @@
 New Indexer Architecture
 
+Indexers
 
-Transaction Indexer
+Logs Subscribe Indexer - subscribes to new txns on a given program, when a txn is received, we index it
 
-Indexes all transactions across all programs v3 and v4. Populates transactions table where the signature is the pk and transaction_accounts, 
-which links each signature to an account_id (program)
+Account Info Update Indexer - subscribes to account info updates on programs, such as amms to update reserves
 
-Split into 2 parts - subscriber, frontfiller, and backfiller
+Fetch Interval Indexer - polls getSignaturesForAddress on an interval, populating/indexing txs in case
+its missed by Logs Subscribe Indexer.
 
-Subscriber - subscribes to txns on each program, and asynchrounously triggers processTransaction() everytime a new tx is picked up
-
-Frontfiller - checks for new transactions every second, and when a new txn is detected, first inserts into transactions table, 
-then asynchronously triggers processTransaction() if there is no conflict in the insert (which implies the txn has already been processed) to 
-process the transaction and populate other tables as necessary. This way, we process transactions as soon as they are detected, minimizing latency
-as compared to having seperate workers that track the transactions table and process transactions (such as fetchEligibleSignatures in v4 indexer).
-
-Backfiller - the purpose of this is a failsafe in case a transaction fails to be picked up by the subscriber or frontfiller. 
-Runs every 15 mins and fetches all signatures within the last 15 mins and adds to transactions table.
-If the txn doesn't already exist in the transaction table, we process the transaction as it hasn't been indexed.
-
-On startup, the transaction indexer fetches all historical txns from the creation of the programs
+History Indexer - gets full tx history for a program (or at least as much as the RPC can provide).
+runs on startup and on long intervals
 
 
+processTransaction(txn, programId)
 
-processTransaction(txn, version)
-
-if version is v4, we check the events emitted in the transaction and call handleAmmEvent() and/or handleVaultEvent() accordingly to populate the 
-appropriate tables
-
-if version is v3, we take the transaction response and call indexTransactin() in instruction-dispatch.ts to index the txn and populate the 
-appropriate tables
+if the programId is V4, we process the events emitted in the txn.
+if v3, we use the swapBuilder to decode the transaction and check token balance changes to 
+figure out if the txn is a buy or sell

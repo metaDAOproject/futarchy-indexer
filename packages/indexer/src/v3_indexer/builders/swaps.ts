@@ -45,27 +45,27 @@ export class SwapPersistable {
 
   async persist() {
     try {
-      const upsertResult =
-        (await usingDb((db) =>
-          db
-            .insert(schema.transactions)
-            .values(this.transactionRecord)
-            .onConflictDoUpdate({
-              target: schema.transactions.txSig,
-              set: this.transactionRecord,
-            })
-            .returning({ txSig: schema.transactions.txSig })
-        )) ?? [];
-      if (
-        upsertResult.length !== 1 ||
-        upsertResult[0].txSig !== this.transactionRecord.txSig
-      ) {
-        logger.warn(
-          `Failed to upsert ${this.transactionRecord.txSig}. ${JSON.stringify(
-            this.transactionRecord
-          )}`
-        );
-      }
+      // const upsertResult =
+      //   (await usingDb((db) =>
+      //     db
+      //       .insert(schema.transactions)
+      //       .values(this.transactionRecord)
+      //       .onConflictDoUpdate({
+      //         target: schema.transactions.txSig,
+      //         set: this.transactionRecord,
+      //       })
+      //       .returning({ txSig: schema.transactions.txSig })
+      //   )) ?? [];
+      // if (
+      //   upsertResult.length !== 1 ||
+      //   upsertResult[0].txSig !== this.transactionRecord.txSig
+      // ) {
+      //   logger.warn(
+      //     `Failed to upsert ${this.transactionRecord.txSig}. ${JSON.stringify(
+      //       this.transactionRecord
+      //     )}`
+      //   );
+      // }
       // Insert user if they aren't already in the database
       const insertUsersResult = (await usingDb((db) =>
           db
