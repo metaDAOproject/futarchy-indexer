@@ -2,8 +2,10 @@ import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/fu
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
+import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
 import { connection, ammClient, conditionalVaultClient } from "./connection";
 import { Program } from "@coral-xyz/anchor";
+import { Context, Logs, PublicKey } from "@solana/web3.js";
 
 import { TelegramBotAPI } from "./adapters/telegram-bot";
 import { Logger } from "./logger";
@@ -11,6 +13,7 @@ import { Logger } from "./logger";
 import { processAmmEvent, processVaultEvent } from "./processor";
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
+type DBConnection = any; // TODO: Fix typing..
 
 const parseEvents = (transactionResponse: VersionedTransactionResponse | TransactionResponse): { ammEvents: any, vaultEvents: any } => {
   const ammEvents: { name: string; data: any }[] = [];
@@ -75,13 +78,15 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
 }
 
 //indexes signature
-export async function index(signature: string, programId: PublicKey) {
+export async function index(logs: Logs, ctx: Context, programId: PublicKey) {
   try {
+    let signature = logs.signature;
     if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
       //autocrat program id, we aren't indexing these for now
       console.log("Unknown program id: ", programId.toBase58());
       return;
-    } 
+    }
+
     const transactionResponse = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
     if (!transactionResponse) {
       console.log("No transaction response");
@@ -99,6 +104,15 @@ export async function index(signature: string, programId: PublicKey) {
     Promise.all(vaultEvents.map(async (event) => {
       await processVaultEvent(event, signature, transactionResponse);
     }));
+
+    await usingDb(async (db: DBConnection) => {
+      await db.insert(schema.transactions).values({
+        signature,
+        slot: transactionResponse.slot,
+        blockTime: transactionResponse.blockTime,
+        failed: transactionResponse.meta.err,
+      });
+    });
     
   } catch (error) {
     logger.errorWithChatBotAlert([
