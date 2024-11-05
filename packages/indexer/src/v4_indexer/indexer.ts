@@ -77,6 +77,8 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
   };
 }
 
+
+
 //indexes signature
 export async function index(logs: Logs, ctx: Context, programId: PublicKey) {
   try {
@@ -106,12 +108,17 @@ export async function index(logs: Logs, ctx: Context, programId: PublicKey) {
     }));
 
     await usingDb(async (db: DBConnection) => {
-      await db.insert(schema.transactions).values({
-        signature,
-        slot: transactionResponse.slot,
-        blockTime: transactionResponse.blockTime,
-        failed: transactionResponse.meta.err,
-      });
+      await db.insert(schema.signatures).values({
+        signature: transactionResponse.signature,
+        slot: BigInt(transactionResponse.slot),
+        didErr: transactionResponse.err !== null,
+        err: transactionResponse.err ? JSON.stringify(transactionResponse.err) : null,
+        blockTime: transactionResponse.blockTime ? new Date(transactionResponse.blockTime * 1000) : null,
+      }).onConflictDoNothing().execute();
+      await db.insert(schema.signature_accounts).values({
+        signature: transactionResponse.signature,
+        account: programId.toString()
+      }).onConflictDoNothing().execute();
     });
     
   } catch (error) {

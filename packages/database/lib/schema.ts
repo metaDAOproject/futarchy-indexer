@@ -295,6 +295,22 @@ export enum InstructionType {
   VaultRedeemConditionalTokensForUnderlyingTokens = "vault_redeem_conditional_tokens_for_underlying_tokens",
 }
 
+export const transactions = pgTable(
+  "transactions",
+  {
+    txSig: transaction("tx_sig").primaryKey(),
+    slot: biggerSlot("slot").notNull(),
+    blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
+    failed: boolean("failed").notNull(),
+    payload: text("payload").notNull(),
+    serializerLogicVersion: smallint("serializer_logic_version").notNull(),
+    mainIxType: pgEnum("main_ix_type", InstructionType),
+  },
+  (table) => ({
+    slotIdx: index("txn_slot_index").on(table.slot),
+  })
+);
+
 // These are responsible for getting all signatures involving an account
 // historically and real time, and writing them to the transactions table for processing.
 // Each proposal / spot market / autocrat version upgrade will result in another entry.
@@ -308,13 +324,13 @@ export enum TransactionWatchStatus {
 export const transactionWatchers = pgTable("transaction_watchers", {
   acct: pubkey("acct").primaryKey(),
   latestTxSig: transaction("latest_tx_sig").references(
-    () => transactions.signature
+    () => transactions.txSig
   ),
   /**
    * We can use this to monitor if the transaction history is being cleared by the rpc.
    * Ideally this should not change once set.
    */
-  firstTxSig: transaction("first_tx_sig").references(() => transactions.signature),
+  firstTxSig: transaction("first_tx_sig").references(() => transactions.txSig),
   /**
    * This may be significantly higher than the slot of the latest signature. The invariant here
    * is that no new transaction observed by the watcher may be less than or equal to the checkedUpToSlot
@@ -336,7 +352,7 @@ export const transactionWatcherTransactions = pgTable(
       .references(() => transactionWatchers.acct)
       .notNull(),
     txSig: transaction("tx_sig")
-      .references(() => transactions.signature)
+      .references(() => transactions.txSig)
       .notNull(),
     slot: biggerSlot("slot").notNull(),
   },
@@ -358,7 +374,6 @@ export enum IndexerImplementation {
   AutocratDaoIndexer = "AutocratDaoIndexer",
   AutocratProposalIndexer = "AutocratProposalIndexer",
   TokenMintIndexer = "TokenMintIndexer",
-  
 }
 export enum IndexerType {
   TXHistory = "TXHistory",
@@ -388,7 +403,7 @@ export const indexerAccountDependencies = pgTable(
       .notNull(),
     acct: pubkey("acct").notNull(),
     latestTxSigProcessed: transaction("latest_tx_sig_processed").references(
-      () => transactions.signature
+      () => transactions.txSig
     ),
     status: pgEnum("status", IndexerAccountDependencyStatus).default(
       IndexerAccountDependencyStatus.Active
@@ -441,7 +456,7 @@ export const tokenAcctBalances = pgTable(
       .notNull()
       .default(sql`0`),
     slot: biggerSlot("slot"),
-    txSig: transaction("tx_sig").references(() => transactions.signature),
+    txSig: transaction("tx_sig").references(() => transactions.txSig),
   },
   (table) => ({
     pk: primaryKey(
@@ -479,7 +494,7 @@ export const orders = pgTable(
   {
     orderTxSig: transaction("order_tx_sig")
       .primaryKey()
-      .references(() => transactions.signature),
+      .references(() => transactions.txSig),
     marketAcct: pubkey("market_acct")
       .references(() => markets.marketAcct)
       .notNull(),
@@ -857,23 +872,7 @@ export const userPerformance = pgTable(
   }
 );
 
-export const transactions = pgTable(
-  "transactions",
-  {
-    signature: transaction("signature").primaryKey(),
-    slot: biggerSlot("slot").notNull(),
-    blockTime: timestamp("block_time", { withTimezone: true }).notNull(),
-    failed: boolean("failed").notNull(),
-    insertedAt: timestamp("inserted_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => ({
-    slotIdx: index("txn_slot_index").on(table.slot),
-  })
-);
-
-export const transaction_accounts = pgTable("transaction_accounts", {
+export const signature_accounts = pgTable("signature_accounts", {
   signature: transaction("signature").notNull(),
   account: pubkey("account").notNull(),
   insertedAt: timestamp("inserted_at", { withTimezone: true })
@@ -884,35 +883,24 @@ export const transaction_accounts = pgTable("transaction_accounts", {
   accountIdx: index("account_index").on(table.account),
 }));
 
-// export const transactionSequenceNumbers = pgTable(
-//   "transactions_seqnums",
-//   {
-//     signature: transaction("signature").notNull().references(() => transactions.signature),
-//     seqNum: bigserial("seq_num", { mode: "bigint" }).notNull().unique(),
-//   },
-//   (table) => ({
-//     pk: primaryKey({ columns: [table.signature, table.seqNum] }),
-//     sequenceNumIdx: index("sequence_num_index").on(table.seqNum),
-//   })
-// )
-// export const signatures = pgTable(
-//   "signatures",
-//   {
-//     signature: transaction("signature").primaryKey(),
-//     slot: biggerSlot("slot").notNull(),
-//     didErr: boolean("did_err").notNull(),
-//     err: text("err"),
-//     blockTime: timestamp("block_time", { withTimezone: true }),
-//     insertedAt: timestamp("inserted_at", { withTimezone: true })
-//       .notNull()
-//       .defaultNow(),
-//     seqNum: bigserial("seq_num", { mode: "bigint" }).notNull().unique(),
-//   },
-//   (table) => ({
-//     slotIdx: index("slot_index").on(table.slot),
-//     sequenceNumIdx: index("sequence_num_index").on(table.seqNum),
-//   })
-// );
+export const signatures = pgTable(
+  "signatures",
+  {
+    signature: transaction("signature").primaryKey(),
+    slot: biggerSlot("slot").notNull(),
+    didErr: boolean("did_err").notNull(),
+    err: text("err"),
+    blockTime: timestamp("block_time", { withTimezone: true }),
+    insertedAt: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    seqNum: bigserial("seq_num", { mode: "bigint" }).notNull().unique(),
+  },
+  (table) => ({
+    slotIdx: index("slot_index").on(table.slot),
+    sequenceNumIdx: index("sequence_num_index").on(table.seqNum),
+  })
+);
 
 export const v0_4_amms = pgTable("v0_4_amms", {
   ammAddr: pubkey("amm_addr").primaryKey(),
@@ -1015,7 +1003,7 @@ export const v0_4_splits = pgTable(
     id: bigserial("id", { mode: "bigint" }).primaryKey(),
     vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
     vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
-    signature: transaction("signature").notNull().references(() => transactions.signature),
+    signature: transaction("signature").notNull().references(() => signatures.signature),
     slot: biggerSlot("slot").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -1033,7 +1021,7 @@ export const v0_4_merges = pgTable("v0_4_merges", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),
   vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
   vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
-  signature: transaction("signature").notNull().references(() => transactions.signature),
+  signature: transaction("signature").notNull().references(() => signatures.signature),
   slot: biggerSlot("slot").notNull(),
   amount: bigint("amount", { mode: "bigint" }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -1178,7 +1166,7 @@ export const proposalTotalTradeVolume = pgView("proposal_total_trade_volume", {
 
 export const userDeposits = pgTable("user_deposits", {
   txSig: transaction("tx_sig")
-    .references(() => transactions.signature)
+    .references(() => transactions.txSig)
     .notNull(),
 
   userAcct: pubkey("user_acct")
