@@ -25,6 +25,100 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: base_amount
+          type:
+            nullable: true
+            scalar: numeric
+        - name: quote_amount
+          type:
+            nullable: true
+            scalar: numeric
+        - name: price
+          type:
+            nullable: true
+            scalar: numeric
+        - name: prices_type
+          type:
+            nullable: true
+            scalar: text
+        - name: interv
+          type:
+            nullable: true
+            scalar: timestamptz
+      name: price_chart_data_unique
+      select_permissions:
+        - permission:
+            columns:
+              - base_amount
+              - quote_amount
+              - price
+              - prices_type
+              - interv
+            filter: {}
+          role: anonymous
+    - fields:
+        - name: proposal_acct
+          type:
+            nullable: true
+            scalar: text
+        - name: bar_size
+          type:
+            nullable: true
+            scalar: interval
+        - name: bar_start_time
+          type:
+            nullable: true
+            scalar: timestamptz
+        - name: pass_market_acct
+          type:
+            nullable: true
+            scalar: text
+        - name: pass_price
+          type:
+            nullable: true
+            scalar: numeric
+        - name: pass_base_amount
+          type:
+            nullable: true
+            scalar: numeric
+        - name: pass_quote_amount
+          type:
+            nullable: true
+            scalar: numeric
+        - name: fail_market_acct
+          type:
+            nullable: true
+            scalar: text
+        - name: fail_price
+          type:
+            nullable: true
+            scalar: numeric
+        - name: fail_base_amount
+          type:
+            nullable: true
+            scalar: numeric
+        - name: fail_quote_amount
+          type:
+            nullable: true
+            scalar: numeric
+      name: proposal_bars_unique
+      select_permissions:
+        - permission:
+            columns:
+              - proposal_acct
+              - bar_size
+              - bar_start_time
+              - pass_market_acct
+              - pass_price
+              - pass_base_amount
+              - pass_quote_amount
+              - fail_market_acct
+              - fail_price
+              - fail_base_amount
+              - fail_quote_amount
+            filter: {}
+          role: anonymous
+    - fields:
         - name: proposal_acct
           type:
             nullable: false
@@ -55,6 +149,38 @@
       code: "select up.user_acct::TEXT, sum(up.total_volume)::BIGINT as \"total_volume\" from user_performance up\r\njoin proposals p on up.proposal_acct = p.proposal_acct \r\njoin daos d on p.dao_acct = d.dao_acct\r\njoin dao_details dd on dd.dao_id = d.dao_id \r\nwhere dd.slug = {{dao_slug}}\r\ngroup by dd.slug, up.user_acct\r\norder by sum(up.total_volume) desc;"
       returns: dao_trader
       root_field_name: top_dao_traders
+    - arguments:
+        end_date:
+          description: ""
+          nullable: true
+          type: text
+        market_acct:
+          description: ""
+          nullable: false
+          type: text
+        start_date:
+          description: ""
+          nullable: true
+          type: text
+      code: "WITH changes AS (\n  SELECT \n    *,\n    LAG(price) OVER w AS prev_price,\n    LAG(prices_type) OVER w AS prev_prices_type,\n    LAG(base_amount) OVER w AS prev_base_amount,\n    LAG(quote_amount) OVER w AS prev_quote_amount,\n    LEAD(price) OVER w AS next_price,\n    LEAD(prices_type) OVER w AS next_prices_type,\n    LEAD(base_amount) OVER w AS next_base_amount,\n    LEAD(quote_amount) OVER w AS next_quote_amount\n  FROM prices_chart_data\n  WHERE market_acct = {{market_acct}}\n    AND ({{start_date}}::timestamptz IS NULL OR interv >= {{start_date}}::timestamptz)\n    AND ({{end_date}}::timestamptz IS NULL OR interv <= {{end_date}}::timestamptz)\n  WINDOW w AS (ORDER BY interv)\n)\nSELECT interv, price, base_amount, quote_amount, prices_type::text\nFROM changes\nWHERE \n  -- First row\n  prev_price IS NULL\n  -- Last row\n  OR next_price IS NULL\n  -- Or where any value changes\n  OR price != prev_price\n  OR prices_type != prev_prices_type\n  OR base_amount != prev_base_amount\n  OR quote_amount != prev_quote_amount;"
+      returns: price_chart_data_unique
+      root_field_name: unique_price_chart_data
+    - arguments:
+        end_date:
+          description: ""
+          nullable: true
+          type: text
+        proposal_acct:
+          description: ""
+          nullable: false
+          type: text
+        start_date:
+          description: ""
+          nullable: true
+          type: text
+      code: "WITH changes AS (\n  SELECT \n    *,\n    LAG(pass_price) OVER w AS prev_pass_price,\n    LAG(pass_base_amount) OVER w AS prev_pass_base_amount,\n    LAG(pass_quote_amount) OVER w AS prev_pass_quote_amount,\n    LAG(fail_price) OVER w AS prev_fail_price,\n    LAG(fail_base_amount) OVER w AS prev_fail_base_amount,\n    LAG(fail_quote_amount) OVER w AS prev_fail_quote_amount,\n    LEAD(pass_price) OVER w AS next_pass_price,\n    LEAD(pass_base_amount) OVER w AS next_pass_base_amount,\n    LEAD(pass_quote_amount) OVER w AS next_pass_quote_amount,\n    LEAD(fail_price) OVER w AS next_fail_price,\n    LEAD(fail_base_amount) OVER w AS next_fail_base_amount,\n    LEAD(fail_quote_amount) OVER w AS next_fail_quote_amount\n  FROM proposal_bars\n  WHERE proposal_acct = {{proposal_acct}}\n    AND ({{start_date}}::timestamptz IS NULL OR bar_start_time >= {{start_date}}::timestamptz)\n    AND ({{end_date}}::timestamptz IS NULL OR bar_start_time <= {{end_date}}::timestamptz)\n  WINDOW w AS (ORDER BY bar_start_time)\n), agg AS(\nSELECT \n  proposal_acct::text, bar_size, bar_start_time::timestamptz,\n  pass_market_acct::text, pass_price::numeric, pass_base_amount::numeric, pass_quote_amount::numeric,\n  fail_market_acct::text, fail_price::numeric, fail_base_amount::numeric, fail_quote_amount::numeric\nFROM changes\nWHERE \n  -- First row - no previous values\n  prev_pass_price IS NULL\n\n  -- Last row - no next values\n  OR next_pass_price IS NULL\n\n  -- Price changes - handle nulls in both current and previous\n  OR (pass_price IS NULL AND prev_pass_price IS NOT NULL)\n  OR (pass_price IS NOT NULL AND prev_pass_price IS NULL)\n  OR (pass_price != prev_pass_price AND pass_price IS NOT NULL AND prev_pass_price IS NOT NULL)\n\n  -- Quote amount changes\n  OR (pass_quote_amount IS NULL AND prev_pass_quote_amount IS NOT NULL)\n  OR (pass_quote_amount IS NOT NULL AND prev_pass_quote_amount IS NULL)\n  OR (pass_quote_amount != prev_pass_quote_amount AND pass_quote_amount IS NOT NULL AND prev_pass_quote_amount IS NOT NULL)\n\n  -- Base amount changes\n  OR (pass_base_amount IS NULL AND prev_pass_base_amount IS NOT NULL)\n  OR (pass_base_amount IS NOT NULL AND prev_pass_base_amount IS NULL)\n  OR (pass_base_amount != prev_pass_base_amount AND pass_base_amount IS NOT NULL AND prev_pass_base_amount IS NOT NULL)\n)\nSELECT * FROM agg WHERE pass_price IS NOT NULL AND fail_price IS NOT NULL;"
+      returns: proposal_bars_unique
+      root_field_name: unique_proposal_bars_data
     - arguments:
         proposal_acct:
           description: the proposal account
