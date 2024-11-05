@@ -13,22 +13,13 @@ import { index as indexV3 } from "./v3_indexer/indexer";
 async function processLogs(logs: Logs, ctx: Context, programId: PublicKey) {
   //check if programId is v3 or v4
   if (programId.equals(V4_AMM_PROGRAM_ID) || programId.equals(V4_AUTOCRAT_PROGRAM_ID) || programId.equals(V4_CONDITIONAL_VAULT_PROGRAM_ID)) {
-    await processLogsV4(logs, programId);
+    await indexV4(logs, ctx, programId);
   } else if (programId.equals(V3_AMM_PROGRAM_ID) || programId.equals(V3_AUTOCRAT_PROGRAM_ID) || programId.equals(V3_CONDITIONAL_VAULT_PROGRAM_ID)) {
-    await processLogsV3(logs, ctx, programId);
+    await indexV3(logs, ctx, programId);
   } else {
     logger.error(`Unknown programId ${programId.toString()}`);
   }
 }
-
-async function processLogsV4(logs: Logs, programId: PublicKey) {
-  let signature = logs.signature;
-  await indexV4(signature, programId);
-}
-
-async function processLogsV3(logs: Logs, ctx: Context, programId: PublicKey) {
-  await indexV3(logs, ctx, programId);
-} 
 
 //subscribes to logs for a given account
 async function subscribe(accountPubKey: PublicKey) {
