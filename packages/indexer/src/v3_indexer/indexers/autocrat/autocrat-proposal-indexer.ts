@@ -440,7 +440,134 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       return Err({ type: AutocratDaoIndexerError.GeneralError });
     }
   },
+
+  indexFromLogs: async (logs: string[]) => {
+    try {
+      // Find the relevant log that contains the proposal data
+      const proposalLog = logs.find(log => 
+        log.includes("Instruction:") && 
+        (log.includes("InitializeProposal") || 
+         log.includes("FinalizeProposal") || 
+         log.includes("ExecuteProposal"))
+      );
+
+      if (!proposalLog) {
+        return Err({ type: AutocratDaoIndexerError.MissingParamError });
+      }
+
+      // Extract proposal account from logs
+      const proposalAcctMatch = logs.find(log => log.includes("Proposal:"));
+      if (!proposalAcctMatch) {
+        return Err({ type: AutocratDaoIndexerError.MissingParamError });
+      }
+
+      const proposalAcct = new PublicKey(proposalAcctMatch.split(": ")[1]);
+      
+      // Fetch the proposal data since we need the full account data
+      const protocolV0_3 = rpcReadClient.futarchyProtocols.find(
+        (protocol) => protocol.deploymentVersion == "V0.3"
+      );
+      
+      if (!protocolV0_3) {
+        return Err({ type: AutocratDaoIndexerError.MissingProtocolError });
+      }
+
+      const proposal = await protocolV0_3.autocrat.account.proposal.fetch(proposalAcct);
+      if (!proposal) {
+        return Err({ type: AutocratDaoIndexerError.NotFoundError });
+      }
+
+      // Get current slot and time for calculations
+      const { currentSlot, currentTime } = (
+        await usingDb((db) =>
+          db
+            .select({
+              currentSlot: schema.prices.updatedSlot,
+              currentTime: schema.prices.createdAt,
+            })
+            .from(schema.prices)
+            .orderBy(sql`${schema.prices.updatedSlot} DESC`)
+            .limit(1)
+            .execute()
+        )
+      )?.[0] ?? {};
+
+      if (!currentSlot || !currentTime) {
+        return Err({ type: AutocratDaoIndexerError.MissingParamError });
+      }
+
+      // Handle different proposal states
+      if (proposal.state.pending) {
+        // Update proposal as pending
+        await updateProposalStatus(proposalAcct, ProposalStatus.Pending, currentTime);
+      } else if (proposal.state.passed) {
+        // Update proposal as passed
+        await updateProposalStatus(proposalAcct, ProposalStatus.Passed, currentTime);
+        await updateVaultStatuses(proposal.baseVault, proposal.quoteVault, "finalized");
+        await calculateUserPerformance({ publicKey: proposalAcct, account: proposal });
+      } else if (proposal.state.failed) {
+        // Update proposal as failed
+        await updateProposalStatus(proposalAcct, ProposalStatus.Failed, currentTime);
+        await updateVaultStatuses(proposal.baseVault, proposal.quoteVault, "reverted");
+        await calculateUserPerformance({ publicKey: proposalAcct, account: proposal });
+      }
+
+      // If this is a new proposal, insert associated accounts data
+      if (proposalLog.includes("InitializeProposal")) {
+        await insertAssociatedAccountsDataForProposal(
+          { publicKey: proposalAcct, account: proposal },
+          currentTime
+        );
+      }
+
+      return Ok({ acct: "Updated proposal from logs" });
+    } catch (err) {
+      logger.error("error with proposal indexer:", err);
+      return Err({ type: AutocratDaoIndexerError.GeneralError });
+    }
+  }
 };
+
+// Helper function to update proposal status
+async function updateProposalStatus(
+  proposalAcct: PublicKey,
+  status: ProposalStatus,
+  currentTime: Date
+) {
+  await usingDb((db) =>
+    db
+      .update(schema.proposals)
+      .set({ 
+        status,
+        completedAt: status !== ProposalStatus.Pending ? currentTime : null,
+        updatedAt: sql`NOW()`
+      })
+      .where(
+        eq(schema.proposals.proposalAcct, proposalAcct.toString())
+      )
+      .execute()
+  );
+}
+
+// Helper function to update vault statuses
+async function updateVaultStatuses(
+  baseVault: PublicKey,
+  quoteVault: PublicKey,
+  status: "finalized" | "reverted"
+) {
+  await usingDb((db) =>
+    db
+      .update(schema.conditionalVaults)
+      .set({ status })
+      .where(
+        or(
+          eq(schema.conditionalVaults.condVaultAcct, baseVault.toString()),
+          eq(schema.conditionalVaults.condVaultAcct, quoteVault.toString())
+        )
+      )
+      .execute()
+  );
+}
 
 async function insertAssociatedAccountsDataForProposal(
   proposal: ProposalAccountWithKey,
