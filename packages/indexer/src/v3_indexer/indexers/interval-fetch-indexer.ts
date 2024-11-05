@@ -10,4 +10,12 @@ export type IntervalFetchIndexer = {
       TaggedUnion
     >
   >;
+  indexFromLogs(logs: string[]): Promise<
+    Result<
+      {
+        acct: string;
+      },
+      TaggedUnion
+    >
+  >;
 };
