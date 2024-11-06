@@ -5,7 +5,7 @@ import { AutocratDaoIndexer } from "./autocrat/autocrat-dao-indexer";
 import { AutocratProposalIndexer } from "./autocrat/autocrat-proposal-indexer";
 
 
-export async function index(logs: Logs, ctx: Context, programId: PublicKey) {
+export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
   if (programId.equals(V3_AMM_PROGRAM_ID)) {
     await AmmMarketLogsSubscribeIndexer.index(logs, programId, ctx);
   } else if (programId.equals(V3_CONDITIONAL_VAULT_PROGRAM_ID)) {
@@ -23,13 +23,11 @@ export async function index(logs: Logs, ctx: Context, programId: PublicKey) {
 
     if (instructionLog) {
       if (instructionLog.includes("InitializeDao") || instructionLog.includes("UpdateDao")) {
-        // Trigger DAO indexer to update/insert new DAO
-        await AutocratDaoIndexer.index();
+        await AutocratDaoIndexer.indexFromLogs(logs.logs);
       } else if (instructionLog.includes("InitializeProposal") || 
                  instructionLog.includes("FinalizeProposal") || 
                  instructionLog.includes("ExecuteProposal")) {
-        // Trigger Proposal indexer to update/insert new proposal or update status
-        await AutocratProposalIndexer.index();
+        await AutocratProposalIndexer.indexFromLogs(logs.logs);
       }
     }
   } else {
