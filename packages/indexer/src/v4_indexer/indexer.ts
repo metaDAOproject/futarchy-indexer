@@ -78,9 +78,8 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
 }
 
 //indexes signature
-export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
+export async function index(signature: string, programId: PublicKey) {
   try {
-    let signature = logs.signature;
     if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
       //autocrat program id, we aren't indexing these for now
       console.log("Unknown program id: ", programId.toBase58());
@@ -119,6 +118,27 @@ export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicK
       }).onConflictDoNothing().execute();
     });
     
+  } catch (error) {
+    logger.errorWithChatBotAlert([
+      error instanceof Error
+        ? `Error processing signature: ${error.message}`
+        : "Unknown error processing signature"
+    ]);
+  }
+}
+
+//indexes signature from logs
+export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
+  try {
+    let signature = logs.signature;
+    if (!signature) {
+      console.log("No signature found in logs");
+      logger.errorWithChatBotAlert([
+        "No signature found in logs"
+      ]);
+      return;
+    }
+    await index(signature, programId);
   } catch (error) {
     logger.errorWithChatBotAlert([
       error instanceof Error
