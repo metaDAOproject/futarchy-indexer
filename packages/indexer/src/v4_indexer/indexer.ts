@@ -77,10 +77,8 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
   };
 }
 
-
-
 //indexes signature
-export async function index(logs: Logs, ctx: Context, programId: PublicKey) {
+export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
   try {
     let signature = logs.signature;
     if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {

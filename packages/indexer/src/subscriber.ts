@@ -6,8 +6,8 @@ import { IndexerImplementation } from "@metadaoproject/indexer-db/lib/schema";
 import { AccountLogsIndexer } from "./account-logs-indexer";
 import { AmmMarketLogsSubscribeIndexer } from "./amm-market/amm-market-logs-subscribe-indexer";
 import { logger } from "../logger";
-import { index as indexV4 } from "./v4_indexer/indexer";
-import { index as indexV3 } from "./v3_indexer/indexer";
+import { indexFromLogs as indexV4 } from "./v4_indexer/indexer";
+import { indexFromLogs as indexV3 } from "./v3_indexer/indexer";
 
 
 async function processLogs(logs: Logs, ctx: Context, programId: PublicKey) {

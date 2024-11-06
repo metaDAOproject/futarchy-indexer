@@ -443,6 +443,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
   indexFromLogs: async (logs: string[]) => {
     try {
+      console.log("indexFromLogs::logs", logs);
       // Find the relevant log that contains the proposal data
       const proposalLog = logs.find(log => 
         log.includes("Instruction:") && 
