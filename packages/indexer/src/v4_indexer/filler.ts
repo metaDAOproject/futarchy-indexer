@@ -4,7 +4,7 @@ import { V3_AMM_PROGRAM_ID, V3_AUTOCRAT_PROGRAM_ID, V3_CONDITIONAL_VAULT_PROGRAM
 import { usingDb, schema, eq, asc, desc } from "@metadaoproject/indexer-db";
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
-
+import { index } from "./indexer";
 
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
 
@@ -48,6 +48,11 @@ const backfillHistoricalSignatures = async (
 
     await insertSignatures(signatures, programId);
 
+    //trigger indexing
+    Promise.all(signatures.map(async (signature: ConfirmedSignatureInfo) => {
+      await index(signature.signature, programId);
+    }));
+
     backfilledSignatures = backfilledSignatures.concat(signatures);
     oldestSignature = signatures[signatures.length - 1].signature;
 
@@ -79,7 +84,6 @@ const insertNewSignatures = async (programId: PublicKey) => {
   });
 
   let oldestSignatureInserted: string | undefined;
-
   while (true) {
     const signatures = await connection.getSignaturesForAddress(
       programId,
@@ -90,6 +94,11 @@ const insertNewSignatures = async (programId: PublicKey) => {
     if (signatures.length === 0) break;
 
     await insertSignatures(signatures, programId);
+
+    //trigger indexing
+    Promise.all(signatures.map(async (signature: ConfirmedSignatureInfo) => {
+      await index(signature.signature, programId);
+    }));
 
     allSignatures = allSignatures.concat(signatures);
     oldestSignatureInserted = signatures[signatures.length - 1].signature;
