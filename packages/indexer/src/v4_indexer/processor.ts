@@ -4,10 +4,10 @@ import { PublicKey, VersionedTransactionResponse } from "@solana/web3.js";
 import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
-import { connection, conditionalVaultClient } from "./connection";
+import { connection, conditionalVaultClient } from "../connection";
 
-import { TelegramBotAPI } from "./adapters/telegram-bot";
-import { Logger } from "./logger";
+import { TelegramBotAPI } from "../adapters/telegram-bot";
+import { Logger } from "../logger";
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
 

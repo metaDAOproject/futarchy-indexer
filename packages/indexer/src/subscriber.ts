@@ -1,11 +1,11 @@
 import { connection } from "./connection";
 import { Context, Logs, PublicKey } from "@solana/web3.js";
-import { V4_AMM_PROGRAM_ID, V4_AUTOCRAT_PROGRAM_ID, V4_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
-import { V3_AMM_PROGRAM_ID, V3_AUTOCRAT_PROGRAM_ID, V3_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
+import { AMM_PROGRAM_ID as V4_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V4_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V4_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
+import { AMM_PROGRAM_ID as V3_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V3_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V3_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
 import { IndexerImplementation } from "@metadaoproject/indexer-db/lib/schema";
 import { AccountLogsIndexer } from "./account-logs-indexer";
 import { AmmMarketLogsSubscribeIndexer } from "./amm-market/amm-market-logs-subscribe-indexer";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { indexFromLogs as indexV4 } from "./v4_indexer/indexer";
 import { indexFromLogs as indexV3 } from "./v3_indexer/indexer";
 

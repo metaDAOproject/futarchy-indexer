@@ -22,7 +22,7 @@ import {
   parseFormattedInstructionArgsData,
   serialize,
 } from "../transaction/serializer";
-import { logger } from "../logger";
+import { logger } from "../../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 import { getHumanPrice } from "../usecases/math";
 

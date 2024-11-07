@@ -8,7 +8,7 @@ import {
 } from "./serializer";
 import { getTransactionHistory } from "./history";
 import { connection } from "../connection";
-import { logger } from "../logger";
+import { logger } from "../../logger";
 import { Err, Ok, Result, TaggedUnion } from "../match";
 import {
   InstructionType,

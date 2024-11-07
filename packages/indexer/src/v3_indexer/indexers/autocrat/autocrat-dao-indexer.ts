@@ -1,5 +1,5 @@
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
-import { rpcReadClient, connection } from "../../.connection";
+import { rpcReadClient, connection } from "../../connection";
 import { usingDb, schema } from "@metadaoproject/indexer-db";
 import { Dao } from "@metadaoproject/futarchy-sdk";
 import { Err, Ok } from "../../match";
