@@ -1,8 +1,8 @@
 import { Context, Logs, PublicKey } from "@solana/web3.js";
-import { V3_AMM_PROGRAM_ID, V3_AUTOCRAT_PROGRAM_ID, V3_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
-import { AmmMarketLogsSubscribeIndexer } from "./amm-market/amm-market-logs-subscribe-indexer";
-import { AutocratDaoIndexer } from "./autocrat/autocrat-dao-indexer";
-import { AutocratProposalIndexer } from "./autocrat/autocrat-proposal-indexer";
+import { AMM_PROGRAM_ID as V3_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V3_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V3_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
+import { AmmMarketLogsSubscribeIndexer } from "./indexers/amm-market/amm-market-logs-subscribe-indexer";
+import { AutocratDaoIndexer } from "./indexers/autocrat/autocrat-dao-indexer";
+import { AutocratProposalIndexer } from "./indexers/autocrat/autocrat-proposal-indexer";
 
 
 export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
@@ -10,7 +10,9 @@ export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicK
     await AmmMarketLogsSubscribeIndexer.index(logs, programId, ctx);
   } else if (programId.equals(V3_CONDITIONAL_VAULT_PROGRAM_ID)) {
     //TODO: implement
+    return;
   } else if (programId.equals(V3_AUTOCRAT_PROGRAM_ID)) {
+    return;
     // Parse logs to find instruction type
     const instructionLog = logs.logs.find(log => 
       log.includes("Instruction:") && 

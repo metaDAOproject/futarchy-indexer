@@ -3,12 +3,12 @@ import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
 import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
-import { connection, ammClient, conditionalVaultClient } from "./connection";
+import { connection, ammClient, conditionalVaultClient } from "../connection";
 import { Program } from "@coral-xyz/anchor";
 import { Context, Logs, PublicKey } from "@solana/web3.js";
 
-import { TelegramBotAPI } from "./adapters/telegram-bot";
-import { Logger } from "./logger";
+import { TelegramBotAPI } from "../adapters/telegram-bot";
+import { Logger } from "../logger";
 
 import { processAmmEvent, processVaultEvent } from "./processor";
 

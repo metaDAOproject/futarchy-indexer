@@ -1,6 +1,6 @@
 import { connection } from "../connection";
 import { PublicKey } from "@solana/web3.js";
-import { logger } from "../logger";
+import { logger } from "../../logger";
 
 export type TransactionMeta = Awaited<
   ReturnType<(typeof connection)["getSignaturesForAddress"]>

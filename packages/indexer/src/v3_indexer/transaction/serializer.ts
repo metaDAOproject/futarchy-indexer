@@ -18,7 +18,7 @@ import {
   InstructionDisplay,
   Instruction as AnchorInstruction,
 } from "@coral-xyz/anchor/dist/cjs/coder/borsh/instruction";
-import { logger } from "../logger";
+import { logger } from "../../logger";
 
 /**
  * This version should be bumped every time we update this file.
