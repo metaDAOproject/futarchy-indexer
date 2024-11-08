@@ -25,6 +25,28 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: total_volume
+          type:
+            nullable: true
+            scalar: numeric
+        - name: unique_accounts
+          type:
+            nullable: true
+            scalar: numeric
+        - name: total_trades
+          type:
+            nullable: true
+            scalar: numeric
+      name: performance_stats
+      select_permissions:
+        - permission:
+            columns:
+              - total_volume
+              - unique_accounts
+              - total_trades
+            filter: {}
+          role: anonymous
+    - fields:
         - name: base_amount
           type:
             nullable: true
