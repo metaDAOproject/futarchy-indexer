@@ -25,6 +25,28 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: total_volume
+          type:
+            nullable: true
+            scalar: numeric
+        - name: unique_accounts
+          type:
+            nullable: true
+            scalar: numeric
+        - name: total_trades
+          type:
+            nullable: true
+            scalar: numeric
+      name: performance_stats
+      select_permissions:
+        - permission:
+            columns:
+              - total_volume
+              - unique_accounts
+              - total_trades
+            filter: {}
+          role: anonymous
+    - fields:
         - name: base_amount
           type:
             nullable: true
@@ -143,6 +165,18 @@
   native_queries:
     - arguments:
         dao_slug:
+          description: ""
+          nullable: true
+          type: text
+        proposal_acct:
+          description: ""
+          nullable: true
+          type: text
+      code: "WITH base_trades AS (\n    SELECT \n        t.market_acct,\n        o.actor_acct,\n        (t.base_amount / POW(10, tokens.decimals)) * t.quote_price AS trade_volume,\n        dd.slug,\n        m.proposal_acct,\n        COUNT(*) OVER () as total_takes  -- Count all takes that match our filters\n    FROM \n        takes t\n        INNER JOIN orders o \n            ON o.order_tx_sig = t.order_tx_sig\n            AND o.market_acct IS NOT NULL \n            AND o.quote_price > 0\n        INNER JOIN transactions tx \n            ON tx.tx_sig = o.order_tx_sig\n            AND tx.failed IS FALSE\n        INNER JOIN markets m \n            ON m.market_acct = o.market_acct\n        INNER JOIN proposals p \n            ON p.proposal_acct = m.proposal_acct\n        INNER JOIN daos d \n            ON d.dao_acct = p.dao_acct\n        INNER JOIN tokens \n            ON tokens.mint_acct = d.base_acct\n        INNER JOIN dao_details dd \n            ON dd.dao_id = d.dao_id\n    WHERE \n        -- Optional filters that can be commented out or dynamically included\n        (NULLIF({{dao_slug}}, '') IS NULL OR dd.slug = {{dao_slug}})\n        AND (NULLIF({{proposal_acct}}, '') IS NULL OR m.proposal_acct = {{proposal_acct}})\n),\naggregated_stats AS (\n    SELECT \n        COUNT(DISTINCT actor_acct) AS unique_trader_count,\n        SUM(trade_volume) AS total_volume,\n        MAX(total_takes) AS total_trades,  -- Use MAX since the value is the same for all rows\n        -- Include these in output for verification/grouping if needed\n        NULLIF({{dao_slug}}, '') AS filtered_dao_slug,\n        NULLIF({{proposal_acct}}, '') AS filtered_proposal_acct\n    FROM base_trades\n)\nSELECT \n    total_volume::numeric, \n    unique_trader_count::numeric AS unique_accounts,\n    total_trades::numeric\nFROM aggregated_stats;"
+      returns: performance_stats
+      root_field_name: performance_stats
+    - arguments:
+        dao_slug:
           description: Slug of the DAO
           nullable: false
           type: text
@@ -186,7 +220,7 @@
           description: the proposal account
           nullable: true
           type: varchar
-      code: "WITH market_actors AS (\n    SELECT \n      market_acct,\n      actor_acct,\n      COUNT(*) AS countOrders\n    FROM \n      orders\n    GROUP BY \n      market_acct, actor_acct\n), distinct_users_by_proposal AS (\n    SELECT\n        proposal_acct,\n        COUNT(DISTINCT actor_acct) AS uniqueUsersCount,\n        SUM(countOrders) AS totalTrades\n    FROM market_actors\n    JOIN markets ON markets.market_acct = market_actors.market_acct\n    GROUP BY proposal_acct\n)\nSELECT\n\tproposal_acct,\n\tuniqueUsersCount AS user_count,\n\ttotalTrades AS trade_count\nFROM distinct_users_by_proposal\nWHERE \n    CASE \n        WHEN {{proposal_acct}} IS NOT NULL \n            THEN proposal_acct = {{proposal_acct}} \n        ELSE 1 = 1 \n    END;"
+      code: "WITH market_actors AS (\n    SELECT \n      t.market_acct,\n      actor_acct,\n      COUNT(*) AS countOrders\n    FROM \n      takes t\n    JOIN orders o ON o.order_tx_sig = t.order_tx_sig\n    JOIN transactions tx ON tx.tx_sig = o.order_tx_sig\n    WHERE tx.failed IS FALSE\n    AND o.quote_price > 0\n    GROUP BY \n      t.market_acct, actor_acct\n), distinct_users_by_proposal AS (\n    SELECT\n        proposal_acct,\n        COUNT(DISTINCT actor_acct) AS uniqueUsersCount,\n        SUM(countOrders) AS totalTrades\n    FROM market_actors\n    JOIN markets ON markets.market_acct = market_actors.market_acct\n    GROUP BY proposal_acct\n)\nSELECT\n\tproposal_acct,\n\tuniqueUsersCount AS user_count,\n\ttotalTrades AS trade_count\nFROM distinct_users_by_proposal\nWHERE \n    CASE \n        WHEN {{proposal_acct}} IS NOT NULL \n            THEN proposal_acct = {{proposal_acct}} \n        ELSE 1 = 1 \n    END;"
       returns: proposal_statistics
       root_field_name: user_count_and_trade_count_per_proposal
   tables: "!include futarchy/tables/tables.yaml"
