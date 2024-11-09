@@ -100,7 +100,7 @@ export async function indexAmmMarketAccountWithContext(
 
   let priceFromReserves: BN;
 
-  if (ammMarketAccount.baseAmount.toNumber() === 0 || ammMarketAccount.baseAmount.toNumber() === 0) {
+  if (ammMarketAccount.baseAmount.isZero() || ammMarketAccount.quoteAmount.isZero()) {
     logger.error("NO RESERVES", ammMarketAccount);
     return Ok("no price from reserves");
   }
