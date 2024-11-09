@@ -27,4 +27,6 @@ select_permissions:
         - order_tx_sig
         - order_time
       filter: {}
+      allow_aggregations: true
     comment: ""
+    
