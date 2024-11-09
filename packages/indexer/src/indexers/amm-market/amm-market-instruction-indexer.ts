@@ -10,6 +10,7 @@ import {
 import { ammClient, IDL } from "../common";
 import { SwapBuilder } from "../../builders/swaps";
 import { logger } from "../../logger";
+import { GetTransactionErrorType } from "../../transaction/serializer";
 
 export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
   PROGRAM_ID: AMM_PROGRAM_ID.toString(),
@@ -38,7 +39,13 @@ export const AmmMarketInstructionsIndexer: InstructionIndexer<IDL> = {
     if (!buildRes.success) {
       if (
         buildRes.error.type === SwapPersistableError.NonSwapTransaction ||
-        buildRes.error.type === SwapPersistableError.AlreadyPersistedSwap
+        buildRes.error.type === SwapPersistableError.AlreadyPersistedSwap ||
+        buildRes.error.type === SwapPersistableError.ArbTransactionError ||
+        buildRes.error.type === AmmInstructionIndexerError.FailedSwap ||
+        (buildRes.error.type === SwapPersistableError.TransactionParseError &&
+          buildRes.error.value?.type ===
+            GetTransactionErrorType.NullGetTransactionResponse) ||
+        buildRes.error.type === SwapPersistableError.PriceError
       ) {
         logger.error(
           `error with indexing amm transaction ${transaction.txSig}`,
