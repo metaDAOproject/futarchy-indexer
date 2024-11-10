@@ -39,7 +39,7 @@ export async function indexAmmMarketAccountWithContext(
   );
 
   // if we don't have an oracle.aggregator of 0 let's run this mf
-  if (ammMarketAccount.oracle.aggregator.toString() !== BN_0.toString()) {
+  if (!ammMarketAccount.oracle.aggregator.isZero()) {
     // indexing the twap
     const market = await usingDb((db) =>
       db
@@ -102,6 +102,8 @@ export async function indexAmmMarketAccountWithContext(
 
   if (ammMarketAccount.baseAmount.isZero() || ammMarketAccount.quoteAmount.isZero()) {
     logger.error("NO RESERVES", ammMarketAccount);
+    logger.error("baseAmount", ammMarketAccount.baseAmount.toString());
+    logger.error("quoteAmount", ammMarketAccount.quoteAmount.toString());
     return Ok("no price from reserves");
   }
 
