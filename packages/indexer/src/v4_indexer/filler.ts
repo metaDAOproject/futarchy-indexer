@@ -1,6 +1,5 @@
 import { ConfirmedSignatureInfo, Connection, PublicKey } from "@solana/web3.js";
-import { V4_AMM_PROGRAM_ID, V4_AUTOCRAT_PROGRAM_ID, V4_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
-import { V3_AMM_PROGRAM_ID, V3_AUTOCRAT_PROGRAM_ID, V3_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
+import { AMM_PROGRAM_ID as V4_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V4_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V4_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
 import { usingDb, schema, eq, asc, desc } from "@metadaoproject/indexer-db";
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";

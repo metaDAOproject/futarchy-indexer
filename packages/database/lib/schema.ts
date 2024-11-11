@@ -1000,7 +1000,6 @@ export const v0_4_swaps = pgTable("v0_4_swaps", {
 export const v0_4_splits = pgTable(
   "v0_4_splits",
   {
-    id: bigserial("id", { mode: "bigint" }).primaryKey(),
     vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
     vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
     signature: transaction("signature").notNull().references(() => signatures.signature),
@@ -1018,7 +1017,6 @@ export const v0_4_splits = pgTable(
 );
 
 export const v0_4_merges = pgTable("v0_4_merges", {
-  id: bigserial("id", { mode: "bigint" }).primaryKey(),
   vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
   vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
   signature: transaction("signature").notNull().references(() => signatures.signature),
@@ -1028,6 +1026,7 @@ export const v0_4_merges = pgTable("v0_4_merges", {
     .notNull()
     .default(sql`now()`),
 }, (table) => ({
+    pk: primaryKey({ columns: [table.vaultAddr, table.vaultSeqNum]}),
     vaultIdx: index("merge_vault_index").on(table.vaultAddr),
     signatureIdx: index("merge_signature_index").on(table.signature),
     seqNumVaultIdx: index("merge_seq_num_vault_index").on(table.vaultSeqNum, table.vaultAddr),

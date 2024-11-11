@@ -27,6 +27,8 @@ async function subscribe(accountPubKey: PublicKey) {
     try {
       // wait here because we need to fetch the txn from RPC
       // and often we get no response if we try right after recieving the logs notification
+      console.log("Logs received for account", accountPubKey.toString());
+      console.log("Logs", logs);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       processLogs(logs, ctx,  accountPubKey); //trigger processing of logs
     } catch (error) {
@@ -45,6 +47,7 @@ export async function subscribeAll() {
     V3_AUTOCRAT_PROGRAM_ID,
     V3_CONDITIONAL_VAULT_PROGRAM_ID
   ];
+  console.log("Subscribing to logs");
   Promise.all(programIds.map(async (programId) => subscribe(programId)));
 }
 

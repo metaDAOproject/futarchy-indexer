@@ -189,16 +189,36 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
 
 async function handleSplitEvent(event: SplitTokensEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
   try {
+    const insertValues = {
+      vaultAddr: event.vault.toString(),
+      vaultSeqNum: BigInt(event.seqNum.toString()),
+      signature: signature,
+      slot: BigInt(transactionResponse.slot),
+      amount: BigInt(event.amount.toString())
+      // Note: createdAt will be set automatically by the default value
+    };
+    
+    console.log("Attempting to insert with values:", insertValues);
+    
     await usingDb(async (db: DBConnection) => {
-      await db.insert(schema.v0_4_splits).values({
-        vaultAddr: event.vault.toString(),
-        vaultSeqNum: BigInt(event.seqNum.toString()),
-        signature: signature,
-        slot: BigInt(transactionResponse.slot),
-        amount: BigInt(event.amount.toString())
-      }).onConflictDoNothing();
+      // First verify the vault exists
+      const vault = await db.select()
+        .from(schema.v0_4_conditional_vaults)
+        .where(eq(schema.v0_4_conditional_vaults.conditionalVaultAddr, event.vault.toString()))
+        .limit(1);
+      
+      if (vault.length === 0) {
+        console.log("Warning: Referenced vault does not exist:", event.vault.toString());
+      } else {
+        console.log("Vault exists:", event.vault.toString());
+      }
+
+      await db.insert(schema.v0_4_splits)
+        .values(insertValues)
+        .onConflictDoNothing();
     });
   } catch (error) {
+    console.error("Full error details:", error);
     logger.errorWithChatBotAlert([
       error instanceof Error
         ? `Error in handleSplitEvent: ${error.message}`

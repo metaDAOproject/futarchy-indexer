@@ -18,10 +18,10 @@ type DBConnection = any; // TODO: Fix typing..
 const parseEvents = (transactionResponse: VersionedTransactionResponse | TransactionResponse): { ammEvents: any, vaultEvents: any } => {
   const ammEvents: { name: string; data: any }[] = [];
   const vaultEvents: { name: string; data: any }[] = [];
-  try {
+  // try {
     const inner: CompiledInnerInstruction[] =
       transactionResponse?.meta?.innerInstructions ?? [];
-    const ammIdlProgramId = ammClient.programId;
+    const ammIdlProgramId = ammClient.program.programId;
     const vaultIdlProgramId = conditionalVaultClient.vaultProgram.programId;
     for (let i = 0; i < inner.length; i++) {
       for (let j = 0; j < inner[i].instructions.length; j++) {
@@ -36,7 +36,10 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
         }
 
         // get which program the instruction belongs to
-        let program: Program;
+        let program: Program<any>;
+        console.log("programPubkey", programPubkey.toBase58());
+        console.log("ammIdlProgramId", ammIdlProgramId.toBase58());
+        console.log("vaultIdlProgramId", vaultIdlProgramId.toBase58());
         if (programPubkey.equals(ammIdlProgramId)) {
           program = ammClient.program;
           const ixData = anchor.utils.bytes.bs58.decode(
@@ -49,6 +52,7 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
             ammEvents.push(event);
           }
         } else if (programPubkey.equals(vaultIdlProgramId)) {
+          program = conditionalVaultClient.vaultProgram;
           const ixData = anchor.utils.bytes.bs58.decode(
             ix.data
           );
@@ -63,13 +67,13 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
         }
       }
     }
-  } catch (error) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error parsing events: ${error.message}`
-        : "Unknown error parsing events"
-    ]);
-  }
+  // } catch (error) {
+  //   logger.errorWithChatBotAlert([
+  //     error instanceof Error
+  //       ? `Error parsing events: ${error.message}`
+  //       : "Unknown error parsing events"
+  //   ]);
+  // }
 
   return {
     ammEvents,
@@ -79,7 +83,7 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
 
 //indexes signature
 export async function index(signature: string, programId: PublicKey) {
-  try {
+  // try {
     if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
       //autocrat program id, we aren't indexing these for now
       console.log("Unknown program id: ", programId.toBase58());
@@ -106,30 +110,30 @@ export async function index(signature: string, programId: PublicKey) {
 
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.signatures).values({
-        signature: transactionResponse.signature,
+        signature: transactionResponse.transaction.signatures[0],
         slot: BigInt(transactionResponse.slot),
-        didErr: transactionResponse.err !== null,
-        err: transactionResponse.err ? JSON.stringify(transactionResponse.err) : null,
+        didErr: transactionResponse.meta?.err !== null,
+        err: transactionResponse.meta?.err ? JSON.stringify(transactionResponse.meta.err) : null,
         blockTime: transactionResponse.blockTime ? new Date(transactionResponse.blockTime * 1000) : null,
       }).onConflictDoNothing().execute();
       await db.insert(schema.signature_accounts).values({
-        signature: transactionResponse.signature,
+        signature: transactionResponse.transaction.signatures[0],
         account: programId.toString()
       }).onConflictDoNothing().execute();
     });
     
-  } catch (error) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error processing signature: ${error.message}`
-        : "Unknown error processing signature"
-    ]);
-  }
+  // } catch (error) {
+  //   logger.errorWithChatBotAlert([
+  //     error instanceof Error
+  //       ? `Error processing signature: ${error.message}`
+  //       : "Unknown error processing signature"
+  //   ]);
+  // }
 }
 
 //indexes signature from logs
 export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
-  try {
+  // try {
     let signature = logs.signature;
     if (!signature) {
       console.log("No signature found in logs");
@@ -139,12 +143,12 @@ export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicK
       return;
     }
     await index(signature, programId);
-  } catch (error) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error processing signature: ${error.message}`
-        : "Unknown error processing signature"
-    ]);
-  }
+  // } catch (error) {
+  //   logger.errorWithChatBotAlert([
+  //     error instanceof Error
+  //       ? `Error processing signature: ${error.message}`
+  //       : "Unknown error processing signature"
+  //   ]);
+  // }
 }
 

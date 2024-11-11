@@ -10,9 +10,11 @@ export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicK
     await AmmMarketLogsSubscribeIndexer.index(logs, programId, ctx);
   } else if (programId.equals(V3_CONDITIONAL_VAULT_PROGRAM_ID)) {
     //TODO: implement
+    console.log("Conditional vault logs received");
+    console.log(logs);
     return;
   } else if (programId.equals(V3_AUTOCRAT_PROGRAM_ID)) {
-    return;
+    // return;
     // Parse logs to find instruction type
     const instructionLog = logs.logs.find(log => 
       log.includes("Instruction:") && 
