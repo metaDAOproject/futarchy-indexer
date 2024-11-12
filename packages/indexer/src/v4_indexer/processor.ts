@@ -165,6 +165,8 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
         return;
       }
 
+      console.log("latestAmmSeqNumApplied", amm[0].latestAmmSeqNumApplied.toString());
+      console.log("event.common.seqNum", event.common.seqNum.toString());
       if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
         console.log("Already applied", event.common.seqNum.toString());
         return;
@@ -388,7 +390,7 @@ async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: Ad
     .from(schema.prices)
     .where(and(
       eq(schema.prices.marketAcct, event.common.amm.toBase58()),
-      eq(schema.prices.updatedSlot, BigInt(event.common.slot.toString()))
+      eq(schema.prices.updatedSlot, event.common.slot.toString())
     ))
     .limit(1);
 
@@ -436,36 +438,18 @@ async function insertConditionalVault(db: DBConnection, event: InitializeConditi
 }
 
 
-async function fetchTransactionResponses(eligibleSignatures: { signature: string }[]) {
-  try {
-    return await connection.getTransactions(
-      eligibleSignatures.map(s => s.signature),
-      { commitment: "confirmed", maxSupportedTransactionVersion: 1 }
-    );
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error fetching transaction responses: ${error.message}`
-        : "Unknown error fetching transaction responses"
-    ]);
-    return [];
-  }
-}
-
-//set latestProcessedSlot in db
-async function setLatestProcessedSlot(slot: number) {
-  try {
-    await usingDb(async (db) => {
-      await db.update(schema.indexers)
-        .set({ latestSlotProcessed: BigInt(slot) })
-        .where(eq(schema.indexers.name, "v0_4_amm_indexer"))
-        .execute();
-    });
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error setting latest processed slot: ${error.message}`
-        : "Unknown error setting latest processed slot"
-    ]);
-  }
-}
+// async function fetchTransactionResponses(eligibleSignatures: { signature: string }[]) {
+//   try {
+//     return await connection.getTransactions(
+//       eligibleSignatures.map(s => s.signature),
+//       { commitment: "confirmed", maxSupportedTransactionVersion: 1 }
+//     );
+//   } catch (error: unknown) {
+//     logger.errorWithChatBotAlert([
+//       error instanceof Error
+//         ? `Error fetching transaction responses: ${error.message}`
+//         : "Unknown error fetching transaction responses"
+//     ]);
+//     return [];
+//   }
+// }

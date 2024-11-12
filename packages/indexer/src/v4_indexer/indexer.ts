@@ -133,7 +133,7 @@ export async function index(signature: string, programId: PublicKey) {
 
 //indexes signature from logs
 export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
-  // try {
+  try {
     let signature = logs.signature;
     if (!signature) {
       console.log("No signature found in logs");
@@ -143,12 +143,12 @@ export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicK
       return;
     }
     await index(signature, programId);
-  // } catch (error) {
-  //   logger.errorWithChatBotAlert([
-  //     error instanceof Error
-  //       ? `Error processing signature: ${error.message}`
-  //       : "Unknown error processing signature"
-  //   ]);
-  // }
+  } catch (error) {
+    logger.errorWithChatBotAlert([
+      error instanceof Error
+        ? `Error processing signature: ${error.message}`
+        : "Unknown error processing signature"
+    ]);
+  }
 }
 

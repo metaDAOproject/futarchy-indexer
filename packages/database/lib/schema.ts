@@ -386,6 +386,7 @@ export const indexers = pgTable("indexers", {
   name: varchar("name", { length: 100 }).primaryKey(),
   implementation: pgEnum("implementation", IndexerImplementation).notNull(),
   latestSlotProcessed: biggerSlot("latest_slot_processed").notNull(),
+  latestTxSigProcessed: transaction("latest_tx_sig_processed"), //TODO: unify transactions and signatures table and add reference here
   indexerType: pgEnum("indexer_type", IndexerType).notNull(),
 });
 

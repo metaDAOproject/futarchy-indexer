@@ -11,11 +11,6 @@ subscribeAll();
 // await startTransactionWatchers();
 // await startIndexers();
 
-// await Promise.all([
-//   frontfill()
-// ]);
 
-// await Promise.all([
-//   frontfill(),
-//   backfill(),
-// ]);
+backfill();
+frontfill();
