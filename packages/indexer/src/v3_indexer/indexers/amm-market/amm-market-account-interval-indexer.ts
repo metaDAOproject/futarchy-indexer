@@ -62,4 +62,9 @@ export const AmmMarketAccountIntervalFetchIndexer: IntervalFetchIndexer = {
       return Err({ type: AmmAccountIntervalIndexerError.General });
     }
   },
+
+  indexFromLogs: async (logs: string[]) => {
+    //TODO: implement if needed
+    return Err({ type: AmmAccountIntervalIndexerError.General });
+  },
 };

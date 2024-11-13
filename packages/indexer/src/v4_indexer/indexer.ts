@@ -18,7 +18,7 @@ type DBConnection = any; // TODO: Fix typing..
 const parseEvents = (transactionResponse: VersionedTransactionResponse | TransactionResponse): { ammEvents: any, vaultEvents: any } => {
   const ammEvents: { name: string; data: any }[] = [];
   const vaultEvents: { name: string; data: any }[] = [];
-  // try {
+  try {
     const inner: CompiledInnerInstruction[] =
       transactionResponse?.meta?.innerInstructions ?? [];
     const ammIdlProgramId = ammClient.program.programId;
@@ -37,9 +37,9 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
 
         // get which program the instruction belongs to
         let program: Program<any>;
-        console.log("programPubkey", programPubkey.toBase58());
-        console.log("ammIdlProgramId", ammIdlProgramId.toBase58());
-        console.log("vaultIdlProgramId", vaultIdlProgramId.toBase58());
+        // console.log("programPubkey", programPubkey.toBase58());
+        // console.log("ammIdlProgramId", ammIdlProgramId.toBase58());
+        // console.log("vaultIdlProgramId", vaultIdlProgramId.toBase58());
         if (programPubkey.equals(ammIdlProgramId)) {
           program = ammClient.program;
           const ixData = anchor.utils.bytes.bs58.decode(
@@ -63,17 +63,17 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
             vaultEvents.push(event);
           }
         } else {
-          console.log("Unknown program pubkey", programPubkey.toBase58());
+          // console.log("Unknown program pubkey", programPubkey.toBase58());
         }
       }
     }
-  // } catch (error) {
-  //   logger.errorWithChatBotAlert([
-  //     error instanceof Error
-  //       ? `Error parsing events: ${error.message}`
-  //       : "Unknown error parsing events"
-  //   ]);
-  // }
+  } catch (error) {
+    logger.errorWithChatBotAlert([
+      error instanceof Error
+        ? `Error parsing events: ${error.message}`
+        : "Unknown error parsing events"
+    ]);
+  }
 
   return {
     ammEvents,

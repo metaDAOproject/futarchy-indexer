@@ -25,6 +25,10 @@ import {
 import { logger } from "../../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 import { getHumanPrice } from "../usecases/math";
+import { connection } from "../connection";
+import { AmmMarketAccountUpdateIndexer } from '../indexers/amm-market/amm-market-account-indexer';
+import { PublicKey } from "@solana/web3.js";
+
 
 export class SwapPersistable {
   private ordersRecord: OrdersRecord;
@@ -45,27 +49,29 @@ export class SwapPersistable {
 
   async persist() {
     try {
-      // const upsertResult =
-      //   (await usingDb((db) =>
-      //     db
-      //       .insert(schema.transactions)
-      //       .values(this.transactionRecord)
-      //       .onConflictDoUpdate({
-      //         target: schema.transactions.txSig,
-      //         set: this.transactionRecord,
-      //       })
-      //       .returning({ txSig: schema.transactions.txSig })
-      //   )) ?? [];
-      // if (
-      //   upsertResult.length !== 1 ||
-      //   upsertResult[0].txSig !== this.transactionRecord.txSig
-      // ) {
-      //   logger.warn(
-      //     `Failed to upsert ${this.transactionRecord.txSig}. ${JSON.stringify(
-      //       this.transactionRecord
-      //     )}`
-      //   );
-      // }
+      // First insert the transaction record
+      const upsertResult = 
+        (await usingDb((db) =>
+          db
+            .insert(schema.transactions)
+            .values(this.transactionRecord)
+            .onConflictDoUpdate({
+              target: schema.transactions.txSig,
+              set: this.transactionRecord,
+            })
+            .returning({ txSig: schema.transactions.txSig })
+        )) ?? [];
+      if (
+        upsertResult.length !== 1 ||
+        upsertResult[0].txSig !== this.transactionRecord.txSig
+      ) {
+        logger.warn(
+          `Failed to upsert ${this.transactionRecord.txSig}. ${JSON.stringify(
+            this.transactionRecord
+          )}`
+        );
+      }
+
       // Insert user if they aren't already in the database
       const insertUsersResult = (await usingDb((db) =>
           db
@@ -244,6 +250,28 @@ export class SwapBuilder {
     }
   }
 
+  async indexPriceAndTWAPForAccount(account: PublicKey) {
+    console.log("indexing price and twap for account", account.toBase58());
+    const accountInfo = await connection.getAccountInfoAndContext(
+      account
+    );
+
+    //index refresh on startup
+    if (accountInfo.value) {
+      const res = await AmmMarketAccountUpdateIndexer.index(
+        accountInfo.value,
+        account,
+        accountInfo.context
+      );
+      if (!res.success) {
+        logger.error(
+          "error indexing account initial fetch",
+          account.toString()
+        );
+      }
+    }
+  }
+
   async buildOrderFromSwapIx(
     swapIx: Instruction,
     tx: Transaction,
@@ -255,8 +283,11 @@ export class SwapBuilder {
 
     const marketAcct = swapIx.accountsWithData.find((a) => a.name === "amm");
     if (!marketAcct) return Err({ type: "missing data" });
+    const marketAcctPubKey = new PublicKey(marketAcct.pubkey);
+    this.indexPriceAndTWAPForAccount(marketAcctPubKey);
     const userAcct = swapIx.accountsWithData.find((a) => a.name === "user");
     if (!userAcct) return Err({ type: "missing data" });
+    const userAcctPubKey = new PublicKey(userAcct.pubkey);
     // TODO fix
     const userBaseAcct = swapIx.accountsWithData.find(
       (a) => a.name === "userBaseAccount"

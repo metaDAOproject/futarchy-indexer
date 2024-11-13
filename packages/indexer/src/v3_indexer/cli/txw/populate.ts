@@ -27,7 +27,7 @@ import {
 } from "../../indexers/jupiter/jupiter-quotes-indexer";
 
 import Cron from "croner";
-import { logger } from "../../logger";
+import { logger } from "../../../logger";
 
 type IndexerAccountDependency =
   typeof schema.indexerAccountDependencies._.inferInsert;

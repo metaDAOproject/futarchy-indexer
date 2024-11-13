@@ -82,7 +82,7 @@ const insertNewSignatures = async (programId: PublicKey) => {
   //   });
   // }
 
-  console.log(`insertNewSignatures::latestRecordedSignature: ${latestRecordedSignature}`);
+  // console.log(`insertNewSignatures::latestRecordedSignature: ${latestRecordedSignature}`);
 
   let oldestSignatureInserted: string | undefined;
   while (true) {
@@ -195,7 +195,7 @@ export const frontfill = async () => {
       setInterval(async () => {
         const newSignatures = await insertNewSignatures(programId);
         console.log(`inserted up to ${newSignatures.length} new signatures for ${programId.toString()}`);
-      }, 3000); //every 3s
+      }, 30000); //every 30s
     } catch (error) {
       logger.errorWithChatBotAlert([
         error instanceof Error ? 
