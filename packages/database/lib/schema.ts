@@ -731,6 +731,7 @@ export const daoDetails = pgTable(
     lp_token_image_url: varchar("lp_token_image_url"),
     isHide: boolean("is_hide"),
     socials: jsonb("socials"),
+    colors: jsonb("colors"),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),

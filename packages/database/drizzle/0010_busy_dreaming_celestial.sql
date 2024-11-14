@@ -1,0 +1,1 @@
+ALTER TABLE "dao_details" ADD COLUMN "colors" jsonb;
