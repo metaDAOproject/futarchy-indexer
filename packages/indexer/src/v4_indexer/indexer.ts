@@ -5,7 +5,7 @@ import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTran
 import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
 import { connection, ammClient, conditionalVaultClient } from "../connection";
 import { Program } from "@coral-xyz/anchor";
-import { Context, Logs, PublicKey } from "@solana/web3.js";
+import { Context, Logs } from "@solana/web3.js";
 
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
