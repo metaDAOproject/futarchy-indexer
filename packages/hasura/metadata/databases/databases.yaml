@@ -162,7 +162,90 @@
               - trade_count
             filter: {}
           role: anonymous
+    - fields:
+        - name: dao_image
+          type:
+            nullable: true
+            scalar: text
+        - name: proposal_title
+          type:
+            nullable: true
+            scalar: text
+        - name: trade_count
+          type:
+            nullable: true
+            scalar: numeric
+        - name: volume_traded
+          type:
+            nullable: true
+            scalar: numeric
+        - name: proposal_status
+          type:
+            nullable: true
+            scalar: text
+        - name: chart_data
+          type:
+            nullable: true
+            scalar: jsonb
+      name: website_latest_four_proposals
+      select_permissions:
+        - permission:
+            columns:
+              - dao_image
+              - proposal_title
+              - trade_count
+              - volume_traded
+              - proposal_status
+              - chart_data
+            filter: {}
+          role: anonymous
+    - fields:
+        - name: volume_traded
+          type:
+            nullable: true
+            scalar: numeric
+        - name: profits_earned
+          type:
+            nullable: true
+            scalar: numeric
+        - name: unique_traders
+          type:
+            nullable: true
+            scalar: numeric
+        - name: number_of_daos
+          type:
+            nullable: true
+            scalar: numeric
+        - name: total_proposals
+          type:
+            nullable: true
+            scalar: numeric
+        - name: total_markets
+          type:
+            nullable: true
+            scalar: numeric
+        - name: total_trades
+          type:
+            nullable: true
+            scalar: numeric
+      name: website_stats
+      select_permissions:
+        - permission:
+            columns:
+              - volume_traded
+              - profits_earned
+              - unique_traders
+              - number_of_daos
+              - total_proposals
+              - total_markets
+              - total_trades
+            filter: {}
+          role: anonymous
   native_queries:
+    - arguments: {}
+      code: "WITH recent_proposals AS (\n    SELECT DISTINCT ON (p.proposal_acct)\n        p.proposal_acct,\n        p.created_at,\n        p.completed_at,\n        p.status as proposal_status,\n        pd.title as proposal_title,\n        d.dao_acct,\n        d.base_acct as spot_market_acct,\n        dd.image_url as dao_image,\n        string_agg(m.market_acct::text, ',') as market_accts\n    FROM \n        proposals p\n        INNER JOIN proposal_details pd ON pd.proposal_acct = p.proposal_acct\n        INNER JOIN daos d ON d.dao_acct = p.dao_acct\n        INNER JOIN dao_details dd ON dd.dao_id = d.dao_id\n        INNER JOIN markets m ON m.proposal_acct = p.proposal_acct\n    WHERE \n       \tp.status != 'Pending'\n    GROUP BY \n        p.proposal_acct,\n        p.created_at,\n        p.completed_at,\n        p.status,\n        pd.title,\n        d.dao_acct,\n        d.base_acct,\n        dd.image_url\n    ORDER BY p.proposal_acct, p.created_at DESC\n    LIMIT 4\n),\nproposal_trades AS (\n    SELECT \n        rp.proposal_acct,\n        COUNT(*) as trade_count,\n        SUM((t.base_amount / POW(10, tokens.decimals)) * t.quote_price) AS volume_traded\n    FROM \n        recent_proposals rp\n        CROSS JOIN LATERAL unnest(string_to_array(rp.market_accts, ',')) as m(market_acct)\n        INNER JOIN takes t ON t.market_acct = m.market_acct::text\n        INNER JOIN orders o ON o.order_tx_sig = t.order_tx_sig\n            AND o.market_acct IS NOT NULL \n            AND o.quote_price > 0\n        INNER JOIN transactions tx ON tx.tx_sig = o.order_tx_sig\n            AND tx.failed IS FALSE\n        INNER JOIN daos d ON d.dao_acct = rp.dao_acct\n        INNER JOIN tokens ON tokens.mint_acct = d.base_acct\n    GROUP BY rp.proposal_acct\n),\nprice_data AS (\n    SELECT DISTINCT ON (rp.proposal_acct, c.market_acct)\n        c.market_acct,\n        rp.proposal_acct,\n        jsonb_build_object(\n            'intervals', jsonb_agg(\n                jsonb_build_object(\n                    'interv', c.interv,\n                    'price', c.price,\n                    'type', c.prices_type::text\n                ) ORDER BY c.interv\n            )\n        ) as chart_data\n    FROM recent_proposals rp\n    CROSS JOIN LATERAL unnest(array[rp.spot_market_acct] || string_to_array(rp.market_accts, ',')) as m(market_acct)\n    INNER JOIN (\n        SELECT \n            pcd.*\n        FROM \n            prices_chart_data pcd\n            INNER JOIN (\n                SELECT \n                    pcd2.market_acct,\n                    pcd2.interv,\n                    pcd2.price,\n                    pcd2.prices_type,\n                    LAG(pcd2.price) OVER w AS prev_price,\n                    LAG(pcd2.prices_type) OVER w AS prev_prices_type\n                FROM prices_chart_data pcd2\n                WINDOW w AS (PARTITION BY market_acct ORDER BY interv)\n            ) changes ON changes.market_acct = pcd.market_acct \n                AND changes.interv = pcd.interv\n        WHERE \n            (prev_price IS NULL\n            OR changes.price != changes.prev_price\n            OR changes.prices_type != changes.prev_prices_type)\n    ) c ON c.market_acct = m.market_acct::text\n    WHERE \n        c.interv >= rp.created_at\n        AND c.interv <= COALESCE(rp.completed_at, NOW())\n    GROUP BY rp.proposal_acct, c.market_acct\n)\nSELECT DISTINCT ON (rp.proposal_acct)\n    rp.dao_image::text,\n    rp.proposal_title::text,\n    COALESCE(pt.trade_count, 0)::numeric as trade_count,\n    COALESCE(pt.volume_traded, 0)::numeric as volume_traded,\n    rp.proposal_status::text,\n    jsonb_build_object(\n        'spot', COALESCE(\n            (SELECT chart_data\n            FROM price_data pd2\n            WHERE pd2.market_acct = rp.spot_market_acct\n            AND pd2.proposal_acct = rp.proposal_acct\n            LIMIT 1),\n            jsonb_build_object('intervals', '[]'::jsonb)\n        ),\n        'pass', COALESCE(\n            (SELECT chart_data\n            FROM price_data pd2\n            WHERE pd2.market_acct = (string_to_array(rp.market_accts, ','))[1]\n            AND pd2.proposal_acct = rp.proposal_acct\n            LIMIT 1),\n            jsonb_build_object('intervals', '[]'::jsonb)\n        ),\n        'fail', COALESCE(\n            (SELECT chart_data\n            FROM price_data pd2\n            WHERE pd2.market_acct = (string_to_array(rp.market_accts, ','))[2]\n            AND pd2.proposal_acct = rp.proposal_acct\n            LIMIT 1),\n            jsonb_build_object('intervals', '[]'::jsonb)\n        )\n    ) as chart_data\nFROM \n    recent_proposals rp\n    LEFT JOIN proposal_trades pt ON pt.proposal_acct = rp.proposal_acct\nORDER BY rp.proposal_acct, rp.created_at DESC;"
+      returns: website_latest_four_proposals
+      root_field_name: latest_finished_proposals
     - arguments:
         dao_slug:
           description: ""
@@ -255,4 +338,8 @@
       code: "WITH market_actors AS (\n    SELECT \n      t.market_acct,\n      actor_acct,\n      COUNT(*) AS countOrders\n    FROM \n      takes t\n    JOIN orders o ON o.order_tx_sig = t.order_tx_sig\n    JOIN transactions tx ON tx.tx_sig = o.order_tx_sig\n    WHERE tx.failed IS FALSE\n    AND o.quote_price > 0\n    GROUP BY \n      t.market_acct, actor_acct\n), distinct_users_by_proposal AS (\n    SELECT\n        proposal_acct,\n        COUNT(DISTINCT actor_acct) AS uniqueUsersCount,\n        SUM(countOrders) AS totalTrades\n    FROM market_actors\n    JOIN markets ON markets.market_acct = market_actors.market_acct\n    GROUP BY proposal_acct\n)\nSELECT\n\tproposal_acct,\n\tuniqueUsersCount AS user_count,\n\ttotalTrades AS trade_count\nFROM distinct_users_by_proposal\nWHERE \n    CASE \n        WHEN {{proposal_acct}} IS NOT NULL \n            THEN proposal_acct = {{proposal_acct}} \n        ELSE 1 = 1 \n    END;"
       returns: proposal_statistics
       root_field_name: user_count_and_trade_count_per_proposal
+    - arguments: {}
+      code: "WITH base_trades AS (\n    SELECT \n        t.market_acct,\n        o.actor_acct,\n        (t.base_amount / POW(10, tokens.decimals)) * t.quote_price AS trade_volume,\n        dd.slug,\n        m.proposal_acct,\n        COUNT(*) OVER () as total_takes  -- Count all takes that match our filters\n    FROM \n        takes t\n        INNER JOIN orders o \n            ON o.order_tx_sig = t.order_tx_sig\n            AND o.market_acct IS NOT NULL \n            AND o.quote_price > 0\n        INNER JOIN transactions tx \n            ON tx.tx_sig = o.order_tx_sig\n            AND tx.failed IS FALSE\n        INNER JOIN markets m \n            ON m.market_acct = o.market_acct\n        INNER JOIN proposals p \n            ON p.proposal_acct = m.proposal_acct\n        INNER JOIN daos d \n            ON d.dao_acct = p.dao_acct\n        INNER JOIN tokens \n            ON tokens.mint_acct = d.base_acct\n        INNER JOIN dao_details dd \n            ON dd.dao_id = d.dao_id\n),\naggregated_stats AS (\n    SELECT \n        COUNT(DISTINCT actor_acct) AS unique_trader_count,\n        COUNT(DISTINCT proposal_acct) AS proposal_count,\n        COUNT(DISTINCT market_acct) AS market_count,\n        SUM(trade_volume) AS total_volume,\n        MAX(total_takes) AS total_trades,  -- Use MAX since the value is the same for all rows\n        COUNT(DISTINCT slug) AS dao_count\n    FROM base_trades\n)\nSELECT \n    total_volume::numeric AS volume_traded,\n    NULL::numeric AS profits_earned,\n    unique_trader_count::numeric AS unique_traders,\n    dao_count::numeric AS number_of_daos,\n    proposal_count::numeric AS total_proposals,\n    market_count::numeric AS total_markets,\n    total_trades::numeric\nFROM aggregated_stats;"
+      returns: website_stats
+      root_field_name: website_stats
   tables: "!include futarchy/tables/tables.yaml"

@@ -23,3 +23,28 @@
               name
             }
           }
+      - name: fetchAggregateStats
+        query: |
+          query fetchAggregateStats {
+            website_stats {
+              total_trades
+              total_markets
+              total_proposals
+              unique_traders
+              profits_earned
+              number_of_daos
+              volume_traded
+            }
+          }
+      - name: fetchLatestFourProposals
+        query: |
+          query fetchLatestFourProposals {
+            latest_finished_proposals {
+              dao_image
+              proposal_title
+              trade_count
+              volume_traded
+              proposal_status
+              chart_data
+            }
+          }
