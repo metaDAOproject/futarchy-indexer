@@ -2,6 +2,7 @@ import { Counter } from "@lukasdeco/prom-client";
 import { AlertChatBotInterface, TelegramBotAPI } from "./adapters/telegram-bot";
 
 const TELEGRAM_ALERT_CHAT_ID = process.env.TELEGRAM_ALERT_CHAT_ID ?? "";
+const DEPLOY_ENVIRONMENT = process.env.DEPLOY_ENVIRONMENT ?? "STAGING";
 
 export class Logger {
   // private errorCounter;
@@ -61,7 +62,7 @@ export class Logger {
   }
 
   errorWithChatBotAlert(...data: any[]): void {
-    const formattedData = this.formatData(data);
+    const formattedData = DEPLOY_ENVIRONMENT + "::" + this.formatData(data);
     console.error(formattedData);
     // this.errorCounter.inc();
     if (TELEGRAM_ALERT_CHAT_ID) {

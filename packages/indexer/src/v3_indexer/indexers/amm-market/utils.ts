@@ -80,6 +80,7 @@ export async function indexAmmMarketAccountWithContext(
 
     try{
     // TODO batch commits across inserts - maybe with event queue
+      console.log("utils::indexAmmMarketAccountWithContext::upserting twap", newTwap);
       const twapUpsertResult = await usingDb((db) =>
         db
           .insert(schema.twaps)
