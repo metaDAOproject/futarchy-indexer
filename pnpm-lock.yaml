@@ -77,7 +77,7 @@ importers:
         specifier: ^15.1.4
         version: 15.1.4
       '@metadaoproject/futarchy':
-        specifier: ^0.4.0-alpha.18
+        specifier: ^0.4.0-alpha.21
         version: 0.4.0-alpha.21(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)
       '@metadaoproject/futarchy-sdk':
         specifier: 4.0.0-alpha.31
