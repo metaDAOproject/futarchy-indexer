@@ -13,7 +13,7 @@ RUN apk add --no-cache --force-overwrite glibc-2.28-r0.apk
 RUN apk add --no-cache git
 
 EXPOSE 8080
-RUN corepack prepare pnpm@9.11.0 --activate
+RUN corepack prepare pnpm@9.12.1 --activate
 RUN corepack enable
 ENV REPO_DIR /home/indexer/futarchy-indexer
 RUN mkdir -p $REPO_DIR
