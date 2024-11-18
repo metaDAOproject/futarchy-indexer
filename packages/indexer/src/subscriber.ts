@@ -29,7 +29,7 @@ async function subscribe(accountPubKey: PublicKey) {
       // and often we get no response if we try right after recieving the logs notification
       console.log("Logs received for account", accountPubKey.toString());
       console.log("Logs", logs);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       processLogs(logs, ctx,  accountPubKey); //trigger processing of logs
     } catch (error) {
       logger.errorWithChatBotAlert(`Error processing logs for account ${accountPubKey.toString()}`, error);
