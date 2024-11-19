@@ -230,6 +230,22 @@ export class SwapBuilder {
         // }
 
         return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord)); // priceRecord
+      } else {
+        // handle non-swap transactions (add/remove liquidity, crank, etc)
+        // find market account from instructions
+        console.log("builder::buildOrderFromSwapIx::looking for market account in non swap txn");
+        let marketAcct: PublicKey | undefined;
+        for (const ix of tx.instructions) {
+          const candidate = ix.accountsWithData.find((a) => a.name === "amm");
+          if (candidate) {
+            marketAcct = new PublicKey(candidate.pubkey);
+            break;
+          }
+        }
+        if (marketAcct) {
+          console.log("builder::buildOrderFromSwapIx::market found for non swap txn, indexing price and twap", marketAcct);
+          this.indexPriceAndTWAPForAccount(marketAcct);
+        }
       }
       return Err({ type: SwapPersistableError.NonSwapTransaction });
     } catch (e: any) {
@@ -283,8 +299,12 @@ export class SwapBuilder {
 
     const marketAcct = swapIx.accountsWithData.find((a) => a.name === "amm");
     if (!marketAcct) return Err({ type: "missing data" });
+
+    //get market account and index price and twap async
+    console.log("builder::buildOrderFromSwapIx::indexing price and twap for market", marketAcct.pubkey);
     const marketAcctPubKey = new PublicKey(marketAcct.pubkey);
-    // this.indexPriceAndTWAPForAccount(marketAcctPubKey);
+    this.indexPriceAndTWAPForAccount(marketAcctPubKey);
+
     const userAcct = swapIx.accountsWithData.find((a) => a.name === "user");
     if (!userAcct) return Err({ type: "missing data" });
     const userAcctPubKey = new PublicKey(userAcct.pubkey);
