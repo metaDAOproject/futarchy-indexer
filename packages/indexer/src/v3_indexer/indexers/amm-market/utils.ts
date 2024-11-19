@@ -1,7 +1,8 @@
 import { BN } from "@coral-xyz/anchor";
-import { BN_0, enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
+import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { PriceMath } from "@metadaoproject/futarchy/v0.4";
 import { schema, usingDb, eq, inArray } from "@metadaoproject/indexer-db";
+import { TokenRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import {
   TwapRecord,
@@ -12,6 +13,8 @@ import { provider, rpcReadClient } from "../../connection";
 import { Err, Ok, Result, TaggedUnion } from "../../match";
 import { logger } from "../../../logger";
 import { getHumanPrice } from "../../usecases/math";
+import { getMint } from "@solana/spl-token";
+import { connection } from "../../../connection";
 
 export enum AmmMarketAccountIndexingErrors {
   AmmTwapIndexError = "AmmTwapIndexError",
@@ -55,11 +58,47 @@ export async function indexAmmMarketAccountWithContext(
       ammMarketAccount.quoteMint,
       provider
     )
+
+    // get token mints from rpc (needed for fetching supply)
+    const baseMintPubKey = new PublicKey(baseToken.publicKey ?? "");
+    const baseTokenMint = await getMint(
+      connection,
+      baseMintPubKey
+    );
+    const quoteMintPubKey = new PublicKey(quoteToken.publicKey ?? "");
+    const quoteTokenMint = await getMint(
+      connection,
+      quoteMintPubKey
+    );
+    const baseTokenRecord: TokenRecord = {
+      symbol: baseToken.symbol,
+      name: baseToken.name ? baseToken.name : baseToken.symbol,
+      decimals: baseToken.decimals,
+      mintAcct: baseToken.publicKey ?? "",
+      supply: baseTokenMint.supply.toString(),
+      updatedAt: new Date(),
+    }
+    const quoteTokenRecord: TokenRecord = {
+      symbol: quoteToken.symbol,
+      name: quoteToken.name ? quoteToken.name : quoteToken.symbol,
+      decimals: quoteToken.decimals,
+      mintAcct: quoteToken.publicKey ?? "",
+      supply: quoteTokenMint.supply.toString(),
+      updatedAt: new Date(),
+    }
+    const tokensToInsert = [baseTokenRecord, quoteTokenRecord];
+    //upsert tokens to db
+    await usingDb((db) =>
+      db
+        .insert(schema.tokens)
+        .values(tokensToInsert)
+        .onConflictDoNothing() //TODO: probably better to update instead of do nothing on conflict, since supply/name/ticker could've changed
+        .execute()
+    );
   } else {
     [baseToken, quoteToken] = tokens;
   }
   
-
   // if we don't have an oracle.aggregator of 0 let's run this mf
   if (!ammMarketAccount.oracle.aggregator.isZero()) {
     // indexing the twap
