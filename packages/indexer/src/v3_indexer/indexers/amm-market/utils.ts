@@ -1,7 +1,7 @@
 import { BN } from "@coral-xyz/anchor";
 import { BN_0, enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { PriceMath } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, inArray } from "@metadaoproject/indexer-db";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import {
   TwapRecord,
@@ -29,14 +29,36 @@ export async function indexAmmMarketAccountWithContext(
   const ammMarketAccount = await rpcReadClient.markets.amm.decodeMarket(
     accountInfo
   );
-  const baseToken = await enrichTokenMetadata(
-    ammMarketAccount.baseMint,
-    provider
+
+  // TODO: prob need to type these lol
+  let baseToken;
+  let quoteToken;
+
+  //get base and quote decimals from db
+  console.log("utils::indexAmmMarketAccountWithContext::getting tokens from db", ammMarketAccount.baseMint.toString(), ammMarketAccount.quoteMint.toString());
+  const tokens = await usingDb((db) =>
+    db
+      .select()
+      .from(schema.tokens)
+      .where(inArray(schema.tokens.mintAcct, [ammMarketAccount.baseMint.toString(), ammMarketAccount.quoteMint.toString()]))
+      .execute()
   );
-  const quoteToken = await enrichTokenMetadata(
-    ammMarketAccount.quoteMint,
-    provider
-  );
+
+  if (!tokens || tokens.length < 2) {
+    // fallback if we don't have the tokens in the db for some reason
+    console.log("utils::indexAmmMarketAccountWithContext::no tokens in db, fetching from rpc");
+    baseToken = await enrichTokenMetadata(
+      ammMarketAccount.baseMint,
+      provider
+    );
+    quoteToken = await enrichTokenMetadata(
+      ammMarketAccount.quoteMint,
+      provider
+    )
+  } else {
+    [baseToken, quoteToken] = tokens;
+  }
+  
 
   // if we don't have an oracle.aggregator of 0 let's run this mf
   if (!ammMarketAccount.oracle.aggregator.isZero()) {

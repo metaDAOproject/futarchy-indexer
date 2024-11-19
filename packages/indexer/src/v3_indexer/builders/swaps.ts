@@ -283,7 +283,7 @@ export class SwapBuilder {
 
     const marketAcct = swapIx.accountsWithData.find((a) => a.name === "amm");
     if (!marketAcct) return Err({ type: "missing data" });
-    const marketAcctPubKey = new PublicKey(marketAcct.pubkey);
+    // const marketAcctPubKey = new PublicKey(marketAcct.pubkey);
     // this.indexPriceAndTWAPForAccount(marketAcctPubKey);
     const userAcct = swapIx.accountsWithData.find((a) => a.name === "user");
     if (!userAcct) return Err({ type: "missing data" });
