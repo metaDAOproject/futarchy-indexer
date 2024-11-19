@@ -83,7 +83,7 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
 
 //indexes signature
 export async function index(signature: string, programId: PublicKey) {
-  // try {
+  try {
     if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
       //autocrat program id, we aren't indexing these for now
       console.log("Unknown program id: ", programId.toBase58());
@@ -96,18 +96,7 @@ export async function index(signature: string, programId: PublicKey) {
       return;
     }
 
-    const events = parseEvents(transactionResponse);
-    const ammEvents = events.ammEvents;
-    const vaultEvents = events.vaultEvents;
-
-    Promise.all(ammEvents.map(async (event) => {
-      await processAmmEvent(event, signature, transactionResponse);
-    }));
-
-    Promise.all(vaultEvents.map(async (event) => {
-      await processVaultEvent(event, signature, transactionResponse);
-    }));
-
+    //insert signature to db
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.signatures).values({
         signature: transactionResponse.transaction.signatures[0],
@@ -121,14 +110,26 @@ export async function index(signature: string, programId: PublicKey) {
         account: programId.toString()
       }).onConflictDoNothing().execute();
     });
+
+    const events = parseEvents(transactionResponse);
+    const ammEvents = events.ammEvents;
+    const vaultEvents = events.vaultEvents;
+
+    Promise.all(ammEvents.map(async (event) => {
+      await processAmmEvent(event, signature, transactionResponse);
+    }));
+
+    Promise.all(vaultEvents.map(async (event) => {
+      await processVaultEvent(event, signature, transactionResponse);
+    }));
     
-  // } catch (error) {
-  //   logger.errorWithChatBotAlert([
-  //     error instanceof Error
-  //       ? `Error processing signature: ${error.message}`
-  //       : "Unknown error processing signature"
-  //   ]);
-  // }
+  } catch (error) {
+    logger.errorWithChatBotAlert([
+      error instanceof Error
+        ? `Error processing signature: ${error.message}`
+        : "Unknown error processing signature"
+    ]);
+  }
 }
 
 //indexes signature from logs
