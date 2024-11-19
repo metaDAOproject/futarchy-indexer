@@ -119,6 +119,11 @@ export const daos = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
+    isActive: boolean("is_active").notNull().default(false),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    organizationId: bigint("organization_id", { mode: "bigint" })
+      .references(() => organizations.organizationId),
+    colors: jsonb("colors"),
   },
   (table) => ({
     daoProgram: unique("dao_acct_program").on(table.daoAcct, table.programAcct),
@@ -731,6 +736,8 @@ export const daoDetails = pgTable(
     lp_token_image_url: varchar("lp_token_image_url"),
     isHide: boolean("is_hide"),
     socials: jsonb("socials"),
+    organizationId: bigint("organization_id", { mode: "bigint" })
+      .references(() => organizations.organizationId),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),
@@ -1183,6 +1190,31 @@ export const userDeposits = pgTable("user_deposits", {
     .notNull()
     .default(sql`now()`),
 });
+
+export const organizations = pgTable("organizations", {
+  organizationId: bigserial("organization_id", { mode: "bigint" }).primaryKey(),
+  name: text("name").notNull().unique(),
+  // Useful for fetching from a URL
+  slug: varchar("slug").unique(),
+  url: varchar("url").unique(),
+  description: text("description"),
+  imageUrl: varchar("image_url"),
+  // Added this in anticipation for web3 auth.
+  creator_acct: pubkey("creator_acct"),
+  // A way for other people to have permissions to make changes.
+  admin_accts: jsonb("admin_accts"),
+  isHide: boolean("is_hide"),
+  // Key off of this type and then we can do flexible design.
+  socials: jsonb("socials"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+},
+(table) => ({
+  uniqueId: unique("id_name_url").on(table.organizationId, table.url, table.name),
+})
+);
+  
 
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type IndexerAccountDependencyReadRecord =
