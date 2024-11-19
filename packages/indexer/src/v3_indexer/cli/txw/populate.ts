@@ -90,11 +90,12 @@ async function populateAmmMarketIndexerAccountDependencies() {
     )) ?? [];
 
   for (const ammMarket of ammMarkets) {
-    const newAmmIndexerDep: IndexerAccountDependency = {
-      acct: ammMarket.marketAcct.toString(),
-      name: "amm-market-accounts",
-      latestTxSigProcessed: null,
-    };
+    // TODO: we no longer need an account info indexer market accounts.. leaving this here for now
+    // const newAmmIndexerDep: IndexerAccountDependency = {
+    //   acct: ammMarket.marketAcct.toString(),
+    //   name: "amm-market-accounts",
+    //   latestTxSigProcessed: null,
+    // };
     const newAmmIntervalIndexerDep: IndexerAccountDependency = {
       acct: ammMarket.marketAcct.toString(),
       name: "amm-market-accounts-fetch",
@@ -111,7 +112,7 @@ async function populateAmmMarketIndexerAccountDependencies() {
         db
           .insert(schema.indexerAccountDependencies)
           .values([
-            newAmmIndexerDep,
+            // newAmmIndexerDep, //TODO: leaving this here for now
             newAmmIntervalIndexerDep,
             newAmmLogsSubscribeIndexerDep,
           ])

@@ -38,16 +38,17 @@ export async function startAccountInfoIndexer(
       }
     }
 
-    connection.onAccountChange(accountPubKey, async (accountInfo, context) => {
-      const res = await implementation.index(
-        accountInfo,
-        accountPubKey,
-        context
-      );
-      if (!res.success) {
-        logger.error("error indexing account update", accountPubKey.toString());
-      }
-    });
+    // // TODO: re-enable this or delete this whole thing if not needed
+    // connection.onAccountChange(accountPubKey, async (accountInfo, context) => {
+    //   const res = await implementation.index(
+    //     accountInfo,
+    //     accountPubKey,
+    //     context
+    //   );
+    //   if (!res.success) {
+    //     logger.error("error indexing account update", accountPubKey.toString());
+    //   }
+    // });
   }
 }
 function getAccountInfoIndexerImplementation(
