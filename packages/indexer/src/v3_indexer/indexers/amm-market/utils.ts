@@ -121,10 +121,6 @@ export async function indexAmmMarketAccountWithContext(
 
     const proposalAcct = market[0].proposalAcct;
 
-    // if (proposalAcct === null) {
-    //   logger.error("failed to index amm twap for v4 amm", account.toBase58());
-    //   return Err({ type: AmmMarketAccountIndexingErrors.AmmV4TwapIndexError });
-    // }
     const twapNumber: string = twapCalculation.toString();
     const newTwap: TwapRecord = {
       curTwap: twapNumber,
@@ -152,7 +148,6 @@ export async function indexAmmMarketAccountWithContext(
 
       if (twapUpsertResult === undefined || twapUpsertResult.length === 0) {
         logger.error("failed to upsert twap", newTwap);
-        // return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapNoInsertError });
       }
     } catch (e) {
       logger.error("failed to upsert twap", e);

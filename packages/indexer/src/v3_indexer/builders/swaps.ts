@@ -200,36 +200,24 @@ export class SwapBuilder {
           return Err({ type: SwapPersistableError.ArbTransactionError });
         }
         
+        // now we are upserting price/twap in the buildOrderFromSwapIx function
         const result = await this.buildOrderFromSwapIx(swapIx, tx, mintIx);
         if (!result.success) {
           return Err(result.error);
         }
         const { swapOrder, swapTake } = result.ok;
 
-        // TODO: consider co-locating this logic so it can be shared
-        // TODO doing this twice... also doing this above
-
         const transactionRecord: TransactionRecord = {
           txSig: signature,
           slot: ctx.slot.toString(),
-          blockTime: new Date(tx.blockTime * 1000), // TODO need to verify if this is correct
+          blockTime: new Date(tx.blockTime * 1000),
           failed: tx.err !== undefined,
           payload: serialize(tx),
           serializerLogicVersion: SERIALIZED_TRANSACTION_LOGIC_VERSION,
           mainIxType: getMainIxTypeFromTransaction(tx),
         };
 
-        // TODO: This needs smore work before it's ready
-        // const priceRecord: PricesRecord = {
-        //   marketAcct: swapOrder.marketAcct,
-        //   updatedSlot: ctx.slot.toString(),
-        //   createdAt: transactionRecord.blockTime,
-        //   // TODO: This doesn't have base and quote... So could be an issue..
-        //   price: swapTake.quotePrice,
-        //   pricesType: PricesType.Conditional,
-        // }
-
-        return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord)); // priceRecord
+        return Ok(new SwapPersistable(swapOrder, swapTake, transactionRecord));
       } else {
         // handle non-swap transactions (add/remove liquidity, crank, etc)
         // find market account from instructions
@@ -307,7 +295,6 @@ export class SwapBuilder {
 
     const userAcct = swapIx.accountsWithData.find((a) => a.name === "user");
     if (!userAcct) return Err({ type: "missing data" });
-    const userAcctPubKey = new PublicKey(userAcct.pubkey);
     // TODO fix
     const userBaseAcct = swapIx.accountsWithData.find(
       (a) => a.name === "userBaseAccount"

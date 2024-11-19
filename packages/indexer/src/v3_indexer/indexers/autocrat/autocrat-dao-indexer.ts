@@ -51,10 +51,7 @@ export const AutocratDaoIndexer: IntervalFetchIndexer = {
           logger.error("Unable to determine public key for dao tokens");
           return Err({ type: AutocratDaoIndexerError.MissingParamError });
         }
-        // const baseTokenData = await enrichTokenMetadata(
-        //   new PublicKey(dao.baseToken.publicKey),
-        //   provider
-        // );
+
         const baseTokenMint = await getMint(
           connection,
           new PublicKey(dao.baseToken.publicKey)
