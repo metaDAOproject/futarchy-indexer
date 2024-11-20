@@ -64,6 +64,20 @@
       "when": 1729791097640,
       "tag": "0008_stormy_spirit",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1731430722593,
+      "tag": "0009_brainy_karma",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1732042186508,
+      "tag": "0010_crazy_sentinels",
+      "breakpoints": true
     }
   ]
 }
