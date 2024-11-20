@@ -7,24 +7,6 @@
     - GET
   name: getDaoNameFromSlug
   url: dao-name/:slug
-- comment: just for use with website data
-  definition:
-    query:
-      collection_name: allowed-queries
-      query_name: fetchAggregateStats
-  methods:
-    - GET
-  name: fetchAggregateStats
-  url: fetchaggregatestats
-- comment: ""
-  definition:
-    query:
-      collection_name: allowed-queries
-      query_name: fetchLatestFourProposals
-  methods:
-    - GET
-  name: fetchLatestFourProposals
-  url: fetchlatestfourproposals
 - comment: ""
   definition:
     query:

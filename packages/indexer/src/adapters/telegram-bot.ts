@@ -22,7 +22,7 @@ export class TelegramBotAPI implements AlertChatBotInterface {
     method: "GET" | "POST",
     endpoint: string,
     params?: object
-  ): Promise<ChatbotApiResponse<T>> {
+  ): Promise<ChatbotApiResponse<T> | null> {
     let response: AxiosResponse<ChatbotApiResponse<T>>;
     try {
       if (method === "GET") {
@@ -32,11 +32,14 @@ export class TelegramBotAPI implements AlertChatBotInterface {
       }
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to make request: ${error}`);
+      console.error(
+        `Failed to make request: ${error}. Method: ${method}. Endpoint: ${endpoint}`
+      );
+      return null;
     }
   }
 
-  public async getMe(): Promise<ChatbotApiResponse<any>> {
+  public async getMe(): Promise<ChatbotApiResponse<any> | null> {
     return this.request("GET", "getMe");
   }
 
@@ -58,7 +61,7 @@ export class TelegramBotAPI implements AlertChatBotInterface {
     limit?: number,
     timeout?: number,
     allowed_updates?: string[]
-  ): Promise<ChatbotApiResponse<any>> {
+  ): Promise<ChatbotApiResponse<any> | null> {
     const params = { offset, limit, timeout, allowed_updates };
     return this.request("GET", "getUpdates", params);
   }
@@ -74,7 +77,7 @@ type ChatbotApiResponse<T> = {
 };
 
 export interface AlertChatBotInterface {
-  getMe(): Promise<ChatbotApiResponse<any>>;
+  getMe(): Promise<ChatbotApiResponse<any> | null>;
   sendMessage(
     chatId: number | string,
     text: string
@@ -84,5 +87,5 @@ export interface AlertChatBotInterface {
     limit?: number,
     timeout?: number,
     allowed_updates?: string[]
-  ): Promise<ChatbotApiResponse<any>>;
+  ): Promise<ChatbotApiResponse<any> | null>;
 }

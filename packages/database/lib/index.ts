@@ -91,7 +91,6 @@ export const schema = schemaDefs;
 export {
   eq,
   sql,
-  asc,
   desc,
   count,
   lte,
