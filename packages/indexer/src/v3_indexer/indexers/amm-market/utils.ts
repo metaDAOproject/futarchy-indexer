@@ -150,7 +150,7 @@ export async function indexAmmMarketAccountWithContext(
         logger.error("failed to upsert twap", newTwap);
       }
     } catch (e) {
-      logger.error("failed to upsert twap", e);
+      logger.error("error upserting twap", e);
       return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapNoInsertError });
     }
   }

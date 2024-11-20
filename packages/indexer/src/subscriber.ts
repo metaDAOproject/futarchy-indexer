@@ -44,7 +44,7 @@ export async function subscribeAll() {
     V4_AUTOCRAT_PROGRAM_ID,
     V4_CONDITIONAL_VAULT_PROGRAM_ID,
     // V3_AMM_PROGRAM_ID,
-    // V3_AUTOCRAT_PROGRAM_ID,
+    V3_AUTOCRAT_PROGRAM_ID,
     // V3_CONDITIONAL_VAULT_PROGRAM_ID
   ];
   console.log("Subscribing to logs");
