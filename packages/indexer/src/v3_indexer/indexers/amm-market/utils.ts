@@ -96,7 +96,10 @@ export async function indexAmmMarketAccountWithContext(
         .execute()
     );
   } else {
-    [baseToken, quoteToken] = tokens;
+    baseToken = tokens.find(token => token.mintAcct === ammMarketAccount.baseMint.toString());
+    quoteToken = tokens.find(token => token.mintAcct === ammMarketAccount.quoteMint.toString());
+    console.log("utils::indexAmmMarketAccountWithContext::baseToken", baseToken);
+    console.log("utils::indexAmmMarketAccountWithContext::quoteToken", quoteToken);
   }
   
   // if we don't have an oracle.aggregator of 0 let's run this mf
