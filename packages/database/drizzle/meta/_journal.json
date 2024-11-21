@@ -78,6 +78,13 @@
       "when": 1732042186508,
       "tag": "0010_crazy_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1732216045977,
+      "tag": "0011_powerful_angel",
+      "breakpoints": true
     }
   ]
 }
