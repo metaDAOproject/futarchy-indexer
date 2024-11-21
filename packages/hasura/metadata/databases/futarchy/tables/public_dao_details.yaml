@@ -1,6 +1,10 @@
 table:
   name: dao_details
   schema: public
+object_relationships:
+  - name: organization
+    using:
+      foreign_key_constraint_on: organization_id
 array_relationships:
   - name: daos
     using:
@@ -35,12 +39,12 @@ select_permissions:
     permission:
       columns:
         - dao_id
+        - organization_id
+        - is_hide
         - creator_acct
         - fail_token_image_url
         - github
         - image_url
-        - socials
-        - is_hide
         - lp_token_image_url
         - name
         - pass_token_image_url
@@ -49,6 +53,8 @@ select_permissions:
         - url
         - x_account
         - admin_accts
+        - colors
+        - socials
         - description
       filter: {}
     comment: ""
