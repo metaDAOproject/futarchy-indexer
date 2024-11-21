@@ -5,6 +5,9 @@ object_relationships:
   - name: dao_detail
     using:
       foreign_key_constraint_on: dao_id
+  - name: organization
+    using:
+      foreign_key_constraint_on: organization_id
   - name: program
     using:
       foreign_key_constraint_on: program_acct
@@ -43,17 +46,21 @@ select_permissions:
     permission:
       columns:
         - dao_id
+        - organization_id
         - pass_threshold_bps
-        - slots_per_proposal
+        - is_active
+        - is_primary
         - base_acct
         - dao_acct
         - program_acct
         - quote_acct
         - treasury_acct
+        - colors
+        - min_base_futarchic_liquidity
+        - min_quote_futarchic_liquidity
+        - slots_per_proposal
         - twap_initial_observation
         - twap_max_observation_change_per_update
-        - min_quote_futarchic_liquidity
-        - min_base_futarchic_liquidity
         - created_at
         - updated_at
       filter: {}

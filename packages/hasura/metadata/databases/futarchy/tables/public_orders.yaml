@@ -37,6 +37,14 @@ object_relationships:
         remote_table:
           name: users
           schema: public
+array_relationships:
+  - name: takes
+    using:
+      foreign_key_constraint_on:
+        column: order_tx_sig
+        table:
+          name: takes
+          schema: public
 select_permissions:
   - role: anonymous
     permission:

@@ -1,0 +1,36 @@
+table:
+  name: organizations
+  schema: public
+array_relationships:
+  - name: dao_details
+    using:
+      foreign_key_constraint_on:
+        column: organization_id
+        table:
+          name: dao_details
+          schema: public
+  - name: daos
+    using:
+      foreign_key_constraint_on:
+        column: organization_id
+        table:
+          name: daos
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - organization_id
+        - is_hide
+        - creator_acct
+        - image_url
+        - slug
+        - url
+        - admin_accts
+        - socials
+        - description
+        - name
+        - created_at
+      filter: {}
+      allow_aggregations: true
+    comment: ""
