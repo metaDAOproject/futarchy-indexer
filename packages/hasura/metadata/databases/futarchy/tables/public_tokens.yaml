@@ -28,6 +28,20 @@ array_relationships:
         table:
           name: conditional_vaults
           schema: public
+  - name: daoDetailsByQuoteMint
+    using:
+      foreign_key_constraint_on:
+        column: quote_mint
+        table:
+          name: dao_details
+          schema: public
+  - name: dao_details
+    using:
+      foreign_key_constraint_on:
+        column: base_mint
+        table:
+          name: dao_details
+          schema: public
   - name: daos
     using:
       foreign_key_constraint_on:

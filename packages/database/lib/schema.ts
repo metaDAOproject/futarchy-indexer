@@ -738,6 +738,8 @@ export const daoDetails = pgTable(
     socials: jsonb("socials"),
     organizationId: bigint("organization_id", { mode: "bigint" })
       .references(() => organizations.organizationId),
+    baseMint: pubkey("base_mint").references(() => tokens.mintAcct),
+    quoteMint: pubkey("quote_mint").references(() => tokens.mintAcct),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),
