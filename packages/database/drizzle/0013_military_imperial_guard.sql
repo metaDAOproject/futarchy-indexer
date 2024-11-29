@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "market_by_slot_index" ON "prices" USING btree ("market_acct","updated_slot");

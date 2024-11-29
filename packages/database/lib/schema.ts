@@ -249,6 +249,10 @@ export const prices = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.createdAt, table.marketAcct] }),
+    marketBySlotIdx: index("market_by_slot_index").on(
+      table.marketAcct,
+      table.updatedSlot
+    ),
   })
 );
 
