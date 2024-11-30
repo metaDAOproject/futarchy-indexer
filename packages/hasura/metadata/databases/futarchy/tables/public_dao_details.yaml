@@ -5,6 +5,12 @@ object_relationships:
   - name: organization
     using:
       foreign_key_constraint_on: organization_id
+  - name: token
+    using:
+      foreign_key_constraint_on: base_mint
+  - name: tokenByQuoteMint
+    using:
+      foreign_key_constraint_on: quote_mint
 array_relationships:
   - name: daos
     using:
@@ -41,6 +47,7 @@ select_permissions:
         - dao_id
         - organization_id
         - is_hide
+        - base_mint
         - creator_acct
         - fail_token_image_url
         - github
@@ -48,6 +55,7 @@ select_permissions:
         - lp_token_image_url
         - name
         - pass_token_image_url
+        - quote_mint
         - slug
         - token_image_url
         - url
