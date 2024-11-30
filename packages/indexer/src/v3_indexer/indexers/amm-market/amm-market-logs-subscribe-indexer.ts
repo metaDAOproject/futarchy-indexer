@@ -22,7 +22,8 @@ export const AmmMarketLogsSubscribeIndexer: AccountLogsIndexer = {
           buildRes.error.value?.type ===
             GetTransactionErrorType.NullGetTransactionResponse) ||
         buildRes.error.type === SwapPersistableError.PriceError ||
-        buildRes.error.type === SwapPersistableError.ArbTransactionError
+        buildRes.error.type === SwapPersistableError.ArbTransactionError ||
+        buildRes.error.type === SwapPersistableError.GeneralError
       ) {
         logger.error(
           `error with indexing amm logs, signature: ${logs.signature}`,
