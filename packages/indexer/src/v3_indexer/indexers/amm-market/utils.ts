@@ -10,7 +10,7 @@ import {
 } from "@metadaoproject/indexer-db/lib/schema";
 import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
 import { provider, rpcReadClient } from "../../connection";
-import { Err, Ok, Result, TaggedUnion } from "../../match";
+import { Err, Ok, Result, TaggedUnion } from "../../utils/match";
 import { logger } from "../../../logger";
 import { getHumanPrice } from "../../usecases/math";
 import { getMint } from "@solana/spl-token";

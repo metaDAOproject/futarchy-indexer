@@ -7,7 +7,7 @@ import {
   PublicKey,
   VersionedTransactionResponse,
 } from "@solana/web3.js";
-import { Ok, Err, Result } from "../match";
+import { Ok, Err, Result } from "../utils/match";
 import { z } from "zod";
 import { resolveAccounts, ResolveAccountsError } from "./account-resolver";
 import * as base58 from "bs58";

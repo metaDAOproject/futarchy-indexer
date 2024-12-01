@@ -1,5 +1,5 @@
 import { Context } from "@solana/web3.js";
-import { Err, Ok, Result, TaggedUnion } from "../match";
+import { Err, Ok, Result, TaggedUnion } from "../utils/match";
 import {
   AmmInstructionIndexerError,
   SwapPersistableError,

@@ -2,7 +2,7 @@ import { AccountInfoIndexer } from "../account-info-indexer";
 import { rpcReadClient } from "../../connection";
 import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
 import { schema, usingDb } from "@metadaoproject/indexer-db";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../utils/match";
 import {
   OpenbookMarketFetchRequest,
   getMidPrice,

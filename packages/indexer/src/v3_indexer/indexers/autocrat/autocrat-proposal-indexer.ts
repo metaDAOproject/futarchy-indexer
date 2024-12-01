@@ -16,7 +16,7 @@ import {
   sql,
   inArray,
 } from "@metadaoproject/indexer-db";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../utils/match";
 import { PublicKey } from "@solana/web3.js";
 import {
   ConditionalVaultRecord,

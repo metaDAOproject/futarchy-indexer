@@ -1,4 +1,4 @@
-import { Result, Ok, Err } from '../match';
+import { Result, Ok, Err } from '../utils/match';
 import { VersionedTransactionResponse, AddressLookupTableAccount, MessageAccountKeys, MessageAddressTableLookup, RpcResponseAndContext, PublicKey } from "@solana/web3.js";
 import { connection } from '../connection';
 

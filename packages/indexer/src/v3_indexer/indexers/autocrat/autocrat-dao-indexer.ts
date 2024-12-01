@@ -2,7 +2,7 @@ import { IntervalFetchIndexer } from "../interval-fetch-indexer";
 import { rpcReadClient, connection } from "../../connection";
 import { usingDb, schema } from "@metadaoproject/indexer-db";
 import { Dao } from "@metadaoproject/futarchy-sdk";
-import { Err, Ok } from "../../match";
+import { Err, Ok } from "../../utils/match";
 import { PublicKey } from "@solana/web3.js";
 import { DaoRecord, TokenRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { getMint } from "@solana/spl-token";
