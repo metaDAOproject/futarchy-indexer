@@ -38,7 +38,6 @@ export async function indexAmmMarketAccountWithContext(
   let quoteToken;
 
   //get base and quote decimals from db
-  console.log("utils::indexAmmMarketAccountWithContext::getting tokens from db", ammMarketAccount.baseMint.toString(), ammMarketAccount.quoteMint.toString());
   const tokens = await usingDb((db) =>
     db
       .select()
@@ -49,7 +48,6 @@ export async function indexAmmMarketAccountWithContext(
 
   if (!tokens || tokens.length < 2) {
     // fallback if we don't have the tokens in the db for some reason
-    console.log("utils::indexAmmMarketAccountWithContext::no tokens in db, fetching from rpc");
     baseToken = await enrichTokenMetadata(
       ammMarketAccount.baseMint,
       provider
@@ -98,8 +96,6 @@ export async function indexAmmMarketAccountWithContext(
   } else {
     baseToken = tokens.find(token => token.mintAcct === ammMarketAccount.baseMint.toString());
     quoteToken = tokens.find(token => token.mintAcct === ammMarketAccount.quoteMint.toString());
-    console.log("utils::indexAmmMarketAccountWithContext::baseToken", baseToken);
-    console.log("utils::indexAmmMarketAccountWithContext::quoteToken", quoteToken);
   }
   
   // if we don't have an oracle.aggregator of 0 let's run this mf
@@ -140,7 +136,6 @@ export async function indexAmmMarketAccountWithContext(
 
     try{
     // TODO batch commits across inserts - maybe with event queue
-      console.log("utils::indexAmmMarketAccountWithContext::upserting twap", newTwap);
       const twapUpsertResult = await usingDb((db) =>
         db
           .insert(schema.twaps)
@@ -181,8 +176,8 @@ export async function indexAmmMarketAccountWithContext(
   try {
     conditionalMarketSpotPrice = getHumanPrice(
       priceFromReserves,
-      baseToken.decimals!!,
-      quoteToken.decimals!!
+      baseToken?.decimals!,
+      quoteToken?.decimals!
     );
   } catch (e) {
     logger.error("failed to get human price", e);

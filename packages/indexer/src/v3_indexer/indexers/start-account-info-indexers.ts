@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import { connection } from "../connection";
 import { IndexerWithAccountDeps } from "../types";
 import { AccountInfoIndexer } from "./account-info-indexer";
-import { AmmMarketAccountUpdateIndexer } from "./amm-market/amm-market-account-indexer";
+import { AmmMarketAccountUpdateIndexer } from "./amm/amm-market-account-indexer";
 import { OpenbookV2MarketAccountUpdateIndexer } from "./openbook-v2/openbook-v2-account-indexer";
 import { logger } from "../../logger";
 
