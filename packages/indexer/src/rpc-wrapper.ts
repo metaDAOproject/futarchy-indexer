@@ -67,6 +67,7 @@ export class RPCWrapper {
     args: any[] = [],
     context: string
   ): Promise<T> {
+    console.log("RPCWrapper.call", methodName, args, context);
     let lastError: RPCError | null = null;
     
     for (let attempt = 0; attempt < (this.config.maxRetries ?? 3); attempt++) {
@@ -86,7 +87,7 @@ export class RPCWrapper {
         }
         
         return result;
-        
+
       } catch (error) {
         lastError = this.categorizeError(error);
         

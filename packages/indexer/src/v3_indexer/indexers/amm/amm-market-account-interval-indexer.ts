@@ -1,8 +1,8 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
 import { Err, Ok, Result } from "../../utils/match";
 import { indexAmmMarketAccountWithContext } from "./utils";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
-import { connection } from "../../../connection";
+import { rpc } from "../../../rpc-wrapper";
 import { logger } from "../../../logger";
 import { AmmMarketAccountIndexingErrors } from "./utils";
 
@@ -23,7 +23,11 @@ export const AmmMarketAccountIntervalFetchIndexer: IntervalFetchIndexer = {
     }
     try {
       const account = new PublicKey(acct);
-      const resWithContext = await connection.getAccountInfoAndContext(account);
+      const resWithContext = await rpc.call(
+        "getAccountInfoAndContext",
+        [account],
+        "Get account info for amm market account interval fetcher"
+      ) as RpcResponseAndContext<AccountInfo<Buffer> | null>;
       if (!resWithContext.value) {
         return Err({
           type: AmmAccountIntervalIndexerError.InvalidRPCResponse,

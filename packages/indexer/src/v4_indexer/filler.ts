@@ -1,16 +1,11 @@
-import { ConfirmedSignatureInfo, Connection, PublicKey } from "@solana/web3.js";
+import { ConfirmedSignatureInfo, PublicKey } from "@solana/web3.js";
 import { AMM_PROGRAM_ID as V4_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V4_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V4_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
 import { usingDb, schema, eq, asc, desc } from "@metadaoproject/indexer-db";
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
 import { index } from "./indexer";
+import { rpc } from "../rpc-wrapper";
 
-const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
-
-if (!RPC_ENDPOINT) {
-  throw new Error("RPC_ENDPOINT is not set");
-}
-const connection = new Connection(RPC_ENDPOINT);
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
 
 // it's possible that there are signatures BEFORE the oldest signature
@@ -37,11 +32,11 @@ const backfillHistoricalSignatures = async (
   });
 
   while (true) {
-    const signatures = await connection.getSignaturesForAddress(
-      programId,
-      { before: oldestSignature, limit: 1000 },
-      "confirmed"
-    );
+    const signatures = await rpc.call(
+      "getSignaturesForAddress",
+      [programId, { before: oldestSignature, limit: 1000 }, "confirmed"],
+      "Get historical signatures"
+    ) as ConfirmedSignatureInfo[];
 
     if (signatures.length === 0) break;
 
@@ -86,11 +81,11 @@ const insertNewSignatures = async (programId: PublicKey) => {
 
   let oldestSignatureInserted: string | undefined;
   while (true) {
-    const signatures = await connection.getSignaturesForAddress(
-      programId,
-      { limit: 1000, until: latestRecordedSignature, before: oldestSignatureInserted },
-      "confirmed"
-    );
+    const signatures = await rpc.call(
+      "getSignaturesForAddress",
+      [programId, { limit: 1000, until: latestRecordedSignature, before: oldestSignatureInserted }, "confirmed"],
+      "Get new signatures"
+    ) as ConfirmedSignatureInfo[];
 
     if (signatures.length === 0) break;
 

@@ -3,13 +3,13 @@ import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
 import { schema, usingDb } from "@metadaoproject/indexer-db";
-import { connection, v4AmmClient as ammClient, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
+import { v4AmmClient as ammClient, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
 import { Program } from "@coral-xyz/anchor";
 import { Context, Logs } from "@solana/web3.js";
 
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
-
+import { rpc } from "../rpc-wrapper";
 import { processAmmEvent, processVaultEvent } from "./processor";
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
@@ -84,7 +84,11 @@ export async function index(signature: string, programId: PublicKey) {
       return;
     }
 
-    const transactionResponse = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1 });
+    const transactionResponse = await rpc.call(
+      "getTransaction",
+      [signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1 }],
+      "Get transaction"
+    ) as VersionedTransactionResponse;
     if (!transactionResponse) {
       console.log("No transaction response");
       return;

@@ -44,7 +44,7 @@ async function populateIndexerAccountDependencies() {
   try {
     await populateTokenMintIndexerAccountDependencies();
     await populateAmmMarketIndexerAccountDependencies();
-    await populateOpenbookMarketIndexerAccountDependencies();
+    // await populateOpenbookMarketIndexerAccountDependencies();
     await populateSpotPriceMarketIndexerAccountDependencies();
   } catch (e) {
     logger.error("error populating indexers", e);

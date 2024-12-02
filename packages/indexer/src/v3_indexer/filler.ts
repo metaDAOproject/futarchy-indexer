@@ -1,6 +1,6 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, ConfirmedSignatureInfo } from "@solana/web3.js";
 import { AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
-import { connection } from "../connection";
+import { rpc } from "../rpc-wrapper";
 import { logger } from "../logger";
 import { schema, usingDb, eq } from "@metadaoproject/indexer-db";
 
@@ -23,11 +23,11 @@ async function startIndexingForProgram(programId: PublicKey) {
 
     try {
       const latestSignature = await getLatestProcessedSignature(programId);
-      const signatures = await connection.getSignaturesForAddress(
-        programId,
-        { until: latestSignature ?? undefined },
-        'confirmed'
-      );
+      const signatures = await rpc.call(
+        "getSignaturesForAddress",
+        [programId, { before: latestSignature ?? undefined }, "confirmed"],
+        "Get historical signatures"
+      ) as ConfirmedSignatureInfo[];
 
       for (const sig of signatures.reverse()) {
         try {

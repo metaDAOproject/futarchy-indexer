@@ -1,10 +1,9 @@
 import { IndexerImplementation } from "@metadaoproject/indexer-db/lib/schema";
-import { PublicKey } from "@solana/web3.js";
-import { connection } from "../../connection";
+import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
+import { rpc } from "../../rpc-wrapper";
 import { IndexerWithAccountDeps } from "../types";
 import { AccountInfoIndexer } from "./account-info-indexer";
 import { AmmMarketAccountUpdateIndexer } from "./amm/amm-market-account-indexer";
-import { OpenbookV2MarketAccountUpdateIndexer } from "./openbook-v2/openbook-v2-account-indexer";
 import { logger } from "../../logger";
 
 export async function startAccountInfoIndexer(
@@ -19,9 +18,11 @@ export async function startAccountInfoIndexer(
   if (implementation && dependentAccount && dependentAccount.acct) {
     const accountPubKey = new PublicKey(dependentAccount.acct);
 
-    const accountInfo = await connection.getAccountInfoAndContext(
-      accountPubKey
-    );
+    const accountInfo = await rpc.call(
+      "getAccountInfoAndContext",
+      [accountPubKey],
+      "Get account info for account info indexer"
+    ) as RpcResponseAndContext<AccountInfo<Buffer> | null>;
 
     //index refresh on startup
     if (accountInfo.value) {
@@ -57,8 +58,6 @@ function getAccountInfoIndexerImplementation(
   switch (implementation) {
     case IndexerImplementation.AmmMarketIndexer:
       return AmmMarketAccountUpdateIndexer;
-    case IndexerImplementation.OpenbookV2MarketIndexer:
-      return OpenbookV2MarketAccountUpdateIndexer;
   }
   return null;
 }
