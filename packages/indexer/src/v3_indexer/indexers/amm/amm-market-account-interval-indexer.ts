@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { Err, Ok, Result } from "../../utils/match";
 import { indexAmmMarketAccountWithContext } from "./utils";
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
-import { connection } from "../../connection";
+import { connection } from "../../../connection";
 import { logger } from "../../../logger";
 import { AmmMarketAccountIndexingErrors } from "./utils";
 

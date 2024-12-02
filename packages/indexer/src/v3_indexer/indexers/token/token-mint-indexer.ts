@@ -1,5 +1,5 @@
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
-import { provider } from "../../connection";
+import { provider } from "../../../connection";
 import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../utils/match";
 import { PublicKey } from "@solana/web3.js";

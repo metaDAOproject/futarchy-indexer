@@ -25,7 +25,7 @@ import {
 import { logger } from "../../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 import { getHumanPrice } from "../usecases/math";
-import { connection } from "../connection";
+import { connection } from "../../connection";
 import { AmmMarketAccountUpdateIndexer } from '../indexers/amm/amm-market-account-indexer';
 import { PublicKey } from "@solana/web3.js";
 

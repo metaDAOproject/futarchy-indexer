@@ -1,4 +1,4 @@
-import { connection } from "../connection";
+import { connection } from "../../connection";
 import { PublicKey } from "@solana/web3.js";
 import { logger } from "../../logger";
 

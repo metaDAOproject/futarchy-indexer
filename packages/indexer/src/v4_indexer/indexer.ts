@@ -2,10 +2,10 @@ import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/fu
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
-import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
-import { connection, ammClient, conditionalVaultClient } from "../connection";
+import { schema, usingDb } from "@metadaoproject/indexer-db";
+import { connection, v4AmmClient as ammClient, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
 import { Program } from "@coral-xyz/anchor";
-import { Context, Logs, PublicKey } from "@solana/web3.js";
+import { Context, Logs } from "@solana/web3.js";
 
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
@@ -37,9 +37,7 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
 
         // get which program the instruction belongs to
         let program: Program<any>;
-        // console.log("programPubkey", programPubkey.toBase58());
-        // console.log("ammIdlProgramId", ammIdlProgramId.toBase58());
-        // console.log("vaultIdlProgramId", vaultIdlProgramId.toBase58());
+
         if (programPubkey.equals(ammIdlProgramId)) {
           program = ammClient.program;
           const ixData = anchor.utils.bytes.bs58.decode(
@@ -47,7 +45,6 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
           );
           const eventData = anchor.utils.bytes.base64.encode(ixData.slice(8));
           const event = program.coder.events.decode(eventData);
-          // console.log(event)
           if (event) {
             ammEvents.push(event);
           }
@@ -58,12 +55,9 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
           );
           const eventData = anchor.utils.bytes.base64.encode(ixData.slice(8));
           const event = program.coder.events.decode(eventData);
-          // console.log(event)
           if (event) {
             vaultEvents.push(event);
           }
-        } else {
-          // console.log("Unknown program pubkey", programPubkey.toBase58());
         }
       }
     }
@@ -133,7 +127,7 @@ export async function index(signature: string, programId: PublicKey) {
 }
 
 //indexes signature from logs
-export async function indexFromLogs(logs: Logs, ctx: Context, programId: PublicKey) {
+export async function indexFromLogs(logs: Logs, _: Context, programId: PublicKey) {
   try {
     let signature = logs.signature;
     if (!signature) {

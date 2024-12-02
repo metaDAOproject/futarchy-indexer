@@ -4,7 +4,7 @@ import { PublicKey, VersionedTransactionResponse } from "@solana/web3.js";
 import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
-import { connection, conditionalVaultClient } from "../connection";
+import { connection, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
 
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
@@ -332,17 +332,6 @@ async function handleInitializeConditionalVaultEvent(event: InitializeConditiona
 async function doesQuestionExist(db: DBConnection, event: InitializeConditionalVaultEvent): Promise<boolean> {
   const existingQuestion = await db.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, event.question.toString())).limit(1);
   return existingQuestion.length > 0;
-  // if (existingQuestion.length === 0) {
-  //   await trx.insert(schema.v0_4_questions).values({
-  //     questionAddr: event.question.toString(),
-  //     isResolved: false,
-  //     oracleAddr: event.oracle.toString(),
-  //     numOutcomes: event.numOutcomes,
-  //     payoutNumerators: Array(event.numOutcomes).fill(0),
-  //     payoutDenominator: 0n,
-  //     questionId: event.questionId,
-  //   });
-  // }
 }
 
 async function insertTokenAccountIfNotExists(db: DBConnection, event: InitializeConditionalVaultEvent) {
@@ -437,20 +426,3 @@ async function insertConditionalVault(db: DBConnection, event: InitializeConditi
     latestVaultSeqNumApplied: 0n,
   }).onConflictDoNothing();
 }
-
-
-// async function fetchTransactionResponses(eligibleSignatures: { signature: string }[]) {
-//   try {
-//     return await connection.getTransactions(
-//       eligibleSignatures.map(s => s.signature),
-//       { commitment: "confirmed", maxSupportedTransactionVersion: 1 }
-//     );
-//   } catch (error: unknown) {
-//     logger.errorWithChatBotAlert([
-//       error instanceof Error
-//         ? `Error fetching transaction responses: ${error.message}`
-//         : "Unknown error fetching transaction responses"
-//     ]);
-//     return [];
-//   }
-// }

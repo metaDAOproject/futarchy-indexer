@@ -1,6 +1,6 @@
 import { IndexerImplementation } from "@metadaoproject/indexer-db/lib/schema";
 import { PublicKey } from "@solana/web3.js";
-import { connection } from "../connection";
+import { connection } from "../../connection";
 import { IndexerWithAccountDeps } from "../types";
 import { AccountInfoIndexer } from "./account-info-indexer";
 import { AmmMarketAccountUpdateIndexer } from "./amm/amm-market-account-indexer";

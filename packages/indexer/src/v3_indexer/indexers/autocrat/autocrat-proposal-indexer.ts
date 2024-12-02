@@ -1,9 +1,9 @@
 import { IntervalFetchIndexer } from "../interval-fetch-indexer";
 import {
   rpcReadClient,
-  conditionalVaultClient,
+  v3ConditionalVaultClient as conditionalVaultClient,
   provider,
-} from "../../connection";
+} from "../../../connection";
 import {
   usingDb,
   schema,
