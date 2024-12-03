@@ -61,7 +61,6 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "5 * * * * *",
   index: async () => {
     try {
-      console.log("AutocratProposalIndexer::index::starting");
       const { currentSlot, currentTime } =
         (
           await usingDb((db) =>
@@ -77,10 +76,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           )
         )?.[0] ?? {};
 
-      console.log("currentSlot", currentSlot);
       if (!currentSlot || !currentTime) return Err({ type: AutocratDaoIndexerError.MissingParamError });
 
-      logger.log("Autocrat proposal indexer");
       const dbProposals: ProposalRecord[] =
         (await usingDb((db) => db.select().from(schema.proposals).execute())) ??
         [];
@@ -94,12 +91,15 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
       const proposalsToInsert = [];
       for (const proposal of onChainProposals) {
-        if (
-          !dbProposals.find((dbProposal) =>
-            new PublicKey(dbProposal.proposalAcct).equals(proposal.publicKey) &&
-            dbProposal.endedAt === null
-          )
-        ) {
+        // Check if proposal exists in DB at all
+        const existingProposal = dbProposals.find(dbProposal => 
+          new PublicKey(dbProposal.proposalAcct).equals(proposal.publicKey)
+        );
+        
+        // Only insert if:
+        // 1. Proposal doesn't exist in DB at all, or
+        // 2. Proposal exists but is still active (endedAt is null)
+        if (!existingProposal || !existingProposal.endedAt) {
           proposalsToInsert.push(proposal);
         }
       }
@@ -508,7 +508,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       // If this is a new proposal, insert associated accounts data
       if (proposalLog.includes("InitializeProposal")) {
         console.log("indexFromLogs::inserting associated accounts data for proposal", proposalAcct);
-        await upsertProposal({ publicKey: proposalAcct, account: proposal }, currentTime);
+        await upsertProposal({ publicKey: proposalAcct, account: proposal });
         await insertAssociatedAccountsDataForProposal(
           { publicKey: proposalAcct, account: proposal },
           currentTime
@@ -543,7 +543,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 };
 
 // helper function to upsert proposal
-async function upsertProposal(proposal: ProposalAccountWithKey, currentTime: Date) {
+async function upsertProposal(proposal: ProposalAccountWithKey) {
   const daoAcct = proposal.account.dao;
   if (!daoAcct) {
     console.log("AutocratProposalIndexer::upsertProposal::daoAcct not found");
