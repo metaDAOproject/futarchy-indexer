@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { getHumanPrice } from "./math";
+import { getHumanPrice } from "../src/v3_indexer/usecases/math";
 import { PriceMath } from "@metadaoproject/futarchy/v0.4";
 import { BN } from "@coral-xyz/anchor";
 

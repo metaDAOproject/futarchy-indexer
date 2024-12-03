@@ -2,7 +2,7 @@ import { IndexerImplementation } from "@metadaoproject/indexer-db/lib/schema";
 import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
 import { rpc } from "../../rpc-wrapper";
 import { IndexerWithAccountDeps } from "../types";
-import { AccountInfoIndexer } from "./account-info-indexer";
+import { AccountInfoIndexer } from "../types/account-info-indexer";
 import { AmmMarketAccountUpdateIndexer } from "./amm/amm-market-account-indexer";
 import { logger } from "../../logger";
 

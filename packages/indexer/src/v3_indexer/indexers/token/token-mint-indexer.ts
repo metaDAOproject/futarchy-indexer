@@ -1,4 +1,4 @@
-import { IntervalFetchIndexer } from "../interval-fetch-indexer";
+import { IntervalFetchIndexer } from "../../types/interval-fetch-indexer";
 import { provider } from "../../../connection";
 import { usingDb, schema, eq } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../utils/match";

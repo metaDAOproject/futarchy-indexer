@@ -1,7 +1,7 @@
 import { VersionedTransactionResponse } from "@solana/web3.js";
 import { Idl } from "@coral-xyz/anchor";
 import { Result, TaggedUnion } from "../utils/match";
-import { IDL } from "./common";
+import { IDL } from "../indexers/common";
 
 export const Ok = { indexed: true };
 export const Err = { indexed: false };

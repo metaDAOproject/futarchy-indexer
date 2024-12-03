@@ -5,7 +5,7 @@ import {
 
 import { IndexerWithAccountDeps } from "../types";
 import { BirdeyePricesIndexer } from "./birdeye/birdeye-prices-indexer";
-import { IntervalFetchIndexer } from "./interval-fetch-indexer";
+import { IntervalFetchIndexer } from "../types/interval-fetch-indexer";
 import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
 import { AmmMarketAccountIntervalFetchIndexer } from "./amm/amm-market-account-interval-indexer";
 import { AutocratDaoIndexer } from "./autocrat/autocrat-dao-indexer";

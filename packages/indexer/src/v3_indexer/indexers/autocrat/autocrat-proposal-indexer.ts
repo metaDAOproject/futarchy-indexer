@@ -1,4 +1,4 @@
-import { IntervalFetchIndexer } from "../interval-fetch-indexer";
+import { IntervalFetchIndexer } from "../../types/interval-fetch-indexer";
 import {
   rpcReadClient,
   v3ConditionalVaultClient as conditionalVaultClient,

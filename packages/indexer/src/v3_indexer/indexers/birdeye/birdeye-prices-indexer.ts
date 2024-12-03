@@ -1,5 +1,5 @@
 import { and, eq, schema, usingDb } from "@metadaoproject/indexer-db";
-import { IntervalFetchIndexer } from "../interval-fetch-indexer";
+import { IntervalFetchIndexer } from "../../types/interval-fetch-indexer";
 import { Err, Ok } from "../../utils/match";
 import {
   IndexerAccountDependencyStatus,

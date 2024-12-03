@@ -2,7 +2,7 @@ import { IndexerImplementation } from "@metadaoproject/indexer-db/lib/schema";
 import { PublicKey } from "@solana/web3.js";
 import { connection } from "../../connection";
 import { IndexerWithAccountDeps } from "../types";
-import { AccountLogsIndexer } from "./account-logs-indexer";
+import { AccountLogsIndexer } from "../types/account-logs-indexer";
 import { AmmMarketLogsSubscribeIndexer } from "./amm/amm-market-logs-subscribe-indexer";
 import { logger } from "../../logger";
 

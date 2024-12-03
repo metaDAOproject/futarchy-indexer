@@ -1,4 +1,4 @@
-import { AccountInfoIndexer } from "../account-info-indexer";
+import { AccountInfoIndexer } from "../../types/account-info-indexer";
 import { AccountInfo, Context, PublicKey } from "@solana/web3.js";
 import { Err, Ok } from "../../utils/match";
 import { indexAmmMarketAccountWithContext } from "./utils";

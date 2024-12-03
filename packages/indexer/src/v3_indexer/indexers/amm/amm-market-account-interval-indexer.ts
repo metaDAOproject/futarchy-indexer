@@ -1,7 +1,7 @@
 import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
 import { Err, Ok, Result } from "../../utils/match";
 import { indexAmmMarketAccountWithContext } from "./utils";
-import { IntervalFetchIndexer } from "../interval-fetch-indexer";
+import { IntervalFetchIndexer } from "../../types/interval-fetch-indexer";
 import { rpc } from "../../../rpc-wrapper";
 import { logger } from "../../../logger";
 import { AmmMarketAccountIndexingErrors } from "./utils";

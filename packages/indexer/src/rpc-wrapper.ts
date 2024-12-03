@@ -55,6 +55,10 @@ export class RPCWrapper {
       : this.primaryConnection;
   }
 
+  public getActiveConnection(): Connection {
+    return this.activeConnection;
+  }
+
   /**
    * Generic method to execute any RPC function with retry logic
    * @param methodName Name of the method to call on the connection

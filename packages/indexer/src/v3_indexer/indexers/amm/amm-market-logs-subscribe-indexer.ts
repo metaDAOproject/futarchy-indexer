@@ -1,6 +1,6 @@
 import { Context, Logs, PublicKey } from "@solana/web3.js";
 import { Err, Ok } from "../../utils/match";
-import { AccountLogsIndexer } from "../account-logs-indexer";
+import { AccountLogsIndexer } from "../../types/account-logs-indexer";
 import { SwapBuilder } from "../../builders/swaps";
 import { logger } from "../../../logger";
 import { SwapPersistableError } from "../../types/errors";
