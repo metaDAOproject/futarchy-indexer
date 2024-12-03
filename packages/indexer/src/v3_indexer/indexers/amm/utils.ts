@@ -1,7 +1,7 @@
 import { BN } from "@coral-xyz/anchor";
 import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { PriceMath } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq, inArray } from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, inArray, or } from "@metadaoproject/indexer-db";
 import { TokenRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import {
@@ -15,7 +15,7 @@ import { logger } from "../../../logger";
 import { getHumanPrice } from "../../usecases/math";
 import { getMint } from "@solana/spl-token";
 import { connection } from "../../../connection";
-
+import { ProposalStatus, IndexerAccountDependencyStatus } from "@metadaoproject/indexer-db/lib/schema";
 export enum AmmMarketAccountIndexingErrors {
   AmmTwapIndexError = "AmmTwapIndexError",
   MarketMissingError = "MarketMissingError",
@@ -157,8 +157,48 @@ export async function indexAmmMarketAccountWithContext(
 
   if (ammMarketAccount.baseAmount.isZero() || ammMarketAccount.quoteAmount.isZero()) {
     logger.error("NO RESERVES", ammMarketAccount);
+    logger.error("account", account.toBase58());
     logger.error("baseAmount", ammMarketAccount.baseAmount.toString());
     logger.error("quoteAmount", ammMarketAccount.quoteAmount.toString());
+    
+    // Check if the corresponding proposal has been finalized
+    const proposal = await usingDb((db) =>
+      db
+        .select()
+        .from(schema.proposals)
+        .where(
+          or(
+            eq(schema.proposals.passMarketAcct, account.toBase58()),
+            eq(schema.proposals.failMarketAcct, account.toBase58())
+          )
+        )
+        .execute()
+    );
+
+    if (proposal && proposal.length > 0 && proposal[0].status !== ProposalStatus.Pending) {
+      try {
+        // Proposal is finalized or failed, disable the indexer account dependency
+        await usingDb((db) =>
+        db
+          .update(schema.indexerAccountDependencies)
+          .set({
+            status: IndexerAccountDependencyStatus.Disabled,
+            updatedAt: new Date(),
+          })
+          .where(
+            eq(schema.indexerAccountDependencies.acct, account.toBase58())
+          )
+          .execute()
+        );
+      
+        logger.info(`Disabled indexing for finalized market: ${account.toBase58()}`);
+      } catch (e) {
+        logger.error("error disabling indexing for finalized market", e);
+      }
+    } else {
+      logger.log(`Indexing for market: ${account.toBase58()} is still pending`);
+    }
+    
     return Ok("no price from reserves");
   }
 
