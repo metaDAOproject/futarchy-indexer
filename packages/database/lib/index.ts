@@ -14,9 +14,9 @@ const ACQUIRE_TIMEOUT = 10000;   // 10 second timeout for acquiring connection
 // Add connection pool configuration
 const poolConfig = {
   connectionString: connectionString,
-  min: 20,
-  max: 1000, // Reduced from 1000 to a more reasonable number
-  idleTimeoutMillis: 30 * 1000,
+  min: 5,
+  max: 100, // Reduced from 1000 to a more reasonable number
+  idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
   // Add error handling for the pool
   async errorHandler(err: Error) {
@@ -53,8 +53,14 @@ export async function usingDb<T>(
         )
       ]);
 
-      const connection = drizzle(pool, { schema: schemaDefs });
+      const connection = drizzle(client, { schema: schemaDefs });
       const result = await fn(connection);
+      
+      if (client) {
+        client.release();
+        client = undefined;
+      }
+      
       return result;
     } catch (e) {
       attempts++;
