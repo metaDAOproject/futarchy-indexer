@@ -11,6 +11,24 @@ object_relationships:
   - name: dao
     using:
       foreign_key_constraint_on: dao_acct
+  - name: fail_market
+    using:
+      manual_configuration:
+        column_mapping:
+          fail_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
+  - name: pass_market
+    using:
+      manual_configuration:
+        column_mapping:
+          pass_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
 array_relationships:
   - name: comments
     using:

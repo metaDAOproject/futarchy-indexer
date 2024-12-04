@@ -1,0 +1,12 @@
+table:
+  name: prices_1h
+  schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - market_acct
+        - price
+        - interv
+      filter: {}
+    comment: ""
