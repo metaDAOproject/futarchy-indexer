@@ -1,6 +1,6 @@
 TODO
 
-[] Insert conditional prices when new proposal is indexed
+[] Insert conditional prices when new proposal is indexed - DONE
 [] Manage database connections better - probably a connection pool with dedicated channels for each major component
 [] Add telemetry - probably log calltrace when indexer crashes
 [] Add logging for db connections and health checks

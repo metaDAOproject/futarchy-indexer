@@ -17,7 +17,7 @@ import {
   inArray,
 } from "@metadaoproject/indexer-db";
 import { Err, Ok } from "../../utils/match";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
 import {
   ConditionalVaultRecord,
   DaoRecord,
@@ -39,13 +39,14 @@ import {
   enrichTokenMetadata,
 } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
-import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm";
 import { logger } from "../../../logger";
-import { PriceMath, ProposalAccount } from "@metadaoproject/futarchy/v0.3";
-import { UserPerformance, UserPerformanceTotals } from "../../types";
+import { PriceMath } from "@metadaoproject/futarchy/v0.3";
+import { UserPerformanceTotals } from "../../types";
 import { alias } from "drizzle-orm/pg-core";
-import { bigint } from "drizzle-orm/mysql-core";
+import { indexAmmMarketAccountWithContext } from "../amm/utils";
+import { rpc } from "../../../rpc-wrapper";
+
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -442,215 +443,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
     }
   },
 
-  indexFromLogs: async (logs: string[]) => {
-    try {
-
-      //TODO: leaving this here for now, maybe one day we will revisit and do it more efficiently.
-      console.log("AutocratProposalIndexer::indexFromLogs::logs", logs);
-      // Find the relevant log that contains the proposal data
-      const proposalLog = logs.find(log => 
-        log.includes("Instruction:") && 
-        (log.includes("InitializeProposal") || 
-         log.includes("FinalizeProposal") || 
-         log.includes("ExecuteProposal"))
-      );
-      console.log("AutocratProposalIndexer::indexFromLogs::proposalLog", proposalLog);
-
-      if (!proposalLog) {
-        console.log("AutocratProposalIndexer::indexFromLogs::proposalLog not found");
-        return Err({ type: AutocratDaoIndexerError.MissingParamError });
-      }
-
-      // Extract proposal account from logs
-      const proposalAcctMatch = logs.find(log => log.includes("Proposal:"));
-      if (!proposalAcctMatch) {
-        console.log("AutocratProposalIndexer::indexFromLogs::proposalAcctMatch not found");
-        return Err({ type: AutocratDaoIndexerError.MissingParamError });
-      }
-
-      const proposalAcct = new PublicKey(proposalAcctMatch.split(": ")[1]);
-      console.log("AutocratProposalIndexer::indexFromLogs::proposalAcct", proposalAcct);
-      
-      // Fetch the proposal data since we need the full account data
-      const protocolV0_3 = rpcReadClient.futarchyProtocols.find(
-        (protocol) => protocol.deploymentVersion == "V0.3"
-      );
-      
-      if (!protocolV0_3) {
-        return Err({ type: AutocratDaoIndexerError.MissingProtocolError });
-      }
-
-      const proposal = await protocolV0_3.autocrat.account.proposal.fetch(proposalAcct);
-      if (!proposal) {
-        return Err({ type: AutocratDaoIndexerError.NotFoundError });
-      }
-      console.log("AutocratProposalIndexer::indexFromLogs::proposal", proposal);
-
-      // Get current slot and time for calculations
-      const { currentSlot, currentTime } = (
-        await usingDb((db) =>
-          db
-            .select({
-              currentSlot: schema.prices.updatedSlot,
-              currentTime: schema.prices.createdAt,
-            })
-            .from(schema.prices)
-            .orderBy(sql`${schema.prices.updatedSlot} DESC`)
-            .limit(1)
-            .execute()
-        )
-      )?.[0] ?? {};
-
-      if (!currentSlot || !currentTime) {
-        return Err({ type: AutocratDaoIndexerError.MissingParamError });
-      }
-
-      // If this is a new proposal, insert associated accounts data
-      if (proposalLog.includes("InitializeProposal")) {
-        console.log("indexFromLogs::inserting associated accounts data for proposal", proposalAcct);
-        await upsertProposal({ publicKey: proposalAcct, account: proposal });
-        await insertAssociatedAccountsDataForProposal(
-          { publicKey: proposalAcct, account: proposal },
-          currentTime
-        );
-      }
-
-      // Handle different proposal states
-      if (proposal.state.pending) {
-        // Update proposal as pending
-        if (!proposalLog.includes("InitializeProposal")) { // If this is a new proposal, we dont need to update the status
-          await updateProposalStatus(proposalAcct, ProposalStatus.Pending, currentTime);
-        }
-      } else if (proposal.state.passed) {
-        // Update proposal as passed
-        await updateProposalStatus(proposalAcct, ProposalStatus.Passed, currentTime);
-        await updateVaultStatuses(proposal.baseVault, proposal.quoteVault, "finalized");
-        await calculateUserPerformance({ publicKey: proposalAcct, account: proposal });
-      } else if (proposal.state.failed) {
-        // Update proposal as failed
-        await updateProposalStatus(proposalAcct, ProposalStatus.Failed, currentTime);
-        await updateVaultStatuses(proposal.baseVault, proposal.quoteVault, "reverted");
-        await calculateUserPerformance({ publicKey: proposalAcct, account: proposal });
-      }
-
-      console.log("AutocratProposalIndexer::indexFromLogs::done");
-      return Ok({ acct: "Updated proposal from logs" });
-    } catch (err) {
-      logger.error("error with proposal indexer:", err);
-      return Err({ type: AutocratDaoIndexerError.GeneralError });
-    }
-  }
 };
 
-// helper function to upsert proposal
-async function upsertProposal(proposal: ProposalAccountWithKey) {
-  const daoAcct = proposal.account.dao;
-  if (!daoAcct) {
-    console.log("AutocratProposalIndexer::upsertProposal::daoAcct not found");
-    return Err({ type: AutocratDaoIndexerError.MissingParamError });
-  }
-
-  // Get DAO details
-  const dbDao: DaoRecord | undefined = (
-    await usingDb((db) =>
-      db
-        .select()
-        .from(schema.daos)
-        .where(eq(schema.daos.daoAcct, daoAcct.toBase58()))
-        .execute()
-    )
-  )?.[0];
-
-  if (!dbDao) return;
-
-  // Calculate end slot
-  const initialSlot = proposal.account.slotEnqueued;
-  const endSlot = initialSlot.add(new BN(dbDao.slotsPerProposal?.toString()));
-
-  // Prepare proposal record
-  const dbProposal: ProposalRecord = {
-    proposalAcct: proposal.publicKey.toString(),
-    proposalNum: BigInt(proposal.account.number.toString()),
-    autocratVersion: 0.3,
-    daoAcct: daoAcct.toString(),
-    proposerAcct: proposal.account.proposer.toString(),
-    status: ProposalStatus.Pending,
-    descriptionURL: proposal.account.descriptionUrl,
-    initialSlot: initialSlot.toString(),
-    passMarketAcct: proposal.account.passAmm?.toString() ?? null,
-    failMarketAcct: proposal.account.failAmm?.toString() ?? null,
-    baseVault: proposal.account.baseVault.toString(),
-    quoteVault: proposal.account.quoteVault.toString(),
-    endSlot: endSlot.toString(),
-    durationInSlots: dbDao.slotsPerProposal,
-    minBaseFutarchicLiquidity: dbDao.minBaseFutarchicLiquidity ?? null,
-    minQuoteFutarchicLiquidity: dbDao.minQuoteFutarchicLiquidity ?? null,
-    passThresholdBps: dbDao.passThresholdBps,
-    twapInitialObservation: dbDao.twapInitialObservation ?? null,
-    twapMaxObservationChangePerUpdate: dbDao.twapMaxObservationChangePerUpdate ?? null,
-  };
-
-  // Insert or update the proposal
-  await usingDb((db) =>
-    db
-      .insert(schema.proposals)
-      .values([dbProposal])
-      .onConflictDoUpdate({
-        target: [schema.proposals.proposalAcct],
-        set: {
-          status: dbProposal.status,
-          descriptionURL: dbProposal.descriptionURL,
-          initialSlot: dbProposal.initialSlot,
-          endSlot: dbProposal.endSlot,
-          updatedAt: sql`NOW()`,
-        },
-      })
-      .execute()
-  );
-
-  return Ok({ acct: "Proposal upserted successfully" });
-}
-
-// Helper function to update proposal status
-async function updateProposalStatus(
-  proposalAcct: PublicKey,
-  status: ProposalStatus,
-  currentTime: Date
-) {
-  await usingDb((db) =>
-    db
-      .update(schema.proposals)
-      .set({ 
-        status,
-        completedAt: status !== ProposalStatus.Pending ? currentTime : null,
-        updatedAt: sql`NOW()`
-      })
-      .where(
-        eq(schema.proposals.proposalAcct, proposalAcct.toString())
-      )
-      .execute()
-  );
-}
-
-// Helper function to update vault statuses
-async function updateVaultStatuses(
-  baseVault: PublicKey,
-  quoteVault: PublicKey,
-  status: "finalized" | "reverted"
-) {
-  await usingDb((db) =>
-    db
-      .update(schema.conditionalVaults)
-      .set({ status })
-      .where(
-        or(
-          eq(schema.conditionalVaults.condVaultAcct, baseVault.toString()),
-          eq(schema.conditionalVaults.condVaultAcct, quoteVault.toString())
-        )
-      )
-      .execute()
-  );
-}
 
 async function insertAssociatedAccountsDataForProposal(
   proposal: ProposalAccountWithKey,
@@ -896,6 +690,30 @@ async function insertAssociatedAccountsDataForProposal(
       .onConflictDoNothing()
       .execute()
   );
+
+  [passMarket, failMarket].map(async (market) => {
+    try { 
+      console.log("autocrat-proposal-indexer::insertAssociatedAccountsDataForProposal::inserting price for market", market.marketAcct);
+      const account = new PublicKey(market.marketAcct);
+      const resWithContext = await rpc.call(
+        "getAccountInfoAndContext",
+        [account],
+        "Get account info for amm market account interval fetcher"
+      ) as RpcResponseAndContext<AccountInfo<Buffer> | null>;
+      if (!resWithContext.value) {
+        logger.error("Failed to get account info for market", market.marketAcct);
+        return;
+      }
+
+      await indexAmmMarketAccountWithContext(
+        resWithContext.value,
+        account,
+        resWithContext.context
+      );
+    } catch (err) {
+      logger.error("Failed to index price for market", market.marketAcct, err instanceof Error ? err.message : err);
+    }
+  });
 }
 
 async function calculateUserPerformance(

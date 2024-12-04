@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach, mock } from "bun:test";
 import { Connection } from "@solana/web3.js";
-import { RPCWrapper, RPCErrorType } from "../src/rpc-wrapper";
+import { RPCWrapper } from "../src/rpc-wrapper";
 
 // Mock Connection class
 const mockConnection = {
