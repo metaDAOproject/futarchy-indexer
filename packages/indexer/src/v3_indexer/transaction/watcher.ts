@@ -7,9 +7,9 @@ import {
   serialize,
 } from "./serializer";
 import { getTransactionHistory } from "./history";
-import { connection } from "../connection";
+import { connection } from "../../connection";
 import { logger } from "../../logger";
-import { Err, Ok, Result, TaggedUnion } from "../match";
+import { Err, Ok, Result, TaggedUnion } from "../utils/match";
 import {
   InstructionType,
   TransactionWatchStatus,

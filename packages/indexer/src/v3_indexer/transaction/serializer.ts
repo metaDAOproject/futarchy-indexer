@@ -7,11 +7,11 @@ import {
   PublicKey,
   VersionedTransactionResponse,
 } from "@solana/web3.js";
-import { Ok, Err, Result } from "../match";
+import { Ok, Err, Result } from "../utils/match";
 import { z } from "zod";
 import { resolveAccounts, ResolveAccountsError } from "./account-resolver";
 import * as base58 from "bs58";
-import { connection, provider } from "../connection";
+import { connection, provider } from "../../connection";
 import { BorshInstructionCoder, Idl, Program } from "@coral-xyz/anchor";
 import { PROGRAM_ID_TO_IDL_MAP } from "../constants";
 import {

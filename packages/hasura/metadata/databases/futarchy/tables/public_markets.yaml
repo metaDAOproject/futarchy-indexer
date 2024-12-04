@@ -64,6 +64,51 @@ array_relationships:
         table:
           name: prices
           schema: public
+  - name: prices_15m
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_15m
+          schema: public
+  - name: prices_1h
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_1h
+          schema: public
+  - name: prices_1m
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_chart_data
+          schema: public
+  - name: prices_4h
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_4h
+          schema: public
+  - name: prices_5m
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_5m
+          schema: public
   - name: takes
     using:
       foreign_key_constraint_on:

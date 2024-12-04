@@ -19,8 +19,8 @@ import {
   buildWhirlpoolClient,
 } from "@orca-so/whirlpools-sdk";
 import { PublicKey } from "@solana/web3.js";
-import { connection, readonlyWallet } from "../../connection";
-import { Err, Ok } from "../../match";
+import { connection, readonlyWallet } from "../../../connection";
+import { Err, Ok } from "../../utils/match";
 import {
   JupiterQuoteIndexingError,
   fetchQuoteFromJupe,
@@ -44,7 +44,7 @@ async function populateIndexerAccountDependencies() {
   try {
     await populateTokenMintIndexerAccountDependencies();
     await populateAmmMarketIndexerAccountDependencies();
-    await populateOpenbookMarketIndexerAccountDependencies();
+    // await populateOpenbookMarketIndexerAccountDependencies();
     await populateSpotPriceMarketIndexerAccountDependencies();
   } catch (e) {
     logger.error("error populating indexers", e);
