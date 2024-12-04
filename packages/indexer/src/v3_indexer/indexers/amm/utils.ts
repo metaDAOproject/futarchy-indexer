@@ -251,5 +251,25 @@ export async function indexAmmMarketAccountWithContext(
     return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError  });
   }
 
+  try {
+    const marketReservesUpdateResult = await usingDb((db) =>
+      db
+        .update(schema.markets)
+        .set({
+          baseAmount: ammMarketAccount.baseAmount.toString(),
+          quoteAmount: ammMarketAccount.quoteAmount.toString(),
+        })
+        .where(eq(schema.markets.marketAcct, account.toBase58()))
+        .returning({ marketAcct: schema.markets.marketAcct })
+    );
+    if (marketReservesUpdateResult === undefined || marketReservesUpdateResult.length === 0) {
+      logger.error("failed to update market reserves", account.toBase58());
+      return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError });
+    }
+  } catch (e) {
+    logger.error("error updating market reserves", e);
+    return Err({ type: AmmMarketAccountIndexingErrors.AmmTwapPriceError });
+  }
+
   return Ok(`successfully indexed amm: ${account.toBase58()}`);
 }
