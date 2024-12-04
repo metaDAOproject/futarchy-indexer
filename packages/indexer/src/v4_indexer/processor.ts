@@ -326,19 +326,13 @@ async function handleResolveQuestionEvent(event: ResolveQuestionEvent) {
         throw new Error("No metric decisions found for question");
       }
 
-      //check if both outcome and metric questions are resolved - one of them is the current question, find the other one and check if it is resolved
+      //check if the question is the outcome question, if it is, we set the metric decision to completed
       const decision = metricDecisions[0];
-      const otherQuestion = decision.outcomeQuestionAddr === event.question.toString() ? decision.metricQuestionAddr : decision.outcomeQuestionAddr;
-      const otherQuestionResolved = await db.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, otherQuestion)).limit(1);
-      if (otherQuestionResolved.length === 0 || !otherQuestionResolved[0].isResolved) {
-        console.log("Other question is not resolved", otherQuestion.toString());
-        return;
+      if (decision.outcomeQuestionAddr === event.question.toString()) {
+        await db.update(schema.v0_4_metric_decisions).set({
+          completedAt: new Date(),
+        }).where(eq(schema.v0_4_metric_decisions.id, decision.id));
       }
-
-      // update metric decisions, set completedAt to now if both outcome and metric questions are resolved
-      await db.update(schema.v0_4_metric_decisions).set({
-        completedAt: new Date(),
-      }).where(eq(schema.v0_4_metric_decisions.id, decision.id));
     });
   } catch (error) {
     logger.errorWithChatBotAlert([
