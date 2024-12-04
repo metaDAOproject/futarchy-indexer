@@ -1,5 +1,17 @@
-import { AddLiquidityEvent, AmmEvent, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath, SplitTokensEvent, MergeTokensEvent, RemoveLiquidityEvent } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
+import { AddLiquidityEvent,
+  AmmEvent,
+  ConditionalVaultEvent,
+  CreateAmmEvent,
+  getVaultAddr,
+  InitializeConditionalVaultEvent,
+  InitializeQuestionEvent,
+  ResolveQuestionEvent,
+  SwapEvent,
+  PriceMath,
+  SplitTokensEvent,
+  MergeTokensEvent,
+  RemoveLiquidityEvent } from "@metadaoproject/futarchy/v0.4";
+import { schema, usingDb, eq, and, or } from "@metadaoproject/indexer-db";
 import { PublicKey, VersionedTransactionResponse } from "@solana/web3.js";
 import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
@@ -271,6 +283,9 @@ export async function processVaultEvent(event: { name: string; data: Conditional
     case "InitializeQuestionEvent":
       await handleInitializeQuestionEvent(event.data as InitializeQuestionEvent);
       break;
+    case "ResolveQuestionEvent":
+      await handleResolveQuestionEvent(event.data as ResolveQuestionEvent);
+      break;
     case "InitializeConditionalVaultEvent":
       await handleInitializeConditionalVaultEvent(event.data as InitializeConditionalVaultEvent);
       break;
@@ -285,9 +300,58 @@ export async function processVaultEvent(event: { name: string; data: Conditional
   }
 }
 
+async function handleResolveQuestionEvent(event: ResolveQuestionEvent) {
+  try {
+    console.log("v4_indexer::processor::handleResolveQuestionEvent", event);
+    // update v0_4_questions table
+    await usingDb(async (db) => {
+      await db.update(schema.v0_4_questions).set({
+        isResolved: true,
+        payoutNumerators: event.payoutNumerators,
+        payoutDenominator: BigInt(Math.floor(event.payoutNumerators.reduce((acc, curr) => acc + curr, 0))),
+      }).where(eq(schema.v0_4_questions.questionAddr, event.question.toString()));
+
+      //check if both outcome and metric questions are resolved in v0_4_metric_decisions table
+      const metricDecisions = await db.select()
+        .from(schema.v0_4_metric_decisions)
+        .where(
+          or(
+            eq(schema.v0_4_metric_decisions.outcomeQuestionAddr, event.question.toString()),
+            eq(schema.v0_4_metric_decisions.metricQuestionAddr, event.question.toString())
+          )
+        )
+        .limit(1);
+      if (metricDecisions.length === 0) {
+        console.log("No metric decisions found for question", event.question.toString());
+        throw new Error("No metric decisions found for question");
+      }
+
+      //check if both outcome and metric questions are resolved - one of them is the current question, find the other one and check if it is resolved
+      const decision = metricDecisions[0];
+      const otherQuestion = decision.outcomeQuestionAddr === event.question.toString() ? decision.metricQuestionAddr : decision.outcomeQuestionAddr;
+      const otherQuestionResolved = await db.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, otherQuestion)).limit(1);
+      if (otherQuestionResolved.length === 0 || !otherQuestionResolved[0].isResolved) {
+        console.log("Other question is not resolved", otherQuestion.toString());
+        return;
+      }
+
+      // update metric decisions, set completedAt to now if both outcome and metric questions are resolved
+      await db.update(schema.v0_4_metric_decisions).set({
+        completedAt: new Date(),
+      }).where(eq(schema.v0_4_metric_decisions.id, decision.id));
+    });
+  } catch (error) {
+    logger.errorWithChatBotAlert([
+      error instanceof Error
+        ? `Error in handleResolveQuestionEvent: ${error.message}`
+        : "Unknown error in handleResolveQuestionEvent"
+    ]);
+  }
+}
+
 async function handleInitializeQuestionEvent(event: InitializeQuestionEvent) {
   try {
-      await usingDb(async (db) => {
+    await usingDb(async (db) => {
       await db.insert(schema.v0_4_questions).values({
         questionAddr: event.question.toString(),
         isResolved: false,
