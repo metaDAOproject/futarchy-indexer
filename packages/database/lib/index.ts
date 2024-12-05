@@ -14,9 +14,9 @@ const ACQUIRE_TIMEOUT = 10000;   // 10 second timeout for acquiring connection
 // Add connection pool configuration
 const poolConfig = {
   connectionString: connectionString,
-  min: 5,
-  max: 100, // Reduced from 1000 to a more reasonable number
-  idleTimeoutMillis: 30000,
+  min: 20,
+  max: 1000,
+  idleTimeoutMillis: 30 * 1000,
   connectionTimeoutMillis: 5000,
   // Add error handling for the pool
   async errorHandler(err: Error) {
@@ -30,6 +30,32 @@ const pool = new Pool(poolConfig);
 pool.on('error', (err) => {
   console.error('Unexpected pool error:', err);
 });
+
+// Add new constants for monitoring
+const POOL_STATS_INTERVAL = 30000; // Log every 30 seconds
+const POOL_WARNING_THRESHOLD = 300;  // Warn when total connections exceed this
+
+setInterval(() => {
+  const stats = pool.totalCount;
+  const idle = pool.idleCount;
+  const waiting = pool.waitingCount;
+  const active = stats - idle;
+
+  console.log('Database Pool Statistics:', {
+    total: stats,
+    active,
+    idle,
+    waiting,
+    available: poolConfig.max - stats
+  });
+
+  if (stats > POOL_WARNING_THRESHOLD) {
+    console.warn('High connection pool usage detected', {
+      total: stats,
+      threshold: POOL_WARNING_THRESHOLD
+    });
+  }
+}, POOL_STATS_INTERVAL);
 
 export async function getClient() {
   return pool.connect();
@@ -53,14 +79,8 @@ export async function usingDb<T>(
         )
       ]);
 
-      const connection = drizzle(client, { schema: schemaDefs });
+      const connection = drizzle(pool, { schema: schemaDefs });
       const result = await fn(connection);
-      
-      if (client) {
-        client.release();
-        client = undefined;
-      }
-      
       return result;
     } catch (e) {
       attempts++;

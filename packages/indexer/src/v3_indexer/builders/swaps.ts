@@ -221,7 +221,6 @@ export class SwapBuilder {
       } else {
         // handle non-swap transactions (add/remove liquidity, crank, etc)
         // find market account from instructions
-        console.log("builder::buildOrderFromSwapIx::looking for market account in non swap txn");
         let marketAcct: PublicKey | undefined;
         for (const ix of tx.instructions) {
           const candidate = ix.accountsWithData.find((a) => a.name === "amm");
@@ -231,7 +230,6 @@ export class SwapBuilder {
           }
         }
         if (marketAcct) {
-          console.log("builder::buildOrderFromSwapIx::market found for non swap txn, indexing price and twap", marketAcct);
           this.indexPriceAndTWAPForAccount(marketAcct);
         }
       }
