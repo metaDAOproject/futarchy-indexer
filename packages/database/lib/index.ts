@@ -6,9 +6,9 @@ import "dotenv/config";
 let connectionString = process.env.FUTARCHY_PG_URL;
 
 // Add retry configuration
-const RETRY_ATTEMPTS = 5;
-const INITIAL_RETRY_DELAY = 100; // Start with shorter delay
-const MAX_RETRY_DELAY = 2000;    // Max backoff delay
+const RETRY_ATTEMPTS = 12;
+const INITIAL_RETRY_DELAY = 1000; // Start with shorter delay
+const MAX_RETRY_DELAY = 600000;    // Max backoff delay
 const ACQUIRE_TIMEOUT = 10000;   // 10 second timeout for acquiring connection
 
 // Add connection pool configuration
