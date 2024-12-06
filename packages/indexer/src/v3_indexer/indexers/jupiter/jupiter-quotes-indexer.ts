@@ -7,7 +7,6 @@ import {
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
 import { logger } from "../../../logger";
-import { macaddr } from "drizzle-orm/pg-core";
 
 export enum JupiterQuoteIndexingError {
   JupiterFetchError = "JupiterFetchError",
