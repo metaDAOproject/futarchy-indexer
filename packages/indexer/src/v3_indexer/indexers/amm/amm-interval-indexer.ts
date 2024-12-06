@@ -1,5 +1,5 @@
-import { PublicKey, ConfirmedSignatureInfo, VersionedTransactionResponse } from "@solana/web3.js";
-import { Err, Ok, Result } from "../../utils/match";
+import { ConfirmedSignatureInfo } from "@solana/web3.js";
+import { Err, Ok } from "../../utils/match";
 import { IntervalFetchIndexer } from "../../types/interval-fetch-indexer";
 import { rpc } from "../../../rpc-wrapper";
 import { logger } from "../../../logger";

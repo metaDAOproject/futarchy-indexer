@@ -5,6 +5,7 @@ import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
 import { index } from "./indexer";
 import { rpc } from "../rpc-wrapper";
+import { setLatestTxSigProcessed, getNewSignatures } from "../utils/utils";
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
 
@@ -58,50 +59,13 @@ const backfillHistoricalSignatures = async (
 };
 
 const insertNewSignatures = async (programId: PublicKey) => {
-  let allSignatures: ConfirmedSignatureInfo[] = [];
-  //get latest signature from db indexers table latestTxSigProcessed
-  let latestRecordedSignature = await getLatestTxSigProcessed();
-
-  //TODO: this should never happen in theory so im commenting it out for now
-  // if (!latestRecordedSignature) {
-  //   //fallback just in case
-  //   latestRecordedSignature = await usingDb(async (db) => {
-  //     return await db.select({ signature: schema.signatures.signature, slot: schema.signatures.slot })
-  //       .from(schema.signatures)
-  //       .orderBy(desc(schema.signatures.slot))
-  //       .limit(1)
-  //       .then(signatures => {
-  //         if (signatures.length === 0) return undefined;
-  //         return signatures[0].signature;
-  //       });
-  //   });
-  // }
-
-  // console.log(`insertNewSignatures::latestRecordedSignature: ${latestRecordedSignature}`);
-
-  let oldestSignatureInserted: string | undefined;
-  while (true) {
-    const signatures = await rpc.call(
-      "getSignaturesForAddress",
-      [programId, { limit: 1000, until: latestRecordedSignature, before: oldestSignatureInserted }, "confirmed"],
-      "Get new signatures"
-    ) as ConfirmedSignatureInfo[];
-
-    if (signatures.length === 0) break;
-
-    await insertSignatures(signatures, programId);
-
-    //trigger indexing
-    //TODO: maybe only index if signature doesnt exist in signatures table (which would mean it wasnt indexed yet)
-    Promise.all(signatures.map(async (signature: ConfirmedSignatureInfo) => {
-      await index(signature.signature, programId);
-    }));
-
-    allSignatures = allSignatures.concat(signatures);
-    if (!oldestSignatureInserted) setLatestTxSigProcessed(signatures[0].signature); //since getSignaturesForAddress is a backwards walk, this should be the latest signature
-    oldestSignatureInserted = signatures[signatures.length - 1].signature;
-  }
-
+  let allSignatures: ConfirmedSignatureInfo[] = await getNewSignatures(programId, "v0_4_amm_indexer");
+  //insert signatures and index asynchronously
+  insertSignatures(allSignatures, programId);
+  Promise.all(allSignatures.map(async (signature: ConfirmedSignatureInfo) => {
+    await index(signature.signature, programId);
+  }));
+  setLatestTxSigProcessed(allSignatures[0].signature, "v0_4_amm_indexer");
   return allSignatures;
 }
 
@@ -118,51 +82,6 @@ const insertSignatures = async (signatures: ConfirmedSignatureInfo[], queriedAdd
       signature: tx.signature,
       account: queriedAddr.toString()
     }))).onConflictDoNothing().execute();
-  });
-}
-
-//set latestProcessedSlot in db
-async function setLatestProcessedSlot(slot: number) {
-  try {
-    await usingDb(async (db) => {
-      await db.update(schema.indexers)
-        .set({ latestSlotProcessed: slot.toString() })
-        .where(eq(schema.indexers.name, "v0_4_amm_indexer"))
-        .execute();
-    });
-  } catch (error: unknown) {
-    logger.errorWithChatBotAlert([
-      error instanceof Error
-        ? `Error setting latest processed slot: ${error.message}`
-        : "Unknown error setting latest processed slot"
-    ]);
-  }
-}
-
-//get latestProcessedSlot from db
-async function getLatestProcessedSlot() {
-  return await usingDb(async (db) => {
-    return await db.select({ slot: schema.indexers.latestSlotProcessed })
-      .from(schema.indexers)
-      .where(eq(schema.indexers.name, "v0_4_amm_indexer"))
-      .then(slots => slots[0] ? slots[0].slot : undefined);
-  });
-}
-
-//set latestTxSigProcessed
-async function setLatestTxSigProcessed(signature: string) {
-  await usingDb(async (db) => {
-    await db.update(schema.indexers).set({ latestTxSigProcessed: signature }).where(eq(schema.indexers.name, "v0_4_amm_indexer")).execute();
-  });
-}
-
-//get latestTxSigProcessed
-async function getLatestTxSigProcessed() {
-  return await usingDb(async (db) => {
-    return await db.select({ signature: schema.indexers.latestTxSigProcessed })
-      .from(schema.indexers)
-      .where(eq(schema.indexers.name, "v0_4_amm_indexer"))
-      .then(signatures => signatures[0] ? signatures[0].signature as string : undefined);
   });
 }
 

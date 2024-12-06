@@ -9,7 +9,7 @@ async function main() {
   try {
     // Start all indexing processes
     await Promise.all([
-      startIndexerAccountDependencyPopulation(),
+      // startIndexerAccountDependencyPopulation(),
 
       subscribeAll().catch(err => {
         logger.errorWithChatBotAlert("Error in subscribeAll:", err);
