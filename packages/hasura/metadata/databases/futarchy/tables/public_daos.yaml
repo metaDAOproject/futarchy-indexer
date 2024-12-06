@@ -11,6 +11,15 @@ object_relationships:
   - name: program
     using:
       foreign_key_constraint_on: program_acct
+  - name: spot_market
+    using:
+      manual_configuration:
+        column_mapping:
+          base_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
   - name: token
     using:
       foreign_key_constraint_on: base_acct
