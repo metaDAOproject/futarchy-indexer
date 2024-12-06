@@ -7,6 +7,7 @@ import {
   PricesType,
 } from "@metadaoproject/indexer-db/lib/schema";
 import { logger } from "../../../logger";
+import { macaddr } from "drizzle-orm/pg-core";
 
 export enum JupiterQuoteIndexingError {
   JupiterFetchError = "JupiterFetchError",
@@ -47,6 +48,7 @@ export const JupiterQuotesIndexer: IntervalFetchIndexer = {
       return Ok({ acct });
     } catch (e) {
       logger.error("general error indexing jupiter quote: ", e);
+      logger.error("account: ", acct);
       return Err({
         type: JupiterQuoteIndexingError.GeneralJupiterQuoteIndexError,
       });
@@ -97,19 +99,27 @@ export const fetchQuoteFromJupe = async (
       )) ?? [];
 
     // Define the output mint based on the input token
-    const quoteMint =
-      acct === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-        ? "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
-        : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    // TODO: this is hardcoded to USDC for now, might need to make this dynamic
+    const quoteMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
-    const quoteToken =
-      (await usingDb((db) =>
-        db
-          .select()
-          .from(schema.tokens)
-          .where(eq(schema.tokens.mintAcct, quoteMint))
-          .execute()
-      )) ?? [];
+    const quoteToken = [{
+      symbol: "USDC",
+      decimals: 6,
+      name: "USD Coin",
+      mintAcct: quoteMint,
+      imageUrl: null,
+      supply: 1000000n,
+      updatedAt: new Date(),
+    }];
+
+    // const quoteToken =
+    //   (await usingDb((db) =>
+    //     db
+    //       .select()
+    //       .from(schema.tokens)
+    //       .where(eq(schema.tokens.mintAcct, quoteMint))
+    //       .execute()
+    //   )) ?? [];
     
     if (baseToken.length === 0 || quoteToken.length === 0) {
       console.log("quote or base token not found in db for jupiter quotes indexer", acct);
@@ -136,13 +146,15 @@ export const fetchQuoteFromJupe = async (
         askRes.status,
         askRes.statusText
       );
+      logger.error("account: ", acct);
       if (askRes.status === 400) {
         logger.error("jupiter request is malformed");
+        logger.error("account: ", acct);
         const stopJupiterRes = await usingDb((db) =>
           db.update(schema.indexerAccountDependencies).set({ status: IndexerAccountDependencyStatus.Disabled }).where(and(eq(schema.indexerAccountDependencies.acct, acct), eq(schema.indexerAccountDependencies.name, "jupiter-quotes"))).execute()
         );
         if((stopJupiterRes?.rowCount ?? 0) > 0) {
-          logger.error("jupiter dependency disabled");
+          logger.warn("jupiter dependency disabled");
         }
       }
       return null;

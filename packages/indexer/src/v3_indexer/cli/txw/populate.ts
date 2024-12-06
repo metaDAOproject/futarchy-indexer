@@ -2,24 +2,15 @@ import {
   usingDb,
   schema,
   eq,
-  notInArray,
   and,
-  notIlike,
+  isNotNull,
+  or
 } from "@metadaoproject/indexer-db";
 import {
   MarketRecord,
   MarketType,
   TokenRecord,
 } from "@metadaoproject/indexer-db/lib/schema";
-import {
-  ORCA_WHIRLPOOLS_CONFIG,
-  ORCA_WHIRLPOOL_PROGRAM_ID,
-  PDAUtil,
-  WhirlpoolContext,
-  buildWhirlpoolClient,
-} from "@orca-so/whirlpools-sdk";
-import { PublicKey } from "@solana/web3.js";
-import { connection, readonlyWallet } from "../../../connection";
 import { Err, Ok } from "../../utils/match";
 import {
   JupiterQuoteIndexingError,
@@ -43,16 +34,29 @@ async function populateIndexerAccountDependencies() {
   // populating market indexers
   try {
     await populateTokenMintIndexerAccountDependencies();
-    await populateAmmMarketIndexerAccountDependencies();
-    // await populateOpenbookMarketIndexerAccountDependencies();
+    // await populateAmmMarketIndexerAccountDependencies();
     await populateSpotPriceMarketIndexerAccountDependencies();
   } catch (e) {
     logger.error("error populating indexers", e);
   }
 }
 async function populateTokenMintIndexerAccountDependencies() {
+  console.log("populating token mint indexers, fetching base dao tokens");
   const mints: TokenRecord[] =
-    (await usingDb((db) => db.select().from(schema.tokens).execute())) ?? [];
+    (await usingDb((db) =>
+        db.select({
+          symbol: schema.tokens.symbol,
+          name: schema.tokens.name,
+          updatedAt: schema.tokens.updatedAt,
+          mintAcct: schema.tokens.mintAcct,
+          supply: schema.tokens.supply,
+          decimals: schema.tokens.decimals,
+          imageUrl: schema.tokens.imageUrl
+        })
+        .from(schema.tokens)
+        .innerJoin(schema.daos, eq(schema.tokens.mintAcct, schema.daos.baseAcct))
+        .execute())) ?? [];
+  console.log(`found ${mints.length} base dao tokens`);
 
   for (const mint of mints) {
     const newTokenMintIndexerDep: IndexerAccountDependency = {
@@ -80,29 +84,37 @@ async function populateTokenMintIndexerAccountDependencies() {
 }
 
 async function populateAmmMarketIndexerAccountDependencies() {
+  //we only want to index the markets that have a proposal or a metric decision
   const ammMarkets =
     (await usingDb((db) =>
       db
         .select()
         .from(schema.markets)
-        .where(and(eq(schema.markets.marketType, MarketType.FUTARCHY_AMM)))
+        .leftJoin(schema.v0_4_metric_decisions, eq(schema.markets.marketAcct, schema.v0_4_metric_decisions.ammAddr))
+        .where(and(
+          eq(schema.markets.marketType, MarketType.FUTARCHY_AMM),
+          or(
+            isNotNull(schema.markets.proposalAcct),
+            isNotNull(schema.v0_4_metric_decisions.id)
+          )
+        ))
         .execute()
     )) ?? [];
 
   for (const ammMarket of ammMarkets) {
-    // TODO: we no longer need an account info indexer market accounts.. leaving this here for now
+    // TODO: we no longer need an account info indexer on market accounts.. leaving this here for now
     // const newAmmIndexerDep: IndexerAccountDependency = {
     //   acct: ammMarket.marketAcct.toString(),
     //   name: "amm-market-accounts",
     //   latestTxSigProcessed: null,
     // };
     const newAmmIntervalIndexerDep: IndexerAccountDependency = {
-      acct: ammMarket.marketAcct.toString(),
+      acct: ammMarket.markets.marketAcct.toString(),
       name: "amm-market-accounts-fetch",
       latestTxSigProcessed: null,
     };
     const newAmmLogsSubscribeIndexerDep: IndexerAccountDependency = {
-      acct: ammMarket.marketAcct.toString(),
+      acct: ammMarket.markets.marketAcct.toString(),
       name: "amm-markets-logs-subscribe-indexer",
       latestTxSigProcessed: null,
     };
@@ -130,59 +142,7 @@ async function populateAmmMarketIndexerAccountDependencies() {
   console.log(`Successfully populated AMM indexers`);
 }
 
-async function populateOpenbookMarketIndexerAccountDependencies() {
-  const indexerAccountsQuery =
-    (await usingDb((db) =>
-      db
-        .select({ acct: schema.indexerAccountDependencies.acct })
-        .from(schema.indexerAccountDependencies)
-    )) ?? [];
-  const openbookMarkets =
-    (await usingDb((db) =>
-      db
-        .select()
-        .from(schema.markets)
-        .where(
-          and(
-            eq(schema.markets.marketType, MarketType.OPEN_BOOK_V2),
-            notInArray(
-              schema.markets.marketAcct,
-              indexerAccountsQuery.map<string>((ai) => ai.acct)
-            )
-          )
-        )
-        .execute()
-    )) ?? [];
 
-  for (const openbookMarket of openbookMarkets) {
-    const newopenbookIndexerDep: IndexerAccountDependency = {
-      acct: openbookMarket.marketAcct.toString(),
-      name: "openbook-market-accounts",
-      latestTxSigProcessed: null,
-    };
-
-    const openbookInsertResult =
-      (await usingDb((db) =>
-        db
-          .insert(schema.indexerAccountDependencies)
-          .values(newopenbookIndexerDep)
-          .returning({ acct: schema.indexerAccountDependencies.acct })
-      )) ?? [];
-    if (openbookInsertResult.length > 0) {
-      logger.log(
-        "successfully populated indexer dependency for openbook market account:",
-        openbookInsertResult[0].acct
-      );
-    } else {
-      logger.error(
-        "error with inserting indexer dependency for openbook market:",
-        openbookMarket.marketAcct
-      );
-    }
-  }
-
-  logger.log("Successfully populated openbook market indexers");
-}
 
 enum PopulateSpotPriceMarketErrors {
   NotSupportedByJup = "NotSupportedByJup",
@@ -190,26 +150,36 @@ enum PopulateSpotPriceMarketErrors {
 }
 
 async function populateSpotPriceMarketIndexerAccountDependencies() {
+  console.log("populating spot price market indexers, fetching base dao tokens");
   const baseDaoTokens =
     (await usingDb((db) =>
       db
-        .select()
+        .select({
+          symbol: schema.tokens.symbol,
+          name: schema.tokens.name,
+          updatedAt: schema.tokens.updatedAt,
+          mintAcct: schema.tokens.mintAcct,
+          supply: schema.tokens.supply,
+          decimals: schema.tokens.decimals,
+          imageUrl: schema.tokens.imageUrl
+        })
         .from(schema.tokens)
-        .where(
-          and(
-            notIlike(schema.tokens.name, "%proposal%"),
-            notInArray(schema.tokens.symbol, ["USDC", "mUSDC"])
-          )
-        )
+        .innerJoin(schema.daos, eq(schema.tokens.mintAcct, schema.daos.baseAcct))
         .execute()
     )) ?? [];
-
+  console.log(`found ${baseDaoTokens.length} base dao tokens`);
   // Loop through each token to find its corresponding USDC market address
   for (const token of baseDaoTokens) {
-    const result = await populateJupQuoteIndexerAndMarket(token);
+    const result = await populateJupQuoteIndexerAndMarket({
+      ...token,
+      supply: BigInt(token.supply)
+    });
     // for ones that don't work on jup, do birdeye
     if (!result.success) {
-      await populateBirdEyePricesIndexerAndMarket(token);
+      await populateBirdEyePricesIndexerAndMarket({
+        ...token,
+        supply: BigInt(token.supply)
+      });
     }
     // Not enough coverage on orca for now so disabling
     // await populateOrcaWhirlpoolMarket(token);
@@ -270,14 +240,14 @@ async function populateJupQuoteIndexerAndMarket(token: {
 
     const jupMarket: MarketRecord = {
       marketAcct: mintAcct,
-      baseLotSize: BigInt(0),
+      baseLotSize: "0",
       baseMakerFee: 0,
       baseMintAcct: mintAcct,
       baseTakerFee: 0,
       marketType: MarketType.JUPITER_QUOTE,
       quoteMintAcct: usdcToken.mintAcct,
-      quoteLotSize: BigInt(0),
-      quoteTickSize: BigInt(0),
+      quoteLotSize: "0",
+      quoteTickSize: "0",
       quoteMakerFee: 0,
       quoteTakerFee: 0,
       createTxSig: "",
@@ -355,14 +325,14 @@ async function populateBirdEyePricesIndexerAndMarket(token: {
 
     const birdeyeMarket: MarketRecord = {
       marketAcct: mintAcct,
-      baseLotSize: BigInt(0),
+      baseLotSize: "0",
       baseMakerFee: 0,
       baseMintAcct: mintAcct,
       baseTakerFee: 0,
       marketType: MarketType.BIRDEYE_PRICES,
       quoteMintAcct: usdcToken.mintAcct,
-      quoteLotSize: BigInt(0),
-      quoteTickSize: BigInt(0),
+      quoteLotSize: "0",
+      quoteTickSize: "0",
       quoteMakerFee: 0,
       quoteTakerFee: 0,
       createTxSig: "",

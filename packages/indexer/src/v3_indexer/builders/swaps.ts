@@ -25,7 +25,7 @@ import {
 import { logger } from "../../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 import { getHumanPrice } from "../usecases/math";
-import { AmmMarketAccountUpdateIndexer } from '../indexers/amm/amm-market-account-indexer';
+import { indexAmmMarketAccountWithContext } from '../indexers/amm/utils';
 import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
 import { rpc } from "../../rpc-wrapper";
 
@@ -261,7 +261,7 @@ export class SwapBuilder {
     ) as RpcResponseAndContext<AccountInfo<Buffer> | null>;
 
     if (accountInfo.value) {
-      const res = await AmmMarketAccountUpdateIndexer.index(
+      const res = await indexAmmMarketAccountWithContext(
         accountInfo.value,
         account,
         accountInfo.context
