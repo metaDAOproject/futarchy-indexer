@@ -25,7 +25,7 @@ import {
 import { logger } from "../../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 import { getHumanPrice } from "../usecases/math";
-import { AmmMarketAccountUpdateIndexer } from '../indexers/amm/amm-market-account-indexer';
+import { indexAmmMarketAccountWithContext } from '../indexers/amm/utils';
 import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
 import { rpc } from "../../rpc-wrapper";
 
@@ -221,7 +221,6 @@ export class SwapBuilder {
       } else {
         // handle non-swap transactions (add/remove liquidity, crank, etc)
         // find market account from instructions
-        console.log("builder::buildOrderFromSwapIx::looking for market account in non swap txn");
         let marketAcct: PublicKey | undefined;
         for (const ix of tx.instructions) {
           const candidate = ix.accountsWithData.find((a) => a.name === "amm");
@@ -231,7 +230,6 @@ export class SwapBuilder {
           }
         }
         if (marketAcct) {
-          console.log("builder::buildOrderFromSwapIx::market found for non swap txn, indexing price and twap", marketAcct);
           this.indexPriceAndTWAPForAccount(marketAcct);
         }
       }
@@ -263,7 +261,7 @@ export class SwapBuilder {
     ) as RpcResponseAndContext<AccountInfo<Buffer> | null>;
 
     if (accountInfo.value) {
-      const res = await AmmMarketAccountUpdateIndexer.index(
+      const res = await indexAmmMarketAccountWithContext(
         accountInfo.value,
         account,
         accountInfo.context

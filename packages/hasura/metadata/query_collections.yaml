@@ -50,3 +50,68 @@
               dao_slug
             }
           }
+      - name: proposals_by_pk
+        query: |
+          query proposals_by_pk ($proposal_acct: String!) {
+            proposals_by_pk(proposal_acct: $proposal_acct) {
+              autocrat_version
+              base_vault
+              completed_at
+              created_at
+              dao_acct
+              description_url
+              duration_in_slots
+              end_slot
+              ended_at
+              fail_market_acct
+              initial_slot
+              min_base_futarchic_liquidity
+              min_quote_futarchic_liquidity
+              pass_market_acct
+              pass_threshold_bps
+              pricing_model_fail_acct
+              pricing_model_pass_acct
+              proposal_acct
+              proposal_num
+              proposer_acct
+              quote_vault
+              status
+              twap_initial_observation
+              twap_max_observation_change_per_update
+              updated_at
+            }
+          }
+      - name: MyQuery
+        query: |
+          query MyQuery {
+            proposals(where: {proposal_acct:{_eq:"hEoj5ca54sU14MD3QqmKp734h7EgiuoPqyeWkBTUDr1"}}) {
+              pass_market {
+                market_acct
+                prices(limit: 1, order_by: {updated_slot:desc}) {
+                  price
+                  quote_amount
+                  base_amount
+                }
+              }
+              fail_market {
+                market_acct
+                prices(limit: 1, order_by: {updated_slot:desc}) {
+                  price
+                  quote_amount
+                  base_amount
+                }
+              }
+            }
+          }
+      - name: MyQuery2
+        query: |
+          query MyQuery {
+            proposal_bars(where: {proposal_acct:{_eq:"hEoj5ca54sU14MD3QqmKp734h7EgiuoPqyeWkBTUDr1"}}, order_by: [{bar_start_time:desc}], limit: 1) {
+              pass_price
+              fail_price
+              pass_base_amount
+              pass_quote_amount
+              fail_base_amount
+              fail_quote_amount
+            }
+          }

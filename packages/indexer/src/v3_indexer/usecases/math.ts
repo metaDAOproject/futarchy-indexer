@@ -1,5 +1,4 @@
 import { BN } from "@coral-xyz/anchor";
-import { logger } from "../../logger";
 
 export function getHumanPrice(
   ammPrice: BN,
@@ -17,7 +16,6 @@ export function getHumanPrice(
   try {
     return price1e12.toNumber() / 1e12;
   } catch (e) {
-    logger.warn("toNumber failed, returning div by 1e12");
     return price1e12.div(new BN(1e12)).toNumber();
   }
 }

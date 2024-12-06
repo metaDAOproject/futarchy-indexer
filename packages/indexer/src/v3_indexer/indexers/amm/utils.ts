@@ -1,7 +1,7 @@
 import { BN } from "@coral-xyz/anchor";
 import { enrichTokenMetadata } from "@metadaoproject/futarchy-sdk";
 import { PriceMath } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq, inArray, or } from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, inArray, or, and } from "@metadaoproject/indexer-db";
 import { TokenRecord } from "@metadaoproject/indexer-db/lib/schema";
 import { PricesType } from "@metadaoproject/indexer-db/lib/schema";
 import {
@@ -160,6 +160,34 @@ export async function indexAmmMarketAccountWithContext(
     logger.error("account", account.toBase58());
     logger.error("baseAmount", ammMarketAccount.baseAmount.toString());
     logger.error("quoteAmount", ammMarketAccount.quoteAmount.toString());
+
+    async function disableAmmMarketAccountIndexer(account: PublicKey) {
+      try {
+        // Proposal is finalized or failed, disable the indexer account dependency
+        await usingDb((db) =>
+        db
+          .update(schema.indexerAccountDependencies)
+          .set({
+            status: IndexerAccountDependencyStatus.Disabled,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(schema.indexerAccountDependencies.acct, account.toBase58()),
+              or(
+                eq(schema.indexerAccountDependencies.name, "amm-market-accounts-fetch"),
+                eq(schema.indexerAccountDependencies.name, "amm-market-accounts")
+              )
+            )
+          )
+          .execute()
+        );
+      
+        logger.info(`Disabled indexing for finalized market: ${account.toBase58()}`);
+      } catch (e) {
+        logger.error("error disabling indexing for finalized market", e);
+      }
+    }
     
     // Check if the corresponding proposal has been finalized
     const proposal = await usingDb((db) =>
@@ -175,26 +203,9 @@ export async function indexAmmMarketAccountWithContext(
         .execute()
     );
 
-    if (proposal && proposal.length > 0 && proposal[0].status !== ProposalStatus.Pending) {
-      try {
-        // Proposal is finalized or failed, disable the indexer account dependency
-        await usingDb((db) =>
-        db
-          .update(schema.indexerAccountDependencies)
-          .set({
-            status: IndexerAccountDependencyStatus.Disabled,
-            updatedAt: new Date(),
-          })
-          .where(
-            eq(schema.indexerAccountDependencies.acct, account.toBase58())
-          )
-          .execute()
-        );
-      
-        logger.info(`Disabled indexing for finalized market: ${account.toBase58()}`);
-      } catch (e) {
-        logger.error("error disabling indexing for finalized market", e);
-      }
+    if (!proposal || proposal.length === 0 || proposal[0].status !== ProposalStatus.Pending) {
+      logger.log(`No proposal found for market: ${account.toBase58()}`);
+      disableAmmMarketAccountIndexer(account);
     } else {
       logger.log(`Indexing for market: ${account.toBase58()} is still pending`);
     }
