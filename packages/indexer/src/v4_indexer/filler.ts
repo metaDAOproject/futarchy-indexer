@@ -60,9 +60,9 @@ const backfillHistoricalSignatures = async (
 
 const insertNewSignatures = async (programId: PublicKey) => {
   let allSignatures: ConfirmedSignatureInfo[] = await getNewSignatures(programId, "v0_4_amm_indexer");
-  //insert signatures and index asynchronously
-  insertSignatures(allSignatures, programId);
-  Promise.all(allSignatures.map(async (signature: ConfirmedSignatureInfo) => {
+  //insert signatures and index, setLatestTxSigProcess after indexing
+  await insertSignatures(allSignatures, programId);
+  await Promise.all(allSignatures.map(async (signature: ConfirmedSignatureInfo) => {
     await index(signature.signature, programId);
   }));
   setLatestTxSigProcessed(allSignatures[0].signature, "v0_4_amm_indexer");

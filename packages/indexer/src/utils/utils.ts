@@ -72,9 +72,10 @@ export const getNewSignatures = async (programId: PublicKey, indexerName: string
     if (signatures.length === 0) break;
 
     allSignatures = allSignatures.concat(signatures);
-    if (!oldestSignatureInserted) setLatestTxSigProcessed(signatures[0].signature, indexerName); //since getSignaturesForAddress is a backwards walk, this should be the latest signature
     oldestSignatureInserted = signatures[signatures.length - 1].signature;
   }
 
+  //TODO: maybe this should be set in the indexer instead? that seems correct
+  // if (allSignatures.length > 0) setLatestTxSigProcessed(allSignatures[0].signature, indexerName);
   return allSignatures;
 }
