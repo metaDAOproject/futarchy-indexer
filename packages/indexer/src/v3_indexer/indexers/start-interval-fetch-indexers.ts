@@ -7,9 +7,9 @@ import { IndexerWithAccountDeps } from "../types";
 import { BirdeyePricesIndexer } from "./birdeye/birdeye-prices-indexer";
 import { IntervalFetchIndexer } from "../types/interval-fetch-indexer";
 import { JupiterQuotesIndexer } from "./jupiter/jupiter-quotes-indexer";
-import { AmmMarketAccountIntervalFetchIndexer } from "./amm/amm-market-account-interval-indexer";
 import { AutocratDaoIndexer } from "./autocrat/autocrat-dao-indexer";
 import { AutocratProposalIndexer } from "./autocrat/autocrat-proposal-indexer";
+import { V3AmmIntervalIndexer } from "./amm/amm-interval-indexer";
 import { TokenMintIndexer } from "./token/token-mint-indexer";
 import { Cron } from "croner";
 import { and, eq, schema, usingDb } from "@metadaoproject/indexer-db";
@@ -79,14 +79,14 @@ export function getIntervalFetchIndexerImplementation(
       return JupiterQuotesIndexer;
     case IndexerImplementation.BirdeyePricesIndexer:
       return BirdeyePricesIndexer;
-    case IndexerImplementation.AmmMarketsAccountFetch:
-      return AmmMarketAccountIntervalFetchIndexer;
     case IndexerImplementation.AutocratDaoIndexer:
       return AutocratDaoIndexer;
     case IndexerImplementation.AutocratProposalIndexer:
       return AutocratProposalIndexer;
     case IndexerImplementation.TokenMintIndexer:
       return TokenMintIndexer;
+    case IndexerImplementation.V3AmmIntervalIndexer:
+      return V3AmmIntervalIndexer;
   }
   return null;
 }

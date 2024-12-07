@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import { connection } from "../../connection";
 import { IndexerWithAccountDeps } from "../types";
 import { AccountLogsIndexer } from "../types/account-logs-indexer";
-import { AmmMarketLogsSubscribeIndexer } from "./amm/amm-market-logs-subscribe-indexer";
+import { V3AmmLogsSubscribeIndexer } from "./amm/amm-market-logs-subscribe-indexer";
 import { logger } from "../../logger";
 
 export async function startLogsSubscribeIndexer(
@@ -39,8 +39,8 @@ function getLogsSubscribeIndexerImplementation(
   implementation: IndexerImplementation
 ): AccountLogsIndexer | null {
   switch (implementation) {
-    case IndexerImplementation.AmmMarketsLogsSubscribe:
-      return AmmMarketLogsSubscribeIndexer;
+    case IndexerImplementation.V3AmmLogsSubscribeIndexer:
+      return V3AmmLogsSubscribeIndexer;
   }
   return null;
 }

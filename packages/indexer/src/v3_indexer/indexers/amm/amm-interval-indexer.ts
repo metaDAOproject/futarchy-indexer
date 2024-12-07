@@ -13,7 +13,7 @@ export enum AmmAccountIntervalIndexerError {
   BlankAccountAddr = "BlankAccountAddr",
 }
 
-export const AmmIntervalFetchIndexer: IntervalFetchIndexer = {
+export const V3AmmIntervalIndexer: IntervalFetchIndexer = {
   cronExpression: "5/10 * * * * *", // every 10 seconds, starting at 5 seconds past the minute
   retries: 3,
   index: async (acct: string = AMM_PROGRAM_ID.toBase58()) => {

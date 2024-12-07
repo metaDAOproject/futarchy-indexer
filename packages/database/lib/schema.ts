@@ -374,12 +374,12 @@ export const transactionWatcherTransactions = pgTable(
 );
 
 export enum IndexerImplementation {
-  AutocratV0OpenbookV2 = "AutocratV0OpenbookV2",
   AmmMarketIndexer = "AmmMarketIndexer",
   AmmMarketInstructionsIndexer = "AmmMarketInstructionsIndexer",
-  AmmMarketsAccountFetch = "AmmMarketsAccountFetch",
-  AmmMarketsLogsSubscribe = "AmmMarketsLogsSubscribe",
-  OpenbookV2MarketIndexer = "OpenbookV2MarketIndexer",
+  V3AmmIntervalIndexer = "V3AmmIntervalIndexer",
+  V3AmmLogsSubscribeIndexer = "V3AmmLogsSubscribeIndexer",
+  V4AmmIntervalIndexer = "V4AmmIntervalIndexer",
+  V4AmmLogsSubscribeIndexer = "V4AmmLogsSubscribeIndexer",
   JupiterQuotesIndexer = "JupiterQuotesIndexer",
   BirdeyePricesIndexer = "BirdeyePricesIndexer",
   AutocratDaoIndexer = "AutocratDaoIndexer",

@@ -10,7 +10,7 @@ export enum AmmAccountLogsIndexerError {
   GeneralError = "GeneralError",
 }
 
-export const AmmMarketLogsSubscribeIndexer: AccountLogsIndexer = {
+export const V3AmmLogsSubscribeIndexer: AccountLogsIndexer = {
   index: async (logs: Logs, account: PublicKey, context: Context) => {
     const builder = new SwapBuilder();
     const buildRes = await builder.withSignatureAndCtx(logs.signature, context);
