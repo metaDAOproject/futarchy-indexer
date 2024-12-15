@@ -1,0 +1,3 @@
+table:
+  name: reid_data
+  schema: public

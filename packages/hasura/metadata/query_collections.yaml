@@ -81,37 +81,3 @@
               updated_at
             }
           }
-      - name: MyQuery
-        query: |
-          query MyQuery {
-            proposals(where: {proposal_acct:{_eq:"hEoj5ca54sU14MD3QqmKp734h7EgiuoPqyeWkBTUDr1"}}) {
-              pass_market {
-                market_acct
-                prices(limit: 1, order_by: {updated_slot:desc}) {
-                  price
-                  quote_amount
-                  base_amount
-                }
-              }
-              fail_market {
-                market_acct
-                prices(limit: 1, order_by: {updated_slot:desc}) {
-                  price
-                  quote_amount
-                  base_amount
-                }
-              }
-            }
-          }
-      - name: MyQuery2
-        query: |
-          query MyQuery {
-            proposal_bars(where: {proposal_acct:{_eq:"hEoj5ca54sU14MD3QqmKp734h7EgiuoPqyeWkBTUDr1"}}, order_by: [{bar_start_time:desc}], limit: 1) {
-              pass_price
-              fail_price
-              pass_base_amount
-              pass_quote_amount
-              fail_base_amount
-              fail_quote_amount
-            }
-          }
