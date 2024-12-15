@@ -109,6 +109,20 @@ array_relationships:
         remote_table:
           name: prices_5m
           schema: public
+  - name: proposals
+    using:
+      foreign_key_constraint_on:
+        column: fail_market_acct
+        table:
+          name: proposals
+          schema: public
+  - name: proposalsByPassMarketAcct
+    using:
+      foreign_key_constraint_on:
+        column: pass_market_acct
+        table:
+          name: proposals
+          schema: public
   - name: takes
     using:
       foreign_key_constraint_on:

@@ -658,7 +658,6 @@ async function insertAssociatedAccountsDataForProposal(
 
   let passMarket: MarketRecord = {
     marketAcct: proposal.account.passAmm.toString(),
-    proposalAcct: proposal.publicKey.toString(),
     marketType: MarketType.FUTARCHY_AMM,
     createTxSig: "",
     baseMintAcct: storedBaseVault.conditionalOnFinalizeTokenMint.toString(),
@@ -684,7 +683,6 @@ async function insertAssociatedAccountsDataForProposal(
 
   let failMarket: MarketRecord = {
     marketAcct: proposal.account.failAmm.toString(),
-    proposalAcct: proposal.publicKey.toString(),
     marketType: MarketType.FUTARCHY_AMM,
     createTxSig: "",
     baseMintAcct: storedBaseVault.conditionalOnRevertTokenMint.toString(),
