@@ -29,24 +29,6 @@
   definition:
     query:
       collection_name: allowed-queries
-      query_name: MyQuery
-  methods:
-    - GET
-  name: MyQuery
-  url: myquery
-- comment: ""
-  definition:
-    query:
-      collection_name: allowed-queries
-      query_name: MyQuery2
-  methods:
-    - GET
-  name: MyQuery2
-  url: myquery2
-- comment: ""
-  definition:
-    query:
-      collection_name: allowed-queries
       query_name: getProposalDescription
   methods:
     - GET
