@@ -39,13 +39,11 @@ import {
   enrichTokenMetadata,
 } from "@metadaoproject/futarchy-sdk";
 import { BN } from "@coral-xyz/anchor";
-import { gte } from "drizzle-orm";
 import { desc } from "drizzle-orm";
 import { logger } from "../../../logger";
-import { PriceMath, ProposalAccount } from "@metadaoproject/futarchy/v0.3";
-import { UserPerformance, UserPerformanceTotals } from "../../types";
+import { PriceMath } from "@metadaoproject/futarchy/v0.3";
+import { UserPerformanceTotals } from "../../types";
 import { alias } from "drizzle-orm/pg-core";
-import { bigint } from "drizzle-orm/mysql-core";
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -209,6 +207,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             dbDao.twapMaxObservationChangePerUpdate ?? null,
         };
 
+        await insertAssociatedAccountsDataForProposal(proposal, currentTime);
+
         await usingDb((db) =>
           db
             .insert(schema.proposals)
@@ -216,7 +216,9 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .onConflictDoNothing()
             .execute()
         );
-        await insertAssociatedAccountsDataForProposal(proposal, currentTime);
+
+        await updateMarketsWithProposal(proposal);
+        
       });
 
       logger.log("inserted proposals");
@@ -430,6 +432,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             onChainProposal,
             currentTime
           );
+          await updateMarketsWithProposal(onChainProposal);
         }
       }
 
@@ -508,11 +511,14 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
       // If this is a new proposal, insert associated accounts data
       if (proposalLog.includes("InitializeProposal")) {
         console.log("indexFromLogs::inserting associated accounts data for proposal", proposalAcct);
-        await upsertProposal({ publicKey: proposalAcct, account: proposal }, currentTime);
+        // NOTE: The relationship requirement is now  that we must have the markets before the proposal is inserted.
         await insertAssociatedAccountsDataForProposal(
           { publicKey: proposalAcct, account: proposal },
           currentTime
         );
+        await upsertProposal({ publicKey: proposalAcct, account: proposal }, currentTime);
+        // Once we have the proposal inserted, we go in and update the markets with the proposal.
+        await updateMarketsWithProposal({ publicKey: proposalAcct, account: proposal });
       }
 
       // Handle different proposal states
@@ -650,6 +656,29 @@ async function updateVaultStatuses(
       )
       .execute()
   );
+}
+
+async function updateMarketsWithProposal(
+  proposal: ProposalAccountWithKey,
+) {
+
+  if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
+  await usingDb((db) =>
+    db
+      .update(schema.markets)
+      .set({
+        proposalAcct: proposal.publicKey.toString(),
+      })
+      .where(
+        or(
+          eq(schema.markets.marketAcct, proposal.account.passAmm.toString()),
+          eq(schema.markets.marketAcct, proposal.account.failAmm.toString())
+        )
+      )
+      .execute()
+  );
+
 }
 
 async function insertAssociatedAccountsDataForProposal(
@@ -837,9 +866,9 @@ async function insertAssociatedAccountsDataForProposal(
 
   if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
 
+  // NOTE: Took out the proposalAcct from the market record as it is now a foreign key
   let passMarket: MarketRecord = {
     marketAcct: proposal.account.passAmm.toString(),
-    proposalAcct: proposal.publicKey.toString(),
     marketType: MarketType.FUTARCHY_AMM,
     createTxSig: "",
     baseMintAcct: storedBaseVault.conditionalOnFinalizeTokenMint.toString(),
@@ -865,7 +894,6 @@ async function insertAssociatedAccountsDataForProposal(
 
   let failMarket: MarketRecord = {
     marketAcct: proposal.account.failAmm.toString(),
-    proposalAcct: proposal.publicKey.toString(),
     marketType: MarketType.FUTARCHY_AMM,
     createTxSig: "",
     baseMintAcct: storedBaseVault.conditionalOnRevertTokenMint.toString(),
