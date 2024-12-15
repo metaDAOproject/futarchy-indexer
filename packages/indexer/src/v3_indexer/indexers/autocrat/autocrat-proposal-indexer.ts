@@ -209,6 +209,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           twapMaxObservationChangePerUpdate:
             dbDao.twapMaxObservationChangePerUpdate ?? null,
         };
+        // NOTE: We insert the markets first so that we can update the proposal with the market accounts
+        await insertAssociatedAccountsDataForProposal(proposal, currentTime);
 
         await usingDb((db) =>
           db
@@ -217,7 +219,10 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .onConflictDoNothing()
             .execute()
         );
-        await insertAssociatedAccountsDataForProposal(proposal, currentTime);
+
+        // NOTE: We update the markets with the proposal after the proposal is inserted
+        await updateMarketsWithProposal(proposal);
+        
       });
 
       logger.log("inserted proposals");
@@ -391,7 +396,6 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           await calculateUserPerformance(onChainProposal);
         }
 
-        // check if markets are there, if they aren't insert them
         // Check if markets are there, if they aren't, insert them
         const passAmm = onChainProposal.account.passAmm;
         const failAmm = onChainProposal.account.failAmm;
@@ -444,6 +448,27 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
   },
 
 };
+
+async function updateMarketsWithProposal(
+  proposal: ProposalAccountWithKey,
+) {
+  if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
+  await usingDb((db) =>
+    db
+      .update(schema.markets)
+      .set({
+        proposalAcct: proposal.publicKey.toString(),
+      })
+      .where(
+        or(
+          eq(schema.markets.marketAcct, passMarket.marketAcct),
+          eq(schema.markets.marketAcct, failMarket.marketAcct)
+        )
+      )
+      .execute()
+  );
+}
 
 
 async function insertAssociatedAccountsDataForProposal(
