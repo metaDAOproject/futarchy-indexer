@@ -836,34 +836,6 @@ async function insertAssociatedAccountsDataForProposal(
       .execute()
   );
 
-  for (const [mint, owner] of [
-    [basePass, proposal.account.passAmm],
-    [baseFail, proposal.account.failAmm],
-    [quotePass, proposal.account.passAmm],
-    [quoteFail, proposal.account.failAmm],
-  ]) {
-    if(!mint || !owner) continue;
-    let tokenAcct: TokenAcctRecord = {
-      mintAcct: mint.toString(),
-      updatedAt: currentTime,
-      tokenAcct: getAssociatedTokenAddressSync(mint, owner, true).toString(),
-      ownerAcct: owner.toString(),
-      amount: await getAccount(
-        provider.connection,
-        getAssociatedTokenAddressSync(mint, owner, true)
-      ).then((account) => account.amount.toString()),
-    };
-    tokenAcctsToInsert.push(tokenAcct);
-  }
-
-  await usingDb((db) =>
-    db
-      .insert(schema.tokenAccts)
-      .values(tokenAcctsToInsert)
-      .onConflictDoNothing()
-      .execute()
-  );
-
   if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
 
   // NOTE: Took out the proposalAcct from the market record as it is now a foreign key
