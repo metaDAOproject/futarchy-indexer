@@ -363,3 +363,4 @@
       returns: website_stats
       root_field_name: website_stats
   tables: "!include futarchy/tables/tables.yaml"
+  functions: "!include futarchy/functions/functions.yaml"
