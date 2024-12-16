@@ -14,10 +14,12 @@ const ACQUIRE_TIMEOUT = 10000;   // 10 second timeout for acquiring connection
 // Add connection pool configuration
 const poolConfig = {
   connectionString: connectionString,
-  min: 20,
-  max: 1000,
-  idleTimeoutMillis: 30 * 1000,
-  connectionTimeoutMillis: 5000,
+  min: 3,
+  max: 300, // Reduced from 1000 to a more reasonable number
+  idleTimeoutMillis: 5 * 1000,
+  connectionTimeoutMillis: 5 * 1000,
+  acquireTimeoutMillis: 60 * 1000,
+  evictionRunIntervalMillis: 1000,
   // Add error handling for the pool
   async errorHandler(err: Error) {
     console.error('Pool error:', err);
