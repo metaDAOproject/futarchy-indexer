@@ -93,7 +93,7 @@ class TransactionWatcher {
     // TODO: add websocket for realtime updates (might be lossy, but would allow us to increase poll time meaning less rpc costs)
     this.pollerIntervalId = setInterval(async () => {
       await this.handleBackfillFromLatest();
-    }, 10000);
+    }, 60 * 1000);
     return Ok(`successfully started watcher for ${this.account.toBase58()}`);
   }
 
@@ -614,6 +614,6 @@ export async function startTransactionWatchers() {
     if (!updatingWatchers) {
       getWatchers();
     }
-  }, 5000);
+  }, 5 * 1000);
   getWatchers();
 }

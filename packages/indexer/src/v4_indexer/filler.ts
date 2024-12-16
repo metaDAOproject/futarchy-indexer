@@ -190,7 +190,7 @@ export const frontfill = async () => {
       setInterval(async () => {
         const newSignatures = await insertNewSignatures(programId);
         console.log(`inserted up to ${newSignatures.length} new signatures for ${programId.toString()}`);
-      }, 30000); //every 30s
+      }, 60 * 1000); //every 30s
     } catch (error) {
       logger.errorWithChatBotAlert([
         error instanceof Error ? 
