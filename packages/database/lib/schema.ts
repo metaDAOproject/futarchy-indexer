@@ -221,6 +221,8 @@ export const markets = pgTable("markets", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  baseAmount: biggerTokenAmount("base_amount"),
+  quoteAmount: biggerTokenAmount("quote_amount"),
 });
 
 export enum PricesType {

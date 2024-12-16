@@ -64,6 +64,65 @@ array_relationships:
         table:
           name: prices
           schema: public
+  - name: prices_15m
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_15m
+          schema: public
+  - name: prices_1h
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_1h
+          schema: public
+  - name: prices_1m
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_chart_data
+          schema: public
+  - name: prices_4h
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_4h
+          schema: public
+  - name: prices_5m
+    using:
+      manual_configuration:
+        column_mapping:
+          market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: prices_5m
+          schema: public
+  - name: proposals
+    using:
+      foreign_key_constraint_on:
+        column: fail_market_acct
+        table:
+          name: proposals
+          schema: public
+  - name: proposalsByPassMarketAcct
+    using:
+      foreign_key_constraint_on:
+        column: pass_market_acct
+        table:
+          name: proposals
+          schema: public
   - name: takes
     using:
       foreign_key_constraint_on:
@@ -83,22 +142,24 @@ select_permissions:
     permission:
       columns:
         - active_slot
-        - base_lot_size
-        - inactive_slot
-        - quote_lot_size
-        - quote_tick_size
         - asks_token_acct
+        - base_amount
+        - base_lot_size
+        - base_maker_fee
         - base_mint_acct
+        - base_taker_fee
         - bids_token_acct
         - create_tx_sig
+        - created_at
+        - inactive_slot
         - market_acct
         - market_type
         - proposal_acct
-        - quote_mint_acct
-        - base_maker_fee
-        - base_taker_fee
+        - quote_amount
+        - quote_lot_size
         - quote_maker_fee
+        - quote_mint_acct
         - quote_taker_fee
-        - created_at
+        - quote_tick_size
       filter: {}
     comment: ""
