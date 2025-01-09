@@ -103,7 +103,7 @@ export const daos = pgTable(
     baseAcct: pubkey("base_acct")
       .references(() => tokens.mintAcct)
       .notNull(),
-    quoteAcct: pubkey("quote_acct").references(() => tokens.mintAcct),
+    quoteAcct: pubkey("quote_acct").references(() => tokens.mintAcct).notNull(),
     treasuryAcct: pubkey("treasury_acct").unique(),
     // This is keyed for proposals and initialized when dao is created.
     slotsPerProposal: numeric("slots_per_proposal"),
@@ -146,14 +146,14 @@ export const proposals = pgTable("proposals", {
   descriptionURL: varchar("description_url"),
   pricingModelPassAcct: pubkey("pricing_model_pass_acct"),
   pricingModelFailAcct: pubkey("pricing_model_fail_acct"),
-  passMarketAcct: pubkey("pass_market_acct"),
-  failMarketAcct: pubkey("fail_market_acct"),
+  passMarketAcct: pubkey("pass_market_acct").notNull(),
+  failMarketAcct: pubkey("fail_market_acct").notNull(),
   baseVault: pubkey("base_vault").references(
     () => conditionalVaults.condVaultAcct
-  ),
+  ).notNull(),
   quoteVault: pubkey("quote_vault").references(
     () => conditionalVaults.condVaultAcct
-  ),
+  ).notNull(),
   durationInSlots: biggerSlot("duration_in_slots"),
   passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
   twapInitialObservation: biggerTokenAmount("twap_initial_observation"),
@@ -990,6 +990,7 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   }),
   isBinary: boolean("is_binary").notNull().default(false),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  metricThreshold: numeric("metric_threshold"),
 });
 
 // TODO rename `created_at` to `inserted_at`
