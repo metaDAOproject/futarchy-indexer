@@ -992,6 +992,7 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   isBinary: boolean("is_binary").notNull().default(false),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   metricThreshold: numeric("metric_threshold"),
+  discussionLink: text("discussion_link"),
 });
 
 // TODO rename `created_at` to `inserted_at`
