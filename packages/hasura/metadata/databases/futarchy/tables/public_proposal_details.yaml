@@ -27,18 +27,19 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
-        - proposal_id
         - base_cond_vault_acct
+        - categories
+        - content
         - description
+        - discussion_link
         - fail_market_acct
         - pass_market_acct
         - proposal_acct
+        - proposal_id
         - proposer_acct
         - quote_cond_vault_acct
         - slug
         - title
-        - categories
-        - content
       filter: {}
     comment: ""
   - role: proposer
