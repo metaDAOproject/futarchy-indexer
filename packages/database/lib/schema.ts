@@ -1,4 +1,4 @@
-import { SQL, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   bigint,
   doublePrecision,
