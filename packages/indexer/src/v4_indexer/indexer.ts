@@ -1,4 +1,4 @@
-import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
+import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent } from "@metadaoproject/futarchy/v0.4";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
@@ -14,9 +14,9 @@ import { processAmmEvent, processVaultEvent } from "./processor";
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
 
-const parseEvents = (transactionResponse: VersionedTransactionResponse | TransactionResponse): { ammEvents: any, vaultEvents: any } => {
-  const ammEvents: { name: string; data: any }[] = [];
-  const vaultEvents: { name: string; data: any }[] = [];
+const parseEvents = (transactionResponse: VersionedTransactionResponse | TransactionResponse): { ammEvents: {name: string; data: ConditionalVaultEvent}[], vaultEvents: {name: string; data: ConditionalVaultEvent}[] } => {
+  const ammEvents: { name: string; data: ConditionalVaultEvent }[] = [];
+  const vaultEvents: { name: string; data: ConditionalVaultEvent }[] = [];
   try {
     const inner: CompiledInnerInstruction[] =
       transactionResponse?.meta?.innerInstructions ?? [];
@@ -45,7 +45,7 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
           const eventData = anchor.utils.bytes.base64.encode(ixData.slice(8));
           const event = program.coder.events.decode(eventData);
           if (event) {
-            ammEvents.push(event);
+            ammEvents.push({name: event.name, data: event.data as ConditionalVaultEvent});
           }
         } else if (programPubkey.equals(vaultIdlProgramId)) {
           program = conditionalVaultClient.vaultProgram;
@@ -55,7 +55,7 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
           const eventData = anchor.utils.bytes.base64.encode(ixData.slice(8));
           const event = program.coder.events.decode(eventData);
           if (event) {
-            vaultEvents.push(event);
+            vaultEvents.push({name: event.name, data: event.data as ConditionalVaultEvent});
           }
         }
       }
@@ -109,14 +109,14 @@ export async function index(signature: string, programId: PublicKey) {
     });
 
     const events = parseEvents(transactionResponse);
-    const ammEvents = events.ammEvents;
-    const vaultEvents = events.vaultEvents;
+    const ammEvents: {name: string; data: ConditionalVaultEvent}[] = events.ammEvents;
+    const vaultEvents: {name: string; data: ConditionalVaultEvent}[] = events.vaultEvents;
 
-    Promise.all(ammEvents.map(async (event: {name: string; data: any}) => {
+    Promise.all(ammEvents.map(async (event: {name: string; data: ConditionalVaultEvent}) => {
       await processAmmEvent(event, signature, transactionResponse);
     }));
 
-    Promise.all(vaultEvents.map(async (event: {name: string; data: any}) => {
+    Promise.all(vaultEvents.map(async (event: {name: string; data: ConditionalVaultEvent}) => {
       await processVaultEvent(event, signature, transactionResponse);
     }));
     
