@@ -2,7 +2,7 @@ import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/fu
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
-import { schema, usingDb } from "@metadaoproject/indexer-db";
+import { DBConnection, schema, usingDb } from "@metadaoproject/indexer-db";
 import { v4AmmClient as ammClient, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
 import { Program } from "@coral-xyz/anchor";
 import { Context, Logs } from "@solana/web3.js";
@@ -13,7 +13,6 @@ import { rpc } from "../rpc-wrapper";
 import { processAmmEvent, processVaultEvent } from "./processor";
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
-type DBConnection = any; // TODO: Fix typing..
 
 const parseEvents = (transactionResponse: VersionedTransactionResponse | TransactionResponse): { ammEvents: any, vaultEvents: any } => {
   const ammEvents: { name: string; data: any }[] = [];
@@ -98,7 +97,7 @@ export async function index(signature: string, programId: PublicKey) {
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.signatures).values({
         signature: transactionResponse.transaction.signatures[0],
-        slot: BigInt(transactionResponse.slot),
+        slot: transactionResponse.slot.toString(),
         didErr: transactionResponse.meta?.err !== null,
         err: transactionResponse.meta?.err ? JSON.stringify(transactionResponse.meta.err) : null,
         blockTime: transactionResponse.blockTime ? new Date(transactionResponse.blockTime * 1000) : null,
@@ -113,11 +112,11 @@ export async function index(signature: string, programId: PublicKey) {
     const ammEvents = events.ammEvents;
     const vaultEvents = events.vaultEvents;
 
-    Promise.all(ammEvents.map(async (event) => {
+    Promise.all(ammEvents.map(async (event: {name: string; data: any}) => {
       await processAmmEvent(event, signature, transactionResponse);
     }));
 
-    Promise.all(vaultEvents.map(async (event) => {
+    Promise.all(vaultEvents.map(async (event: {name: string; data: any}) => {
       await processVaultEvent(event, signature, transactionResponse);
     }));
     

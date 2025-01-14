@@ -136,3 +136,5 @@ export {
   isNull,
   inArray,
 } from "drizzle-orm";
+
+export type DBConnection = NodePgDatabase<typeof schemaDefs>;
