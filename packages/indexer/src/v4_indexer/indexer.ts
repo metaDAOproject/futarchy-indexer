@@ -2,7 +2,7 @@ import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID, ConditionalVaultEvent } f
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
-import { DBConnection, schema, usingDb } from "@metadaoproject/indexer-db";
+import { schema, usingDb } from "@metadaoproject/indexer-db";
 import { v4AmmClient as ammClient, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
 import { Program } from "@coral-xyz/anchor";
 import { Context, Logs } from "@solana/web3.js";
@@ -94,7 +94,7 @@ export async function index(signature: string, programId: PublicKey) {
     }
 
     //insert signature to db
-    await usingDb(async (db: DBConnection) => {
+    await usingDb(async (db) => {
       await db.insert(schema.signatures).values({
         signature: transactionResponse.transaction.signatures[0],
         slot: transactionResponse.slot.toString(),
@@ -109,14 +109,14 @@ export async function index(signature: string, programId: PublicKey) {
     });
 
     const events = parseEvents(transactionResponse);
-    const ammEvents: {name: string; data: ConditionalVaultEvent}[] = events.ammEvents;
-    const vaultEvents: {name: string; data: ConditionalVaultEvent}[] = events.vaultEvents;
+    const ammEvents = events.ammEvents;
+    const vaultEvents = events.vaultEvents;
 
-    Promise.all(ammEvents.map(async (event: {name: string; data: ConditionalVaultEvent}) => {
+    Promise.all(ammEvents.map(async (event) => {
       await processAmmEvent(event, signature, transactionResponse);
     }));
 
-    Promise.all(vaultEvents.map(async (event: {name: string; data: ConditionalVaultEvent}) => {
+    Promise.all(vaultEvents.map(async (event) => {
       await processVaultEvent(event, signature, transactionResponse);
     }));
     
