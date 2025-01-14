@@ -11,9 +11,9 @@ import { AddLiquidityEvent,
   SplitTokensEvent,
   MergeTokensEvent,
   RemoveLiquidityEvent } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq, and, or } from "@metadaoproject/indexer-db";
+import { schema, usingDb, eq, and, or, DBConnection } from "@metadaoproject/indexer-db";
 import { PublicKey, VersionedTransactionResponse } from "@solana/web3.js";
-import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
+import { MarketType, PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
 import { connection, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
@@ -28,8 +28,6 @@ type Market = {
   baseMint: string;
   quoteMint: string;
 }
-
-type DBConnection = any; // TODO: Fix typing..
 
 
 export async function processAmmEvent(event: { name: string; data: AmmEvent }, signature: string, transactionResponse: VersionedTransactionResponse) {
@@ -62,11 +60,10 @@ async function handleCreateAmmEvent(event: CreateAmmEvent) {
         baseMint: event.baseMint.toString(),
         quoteMint: event.quoteMint.toString(),
       });
-
       await db.insert(schema.v0_4_amms).values({
         ammAddr: event.common.amm.toString(),
         lpMintAddr: event.lpMint.toString(),
-        createdAtSlot: BigInt(event.common.slot.toString()),
+        createdAtSlot: event.common.slot.toString(),
         baseMintAddr: event.baseMint.toString(),
         quoteMintAddr: event.quoteMint.toString(),
         latestAmmSeqNumApplied: 0n,
@@ -93,7 +90,7 @@ async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
         return;
       }
 
-      if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
+      if (amm[0].latestAmmSeqNumApplied >= event.common.seqNum.toString()) {
         console.log("Already applied", event.common.seqNum.toString());
         return;
       }
@@ -101,9 +98,9 @@ async function handleAddLiquidityEvent(event: AddLiquidityEvent) {
       await insertPriceIfNotDuplicate(db, amm, event);
 
       await db.update(schema.v0_4_amms).set({
-        baseReserves: BigInt(event.common.postBaseReserves.toString()),
-        quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
-        latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
+        baseReserves: event.common.postBaseReserves.toString(),
+        quoteReserves: event.common.postQuoteReserves.toString(),
+        latestAmmSeqNumApplied: event.common.seqNum.toString(),
       }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
 
       console.log("Updated AMM", event.common.amm.toString());
@@ -127,7 +124,7 @@ async function handleRemoveLiquidityEvent(event: RemoveLiquidityEvent) {
         return;
       }
 
-      if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
+      if (amm[0].latestAmmSeqNumApplied >= event.common.seqNum.toString()) {
         console.log("Already applied", event.common.seqNum.toString());
         return;
       }
@@ -135,9 +132,9 @@ async function handleRemoveLiquidityEvent(event: RemoveLiquidityEvent) {
       await insertPriceIfNotDuplicate(db, amm, event);
 
       await db.update(schema.v0_4_amms).set({
-        baseReserves: BigInt(event.common.postBaseReserves.toString()),
-        quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
-        latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
+        baseReserves: event.common.postBaseReserves.toString(),
+        quoteReserves: event.common.postQuoteReserves.toString(),
+        latestAmmSeqNumApplied: event.common.seqNum.toString(),
       }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
 
       console.log("Updated AMM", event.common.amm.toString());
@@ -159,15 +156,14 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.v0_4_swaps).values({
         signature: signature,
-        slot: BigInt(transactionResponse.slot),
-        // @ts-ignore - fixed above in the if statement
-        blockTime: new Date(transactionResponse.blockTime * 1000),
+        slot: transactionResponse.slot.toString(),
+        blockTime: new Date((transactionResponse.blockTime ?? 0) * 1000),
         swapType: event.swapType.buy ? V04SwapType.Buy : V04SwapType.Sell,
         ammAddr: event.common.amm.toString(),
         userAddr: event.common.user.toString(),
         inputAmount: event.inputAmount.toString(),
         outputAmount: event.outputAmount.toString(),
-        ammSeqNum: BigInt(event.common.seqNum.toString())
+        ammSeqNum: event.common.seqNum.toString()
       }).onConflictDoNothing();
 
       const amm = await db.select().from(schema.v0_4_amms).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString())).limit(1);
@@ -179,7 +175,7 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
 
       console.log("latestAmmSeqNumApplied", amm[0].latestAmmSeqNumApplied.toString());
       console.log("event.common.seqNum", event.common.seqNum.toString());
-      if (amm[0].latestAmmSeqNumApplied >= BigInt(event.common.seqNum.toString())) {
+      if (amm[0].latestAmmSeqNumApplied >= event.common.seqNum.toString()) {
         console.log("Already applied", event.common.seqNum.toString());
         return;
       }
@@ -187,9 +183,9 @@ async function handleSwapEvent(event: SwapEvent, signature: string, transactionR
       await insertPriceIfNotDuplicate(db, amm, event);
 
       await db.update(schema.v0_4_amms).set({
-        baseReserves: BigInt(event.common.postBaseReserves.toString()),
-        quoteReserves: BigInt(event.common.postQuoteReserves.toString()),
-        latestAmmSeqNumApplied: BigInt(event.common.seqNum.toString()),
+        baseReserves: event.common.postBaseReserves.toString(),
+        quoteReserves: event.common.postQuoteReserves.toString(),
+        latestAmmSeqNumApplied: event.common.seqNum.toString(),
       }).where(eq(schema.v0_4_amms.ammAddr, event.common.amm.toString()));
     });
   } catch (error) {
@@ -205,10 +201,10 @@ async function handleSplitEvent(event: SplitTokensEvent, signature: string, tran
   try {
     const insertValues = {
       vaultAddr: event.vault.toString(),
-      vaultSeqNum: BigInt(event.seqNum.toString()),
+      vaultSeqNum: event.seqNum.toString(),
       signature: signature,
-      slot: BigInt(transactionResponse.slot),
-      amount: BigInt(event.amount.toString())
+      slot: transactionResponse.slot.toString(),
+      amount: event.amount.toString()
       // Note: createdAt will be set automatically by the default value
     };
     
@@ -246,10 +242,10 @@ async function handleMergeEvent(event: MergeTokensEvent, signature: string, tran
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.v0_4_merges).values({
         vaultAddr: event.vault.toString(),
-        vaultSeqNum: BigInt(event.seqNum.toString()),
+        vaultSeqNum: event.seqNum.toString(),
         signature: signature,
-        slot: BigInt(transactionResponse.slot),
-        amount: BigInt(event.amount.toString())
+        slot: transactionResponse.slot.toString(),
+        amount: event.amount.toString()
       }).onConflictDoNothing();
     });
   } catch (error) {
@@ -271,7 +267,7 @@ async function insertTokenIfNotExists(db: DBConnection, mintAcct: PublicKey) {
       symbol: mintAcct.toString().slice(0, 3),
       name: mintAcct.toString().slice(0, 3),
       decimals: mint.decimals,
-      supply: mint.supply,
+      supply: mint.supply.toString(),
       updatedAt: new Date(),
     }).onConflictDoNothing();
   }
@@ -403,7 +399,7 @@ async function insertTokenAccountIfNotExists(db: DBConnection, event: Initialize
       tokenAcct: event.vaultUnderlyingTokenAccount.toString(),
       mintAcct: event.underlyingTokenMint.toString(),
       ownerAcct: event.vaultUnderlyingTokenAccount.toString(),
-      amount: 0n,
+      amount: 0n.toString(),
     });
   }
 }
@@ -419,11 +415,11 @@ async function insertMarketIfNotExists(db: DBConnection, market: Market) {
       marketAcct: market.marketAcct,
       baseMintAcct: market.baseMint,
       quoteMintAcct: market.quoteMint,
-      marketType: 'amm',
+      marketType: MarketType.FUTARCHY_AMM,
       createTxSig: '',
-      baseLotSize: 0n,
-      quoteLotSize: 0n,
-      quoteTickSize: 0n,
+      baseLotSize: 0n.toString(),
+      quoteLotSize: 0n.toString(),
+      quoteTickSize: 0n.toString(),
       baseMakerFee: 0,
       quoteMakerFee: 0,
       baseTakerFee: 0,
@@ -431,8 +427,9 @@ async function insertMarketIfNotExists(db: DBConnection, market: Market) {
     }).onConflictDoNothing();
   }
 }
+type AmmInsertion = typeof schema.v0_4_amms.$inferInsert;
 
-async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: AddLiquidityEvent | SwapEvent | RemoveLiquidityEvent) {
+async function insertPriceIfNotDuplicate(db: DBConnection, amm: AmmInsertion[], event: AddLiquidityEvent | SwapEvent | RemoveLiquidityEvent) {
   console.log("insertPriceIfNotDuplicate::event", event);
   const existingPrice = await db.select()
     .from(schema.prices)
@@ -465,10 +462,10 @@ async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: Ad
 
   await db.insert(schema.prices).values({
     marketAcct: event.common.amm.toBase58(),
-    baseAmount: BigInt(event.common.postBaseReserves.toString()),
-    quoteAmount: BigInt(event.common.postQuoteReserves.toString()),
+    baseAmount: event.common.postBaseReserves.toString(),
+    quoteAmount: event.common.postQuoteReserves.toString(),
     price: humanPrice.toString(),
-    updatedSlot: BigInt(event.common.slot.toString()),
+    updatedSlot: event.common.slot.toString(),
     createdBy: 'amm-market-indexer',
     pricesType: PricesType.Conditional,
   }).onConflictDoNothing();
