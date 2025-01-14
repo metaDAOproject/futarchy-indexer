@@ -27,7 +27,7 @@ async function main() {
   const statement = arg ?? await chooseCommonStatement();
   console.log(green(statement));
   const result = await usingDb(db => db.execute(sql.raw(statement)));
-  if (result.rowCount) {
+  if (result?.rowCount) {
     console.log('total:', result.rowCount);
     console.log(table(result.rows));
     return;

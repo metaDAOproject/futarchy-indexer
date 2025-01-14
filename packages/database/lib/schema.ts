@@ -1,4 +1,4 @@
-import { SQL, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   bigint,
   doublePrecision,
@@ -651,7 +651,8 @@ export const comments = pgTable("comments", {
   // it references only commentIds which have respondingCommentId with NULL
   respondingCommentId: bigint("responding_comment_id", {
     mode: "bigint",
-  }).references(() => comments.commentId),
+    // for circular references we need to cast to any
+  }).references((): any => comments.commentId),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),

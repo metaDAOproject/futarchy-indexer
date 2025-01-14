@@ -256,7 +256,7 @@ async function parseInstructions(
     const outerIxWithDisplay = getIxWithDisplay(
       {
         ...curOuter,
-        data: Buffer.from(curOuter.data),
+        data: Buffer.from(curOuter.data.buffer),
         accounts: curOuter.accountKeyIndexes,
       },
       idl,
@@ -305,7 +305,7 @@ async function parseInstructions(
       const innerIxWithDisplay = getIxWithDisplay(
         {
           ...curOuter,
-          data: Buffer.from(curOuter.data),
+          data: Buffer.from(curOuter.data.buffer),
           accounts: curOuter.accountKeyIndexes,
         },
         idl,
@@ -397,7 +397,7 @@ function getIxWithDisplay(
   }
 
   try {
-    decodedIx = coder.decode(Buffer.from(instruction.data));
+    decodedIx = coder.decode(Buffer.from(instruction.data.buffer));
   } catch (e) {
     logger.error("error with coder decoding of instruction:", e);
     return null;
