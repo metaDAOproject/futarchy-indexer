@@ -778,6 +778,7 @@ export const proposalDetails = pgTable("proposal_details", {
   pass_market_acct: pubkey("pass_market_acct"),
   fail_market_acct: pubkey("fail_market_acct"),
   discussion_link: text("discussion_link"),
+  state: text("state").notNull().default("draft"),
 });
 
 export const programSystem = pgTable("program_system", {
@@ -993,6 +994,7 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   completedAt: timestamp("completed_at", { withTimezone: true }),
   metricThreshold: numeric("metric_threshold"),
   discussionLink: text("discussion_link"),
+  state: text("state").notNull().default("draft"),
 });
 
 // TODO rename `created_at` to `inserted_at`
