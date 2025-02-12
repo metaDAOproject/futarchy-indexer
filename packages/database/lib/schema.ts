@@ -754,7 +754,7 @@ export const daoDetails = pgTable(
 
 export const proposalDetails = pgTable("proposal_details", {
   // This table holds details for proposals which are not part of the indexing service.
-  proposalId: bigint("proposal_id", { mode: "bigint" }).primaryKey(),
+  proposalId: bigserial("proposal_id", { mode: "bigint" }).primaryKey(),
   // Our reference to on-chain data
   proposalAcct: pubkey("proposal_acct").references(
     () => proposals.proposalAcct
@@ -779,6 +779,9 @@ export const proposalDetails = pgTable("proposal_details", {
   fail_market_acct: pubkey("fail_market_acct"),
   discussion_link: text("discussion_link"),
   state: text("state").notNull().default("draft"),
+  summary: text("summary"),
+  organizationId: bigint("organization_id", { mode: "bigint" })
+    .references(() => organizations.organizationId),
 });
 
 export const programSystem = pgTable("program_system", {
@@ -995,6 +998,7 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   metricThreshold: numeric("metric_threshold"),
   discussionLink: text("discussion_link"),
   state: text("state").notNull().default("draft"),
+  summary: text("summary"),
 });
 
 // TODO rename `created_at` to `inserted_at`
