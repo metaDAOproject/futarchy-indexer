@@ -29,15 +29,6 @@
   definition:
     query:
       collection_name: allowed-queries
-      query_name: getProposalDescription
-  methods:
-    - GET
-  name: getProposalDescription
-  url: proposal-description/:pk
-- comment: ""
-  definition:
-    query:
-      collection_name: allowed-queries
       query_name: proposals_by_pk
   methods:
     - GET

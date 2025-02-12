@@ -4,7 +4,13 @@ table:
 object_relationships:
   - name: proposal
     using:
-      foreign_key_constraint_on: proposal_acct
+      manual_configuration:
+        column_mapping:
+          proposal_acct: proposal_acct
+        insertion_order: null
+        remote_table:
+          name: proposals
+          schema: public
 insert_permissions:
   - role: user
     permission:
@@ -27,24 +33,28 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
+        - organization_id
+        - proposal_id
         - base_cond_vault_acct
-        - categories
-        - content
         - description
-        - discussion_link
         - fail_market_acct
         - pass_market_acct
         - proposal_acct
-        - proposal_id
         - proposer_acct
         - quote_cond_vault_acct
         - slug
         - title
+        - categories
+        - content
+        - discussion_link
+        - state
+        - summary
       filter: {}
     comment: ""
   - role: proposer
     permission:
       columns:
+        - organization_id
         - proposal_id
         - base_cond_vault_acct
         - description
@@ -57,11 +67,15 @@ select_permissions:
         - title
         - categories
         - content
+        - discussion_link
+        - state
+        - summary
       filter: {}
     comment: ""
   - role: user
     permission:
       columns:
+        - organization_id
         - proposal_id
         - base_cond_vault_acct
         - description
@@ -74,6 +88,9 @@ select_permissions:
         - title
         - categories
         - content
+        - discussion_link
+        - state
+        - summary
       filter: {}
     comment: ""
 update_permissions:

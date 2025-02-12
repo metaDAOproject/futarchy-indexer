@@ -34,3 +34,19 @@ select_permissions:
       filter: {}
       allow_aggregations: true
     comment: ""
+  - role: user
+    permission:
+      columns:
+        - organization_id
+        - is_hide
+        - creator_acct
+        - image_url
+        - slug
+        - url
+        - admin_accts
+        - socials
+        - description
+        - name
+        - created_at
+      filter: {}
+    comment: ""
