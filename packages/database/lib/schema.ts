@@ -596,6 +596,8 @@ export const takes = pgTable(
       .notNull(),
     orderBlock: biggerBlock("order_block").notNull(),
     orderTime: timestamp("order_time", { withTimezone: true }).notNull(),
+    baseDecimals: smallint("base_decimals"),
+    quoteDecimals: smallint("quote_decimals"),
   },
   (table) => ({
     // For aggregating into candles and showing latest trades
@@ -676,6 +678,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  userName: text("user_name").unique(),
+  imageUrl: text("image_url"),
 });
 
 export const sessions = pgTable("sessions", {
@@ -744,8 +748,11 @@ export const daoDetails = pgTable(
     socials: jsonb("socials"),
     organizationId: bigint("organization_id", { mode: "bigint" })
       .references(() => organizations.organizationId),
-    baseMint: pubkey("base_mint").references(() => tokens.mintAcct),
-    quoteMint: pubkey("quote_mint").references(() => tokens.mintAcct),
+    baseMint: pubkey("base_mint"),
+    quoteMint: pubkey("quote_mint"),
+    daoAcct: pubkey("dao_acct"),
+    isActive: boolean("is_active").notNull().default(false),
+    isPrimary: boolean("is_primary").notNull().default(false),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),
