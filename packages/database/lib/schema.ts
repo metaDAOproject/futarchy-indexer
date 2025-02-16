@@ -1235,6 +1235,7 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  telegramChannel: text("telegram_channel"),
 },
 (table) => ({
   uniqueId: unique("id_name_url").on(table.organizationId, table.url, table.name),
