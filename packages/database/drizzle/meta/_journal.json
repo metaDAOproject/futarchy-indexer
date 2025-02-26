@@ -113,6 +113,13 @@
       "when": 1740599383669,
       "tag": "0015_reflective_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1740615036090,
+      "tag": "0016_free_harpoon",
+      "breakpoints": true
     }
   ]
 }
