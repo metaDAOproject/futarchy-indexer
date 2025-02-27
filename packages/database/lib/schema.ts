@@ -1186,6 +1186,9 @@ export const v0_4_funding_records = pgTable("v0_4_funding_records", {
     .references(() => v0_4_launches.launchAddr),
   funderAddr: pubkey("funder_addr").notNull(),
   committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
+  latestFundingRecordSeqNumApplied: bigint("latest_funding_record_seq_num_applied", { mode: "bigint" }).notNull(),
+  isClaimed: boolean("is_claimed").notNull().default(false),
+  isRefunded: boolean("is_refunded").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),

@@ -134,6 +134,20 @@
       "when": 1740699923228,
       "tag": "0018_third_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1740769001422,
+      "tag": "0019_cloudy_the_phantom",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1740769081796,
+      "tag": "0020_worthless_thor",
+      "breakpoints": true
     }
   ]
 }
