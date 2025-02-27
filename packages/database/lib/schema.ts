@@ -1,4 +1,4 @@
-import { SQL, sql } from "drizzle-orm";
+import { desc, SQL, sql } from "drizzle-orm";
 import {
   bigint,
   doublePrecision,
@@ -1174,6 +1174,21 @@ export const v0_4_launches = pgTable("v0_4_launches", {
   latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
   state: pgEnum("state", V04LaunchState).notNull(),
   slotStarted: slot("slot_started").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const launchDetails = pgTable("launch_details", {
+  launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url"),
+  videoUrl: text("video_url"),
+  websiteUrl: text("website_url"),
+  twitterUrl: text("twitter_url"),
+  telegramUrl: text("telegram_url"),
+  discordUrl: text("discord_url"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
