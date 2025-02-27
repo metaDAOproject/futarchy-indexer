@@ -1179,6 +1179,18 @@ export const v0_4_launches = pgTable("v0_4_launches", {
     .default(sql`now()`),
 });
 
+export const v0_4_funding_records = pgTable("v0_4_funding_records", {
+  fundingRecordAddr: pubkey("funding_record_addr").primaryKey(),
+  launchAddr: pubkey("launch_addr")
+    .notNull()
+    .references(() => v0_4_launches.launchAddr),
+  funderAddr: pubkey("funder_addr").notNull(),
+  committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
 export const launchDetails = pgTable("launch_details", {
   launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
   title: text("title").notNull(),
@@ -1217,6 +1229,20 @@ export const v0_4_refunds = pgTable("v0_4_refunds", {
     .notNull()
     .default(sql`now()`),
 });
+
+export const v0_4_claims = pgTable("v0_4_claims", {
+  claimId: uuid("claim_id").notNull().defaultRandom().primaryKey(),
+  launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
+  funderAddr: pubkey("funder_addr").notNull(),
+  tokensClaimed: numeric("tokens_claimed", { precision: 20, scale: 0 }).notNull(),
+  fundingRecordAddr: pubkey("funding_record_addr").notNull().references(() => v0_4_funding_records.fundingRecordAddr),
+  slot: slot("slot").notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
 
 // TODO: This is commented out give these are timescale views, but I wanted to include them
 export const twapChartData = pgView("twap_chart_data", {
