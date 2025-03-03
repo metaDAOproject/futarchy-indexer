@@ -1166,10 +1166,9 @@ export const v0_4_launches = pgTable("v0_4_launches", {
     .references(() => tokens.mintAcct),
   pdaBump: smallint("pda_bump").notNull(),
   daoAddr: pubkey("dao_addr")
-    .notNull()
     .references(() => v0_4_daos.daoAddr),
-  daoTreasuryAddr: pubkey("dao_treasury_addr").notNull(),
-  treasuryUsdcAcct: pubkey("treasury_usdc_acct").notNull(),
+  daoTreasuryAddr: pubkey("dao_treasury_addr"),
+  treasuryUsdcAcct: pubkey("treasury_usdc_acct"),
   committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
   latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
   state: pgEnum("state", V04LaunchState).notNull(),
