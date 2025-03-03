@@ -1113,6 +1113,7 @@ export const v0_4_daos = pgTable("v0_4_daos", {
   slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }).notNull(),
   twapInitialObservation: numeric("twap_initial_observation", { precision: 40, scale: 0 }).notNull(),
   twapMaxObservationChangePerUpdate: numeric("twap_max_observation_change_per_update", { precision: 40, scale: 0 }).notNull(),
+  twapStartDelaySlots: bigint("twap_start_delay_slots", { mode: "bigint" }).notNull(),
   minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", { mode: "bigint" }).notNull(),
   minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", { mode: "bigint" }).notNull(),
   latestDaoSeqNumApplied: bigint("latest_dao_seq_num_applied", { mode: "bigint" }).notNull(),
