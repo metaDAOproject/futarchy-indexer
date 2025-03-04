@@ -1,0 +1,22 @@
+table:
+  name: v0_4_proposals
+  schema: public
+object_relationships:
+  - name: v04AmmByPassAmmAddr
+    using:
+      foreign_key_constraint_on: pass_amm_addr
+  - name: v04ConditionalVaultByQuoteVaultAddr
+    using:
+      foreign_key_constraint_on: quote_vault_addr
+  - name: v0_4_amm
+    using:
+      foreign_key_constraint_on: fail_amm_addr
+  - name: v0_4_conditional_vault
+    using:
+      foreign_key_constraint_on: base_vault_addr
+  - name: v0_4_dao
+    using:
+      foreign_key_constraint_on: dao_addr
+  - name: v0_4_question
+    using:
+      foreign_key_constraint_on: question_addr

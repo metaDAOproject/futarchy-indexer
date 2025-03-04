@@ -286,6 +286,43 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: user_acct
+          type:
+            nullable: false
+            scalar: text
+        - name: total_trades
+          type:
+            nullable: false
+            scalar: bigint
+        - name: total_volume
+          type:
+            nullable: false
+            scalar: numeric
+        - name: market_acct
+          type:
+            nullable: false
+            scalar: text
+        - name: market_side
+          type:
+            nullable: false
+            scalar: text
+        - name: proposal_acct
+          type:
+            nullable: false
+            scalar: text
+      name: organization_proposal_user_trade_volume
+      select_permissions:
+        - permission:
+            columns:
+              - user_acct
+              - total_trades
+              - total_volume
+              - market_acct
+              - market_side
+              - proposal_acct
+            filter: {}
+          role: anonymous
+    - fields:
         - name: total_volume
           type:
             nullable: true
@@ -720,6 +757,14 @@
       returns: live_proposals
       root_field_name: live_proposals
     - arguments:
+        market_key:
+          description: ""
+          nullable: false
+          type: bigint
+      code: "WITH decision_market_data AS (\n\tSELECT\n\t\tamm_addr,\n\t\tCOALESCE(completed_at, committee_evaluation) AS completed_at,\n\t\tcreated_at\n\tFROM v0_4_metric_decisions md\n\tWHERE ({{market_key}}::BIGINT IS NULL OR {{market_key}}::BIGINT = md.id)\n),\n--twap_data AS (\n--\tSELECT\n--\t\t*\n--\tFROM twaps\n--\tWHERE market_acct = (SELECT amm_addr FROM decision_market_data)\n--\tAND created_at >= (SELECT created_at FROM decision_market_data)\n--\tAND created_at <= (SELECT completed_at FROM decision_market_data)\n--),\nprices_1h AS (\n\tSELECT\n\t\tARRAY_AGG(\n\t\t\tJSON_BUILD_ARRAY(price, bucket_time::TEXT)\n\t\t\tORDER BY bucket_time DESC\n\t\t) AS prices\n\tFROM (\n        SELECT \n            time_bucket('60 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM decision_market_data dmd\n        LEFT JOIN prices_chart_data pc ON \n            pc.market_acct = dmd.amm_addr\n            AND pc.interv >= dmd.created_at\n            AND pc.interv <= dmd.completed_at\n        GROUP BY bucket_time\n    ) t\n),\nprices_15m AS (\n\tSELECT\n\t\tARRAY_AGG(\n\t\t\tJSON_BUILD_ARRAY(price, bucket_time::TEXT)\n\t\t\tORDER BY bucket_time DESC\n\t\t) AS prices\n\tFROM (\n        SELECT \n            time_bucket('15 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM decision_market_data dmd\n        LEFT JOIN prices_chart_data pc ON \n            pc.market_acct = dmd.amm_addr\n            AND pc.interv >= dmd.created_at\n            AND pc.interv <= dmd.completed_at\n        GROUP BY bucket_time\n    ) t\n),\nprices_5m AS (\n\tSELECT\n\t\tARRAY_AGG(\n\t\t\tJSON_BUILD_ARRAY(price, bucket_time::TEXT)\n\t\t\tORDER BY bucket_time DESC\n\t\t) AS prices\n\tFROM (\n        SELECT \n            time_bucket('5 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM decision_market_data dmd\n        LEFT JOIN prices_chart_data pc ON \n            pc.market_acct = dmd.amm_addr\n            AND pc.interv >= dmd.created_at\n            AND pc.interv <= dmd.completed_at\n        GROUP BY bucket_time\n    ) t),\nprices_1m AS (\n\tSELECT\n\t\tARRAY_AGG(\n\t\t\tJSON_BUILD_ARRAY(price, bucket_time::TEXT)\n\t\t\tORDER BY bucket_time DESC\n\t\t) AS prices\n\tFROM (\n        SELECT \n            time_bucket('1 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM decision_market_data dmd\n        LEFT JOIN prices_chart_data pc ON \n            pc.market_acct = dmd.amm_addr\n            AND pc.interv >= dmd.created_at\n            AND pc.interv <= dmd.completed_at\n        GROUP BY bucket_time\n    ) t\n)\nSELECT json_build_object(\n\t'prices_1m', (SELECT prices FROM prices_1m),\n\t'prices_5m', (SELECT prices FROM prices_5m),\n\t'prices_15m', (SELECT prices FROM prices_15m),\n\t'prices_1h', (SELECT prices FROM prices_1h)\n) AS prices;"
+      returns: chart_prices_twap
+      root_field_name: metric_market_chart_prices
+    - arguments:
         market_acct:
           description: ""
           nullable: true
@@ -883,12 +928,73 @@
       root_field_name: unique_proposal_bars_data
     - arguments:
         proposal_acct:
-          description: the proposal account
+          description: ""
           nullable: true
           type: varchar
-      code: "WITH market_actors AS (\n    SELECT \n      t.market_acct,\n      actor_acct,\n      COUNT(*) AS countOrders\n    FROM \n      takes t\n    JOIN orders o ON o.order_tx_sig = t.order_tx_sig\n    JOIN transactions tx ON tx.tx_sig = o.order_tx_sig\n    WHERE tx.failed IS FALSE\n    AND o.quote_price > 0\n    GROUP BY \n      t.market_acct, actor_acct\n), distinct_users_by_proposal AS (\n    SELECT\n        proposal_acct,\n        COUNT(DISTINCT actor_acct) AS uniqueUsersCount,\n        SUM(countOrders) AS totalTrades\n    FROM market_actors\n    JOIN markets ON markets.market_acct = market_actors.market_acct\n    GROUP BY proposal_acct\n)\nSELECT\n\tproposal_acct,\n\tuniqueUsersCount AS user_count,\n\ttotalTrades AS trade_count\nFROM distinct_users_by_proposal\nWHERE \n    CASE \n        WHEN {{proposal_acct}} IS NOT NULL \n            THEN proposal_acct = {{proposal_acct}} \n        ELSE 1 = 1 \n    END;"
+      code: "WITH market_actors AS (\n    SELECT \n      t.market_acct,\n      o.actor_acct,\n      COUNT(*) AS countOrders\n    FROM \n      takes t\n    JOIN orders o ON o.order_tx_sig = t.order_tx_sig\n    JOIN transactions tx ON tx.tx_sig = o.order_tx_sig\n    WHERE tx.failed IS FALSE\n    AND o.quote_price > 0\n    GROUP BY \n      t.market_acct, o.actor_acct\n), distinct_users_by_proposal AS (\n    SELECT\n        proposal_acct,\n        COUNT(DISTINCT actor_acct) AS uniqueUsersCount,\n        SUM(countOrders) AS totalTrades\n    FROM market_actors\n    JOIN markets ON markets.market_acct = market_actors.market_acct\n    GROUP BY proposal_acct\n)\nSELECT\n\tproposal_acct,\n\tuniqueUsersCount AS user_count,\n\ttotalTrades AS trade_count\nFROM distinct_users_by_proposal\nWHERE \n    CASE \n        WHEN {{proposal_acct}} IS NOT NULL \n            THEN proposal_acct = {{proposal_acct}} \n        ELSE 1 = 1 \n    END;"
       returns: proposal_statistics
       root_field_name: user_count_and_trade_count_per_proposal
+    - arguments:
+        organization_slug:
+          description: ""
+          nullable: false
+          type: text
+      code: |-
+        WITH proposal_markets AS (
+            SELECT
+                m.market_acct,
+                m.proposal_acct,
+                CASE
+                	WHEN p.fail_market_acct = m.market_acct
+                	THEN 'fail'
+                	WHEN p.pass_market_acct = m.market_acct
+                	THEN 'pass'
+                END AS market_side
+            FROM markets m
+            JOIN proposals p ON p.proposal_acct = m.proposal_acct
+            JOIN daos d ON d.dao_acct = p.dao_acct
+            JOIN organizations o ON o.organization_id = d.organization_id
+            WHERE m.proposal_acct IS NOT NULL
+            AND ({{organization_slug}}::TEXT IS NULL OR o.slug = {{organization_slug}}::TEXT)
+        ), proposal_orders AS (
+            SELECT
+                orders.actor_acct,
+                orders.market_acct AS market_acct,
+                orders.side AS side,
+                orders.filled_base_amount AS order_amount,
+                orders.quote_price AS order_price,
+                pm.proposal_acct AS proposal_acct,
+                pm.market_side AS market_side,
+                takes.base_amount AS trade_amount,
+                takes.quote_price AS trade_price,
+                takes.base_decimals AS trade_base_decimals,
+                takes.order_tx_sig AS tx_sig
+            FROM orders
+            LEFT JOIN takes ON orders.order_tx_sig = takes.order_tx_sig
+            JOIN proposal_markets pm ON pm.market_acct = orders.market_acct
+            WHERE orders.market_acct IN (SELECT market_acct FROM proposal_markets)
+        ), proposal_trades_stats AS (
+            SELECT
+                market_acct,
+                actor_acct,
+                COUNT(*) AS trade_count,
+                SUM(order_price * trade_amount / POWER(10, 9)) AS volume,
+                proposal_acct,
+                market_side
+            FROM proposal_orders
+            WHERE tx_sig IS NOT NULL
+            GROUP BY market_acct, actor_acct, proposal_acct, market_side
+        )
+        SELECT
+            actor_acct::TEXT AS user_acct,
+            trade_count::BIGINT AS total_trades,
+            volume::NUMERIC AS total_volume,
+            market_acct::TEXT AS market_acct,
+            market_side::TEXT AS market_side,
+            proposal_acct::TEXT AS proposal_acct
+        FROM proposal_trades_stats ORDER BY volume DESC;
+      returns: organization_proposal_user_trade_volume
+      root_field_name: user_proposal_organization_volume
     - arguments:
         user_acct:
           description: ""

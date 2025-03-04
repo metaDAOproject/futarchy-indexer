@@ -2,6 +2,9 @@ table:
   name: proposal_details
   schema: public
 object_relationships:
+  - name: organization
+    using:
+      foreign_key_constraint_on: organization_id
   - name: proposal
     using:
       manual_configuration:

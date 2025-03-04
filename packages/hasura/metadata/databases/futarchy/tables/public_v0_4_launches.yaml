@@ -1,0 +1,46 @@
+table:
+  name: v0_4_launches
+  schema: public
+object_relationships:
+  - name: token
+    using:
+      foreign_key_constraint_on: token_mint_acct
+  - name: v0_4_dao
+    using:
+      foreign_key_constraint_on: dao_addr
+array_relationships:
+  - name: launch_details
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: launch_details
+          schema: public
+  - name: v0_4_claims
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_claims
+          schema: public
+  - name: v0_4_funding_records
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_funding_records
+          schema: public
+  - name: v0_4_funds
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_funds
+          schema: public
+  - name: v0_4_refunds
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_refunds
+          schema: public

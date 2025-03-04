@@ -1,0 +1,15 @@
+table:
+  name: v0_4_funding_records
+  schema: public
+object_relationships:
+  - name: v0_4_launch
+    using:
+      foreign_key_constraint_on: launch_addr
+array_relationships:
+  - name: v0_4_claims
+    using:
+      foreign_key_constraint_on:
+        column: funding_record_addr
+        table:
+          name: v0_4_claims
+          schema: public

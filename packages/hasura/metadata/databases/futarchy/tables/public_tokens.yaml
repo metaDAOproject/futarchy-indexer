@@ -109,6 +109,13 @@ array_relationships:
         table:
           name: v0_4_amms
           schema: public
+  - name: v04DaosByUsdcMintAcct
+    using:
+      foreign_key_constraint_on:
+        column: usdc_mint_acct
+        table:
+          name: v0_4_daos
+          schema: public
   - name: v0_4_amms
     using:
       foreign_key_constraint_on:
@@ -122,6 +129,20 @@ array_relationships:
         column: underlying_mint_acct
         table:
           name: v0_4_conditional_vaults
+          schema: public
+  - name: v0_4_daos
+    using:
+      foreign_key_constraint_on:
+        column: token_mint_acct
+        table:
+          name: v0_4_daos
+          schema: public
+  - name: v0_4_launches
+    using:
+      foreign_key_constraint_on:
+        column: token_mint_acct
+        table:
+          name: v0_4_launches
           schema: public
 select_permissions:
   - role: anonymous
