@@ -7,10 +7,22 @@ object_relationships:
       foreign_key_constraint_on: organization_id
   - name: token
     using:
-      foreign_key_constraint_on: base_mint
+      manual_configuration:
+        column_mapping:
+          base_mint: mint_acct
+        insertion_order: null
+        remote_table:
+          name: tokens
+          schema: public
   - name: tokenByQuoteMint
     using:
-      foreign_key_constraint_on: quote_mint
+      manual_configuration:
+        column_mapping:
+          quote_mint: mint_acct
+        insertion_order: null
+        remote_table:
+          name: tokens
+          schema: public
 array_relationships:
   - name: daos
     using:
@@ -47,8 +59,10 @@ select_permissions:
         - dao_id
         - organization_id
         - is_hide
+        - is_primary
         - base_mint
         - creator_acct
+        - dao_acct
         - fail_token_image_url
         - github
         - image_url

@@ -24,25 +24,27 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
-        - dao_id
-        - id
-        - is_binary
         - amm_addr
-        - metric_question_addr
-        - metric_vault_addr
-        - outcome_question_addr
-        - outcome_vault_addr
-        - score_max_value
-        - score_min_value
-        - description
-        - recipient
-        - score_term
-        - score_unit
-        - title
         - committee_evaluation
         - completed_at
         - created_at
+        - dao_id
+        - description
+        - discussion_link
         - grant_awarded
+        - id
+        - is_binary
         - market_opened
+        - metric_question_addr
+        - metric_threshold
+        - metric_vault_addr
+        - outcome_question_addr
+        - outcome_vault_addr
+        - recipient
+        - score_max_value
+        - score_min_value
+        - score_term
+        - score_unit
+        - title
       filter: {}
     comment: ""

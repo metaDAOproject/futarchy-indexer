@@ -127,6 +127,76 @@
       "when": 1741053030189,
       "tag": "0017_clever_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1736449347092,
+      "tag": "0015_secret_captain_britain",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1736643991271,
+      "tag": "0016_useful_the_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1736644601840,
+      "tag": "0017_loving_adam_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1737400753884,
+      "tag": "0018_dizzy_cardiac",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1737401464505,
+      "tag": "0019_luxuriant_the_anarchist",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1738530566413,
+      "tag": "0020_illegal_scourge",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1738697422141,
+      "tag": "0021_nasty_darwin",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1739379132600,
+      "tag": "0022_moaning_lorna_dane",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1739464698759,
+      "tag": "0023_modern_human_robot",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1739668674696,
+      "tag": "0024_steep_thor_girl",
+      "breakpoints": true
     }
   ]
 }

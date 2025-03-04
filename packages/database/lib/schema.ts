@@ -117,7 +117,7 @@ export const daos = pgTable(
     baseAcct: pubkey("base_acct")
       .references(() => tokens.mintAcct)
       .notNull(),
-    quoteAcct: pubkey("quote_acct").references(() => tokens.mintAcct),
+    quoteAcct: pubkey("quote_acct").references(() => tokens.mintAcct).notNull(),
     treasuryAcct: pubkey("treasury_acct").unique(),
     // This is keyed for proposals and initialized when dao is created.
     slotsPerProposal: numeric("slots_per_proposal"),
@@ -160,14 +160,14 @@ export const proposals = pgTable("proposals", {
   descriptionURL: varchar("description_url"),
   pricingModelPassAcct: pubkey("pricing_model_pass_acct"),
   pricingModelFailAcct: pubkey("pricing_model_fail_acct"),
-  passMarketAcct: pubkey("pass_market_acct"),
-  failMarketAcct: pubkey("fail_market_acct"),
+  passMarketAcct: pubkey("pass_market_acct").notNull(),
+  failMarketAcct: pubkey("fail_market_acct").notNull(),
   baseVault: pubkey("base_vault").references(
     () => conditionalVaults.condVaultAcct
-  ),
+  ).notNull(),
   quoteVault: pubkey("quote_vault").references(
     () => conditionalVaults.condVaultAcct
-  ),
+  ).notNull(),
   durationInSlots: biggerSlot("duration_in_slots"),
   passThresholdBps: bigint("pass_threshold_bps", { mode: "bigint" }),
   twapInitialObservation: biggerTokenAmount("twap_initial_observation"),
@@ -610,6 +610,8 @@ export const takes = pgTable(
       .notNull(),
     orderBlock: biggerBlock("order_block").notNull(),
     orderTime: timestamp("order_time", { withTimezone: true }).notNull(),
+    baseDecimals: smallint("base_decimals"),
+    quoteDecimals: smallint("quote_decimals"),
   },
   (table) => ({
     // For aggregating into candles and showing latest trades
@@ -690,6 +692,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  userName: text("user_name").unique(),
+  imageUrl: text("image_url"),
 });
 
 export const sessions = pgTable("sessions", {
@@ -758,8 +762,11 @@ export const daoDetails = pgTable(
     socials: jsonb("socials"),
     organizationId: bigint("organization_id", { mode: "bigint" })
       .references(() => organizations.organizationId),
-    baseMint: pubkey("base_mint").references(() => tokens.mintAcct),
-    quoteMint: pubkey("quote_mint").references(() => tokens.mintAcct),
+    baseMint: pubkey("base_mint"),
+    quoteMint: pubkey("quote_mint"),
+    daoAcct: pubkey("dao_acct"),
+    isActive: boolean("is_active").notNull().default(false),
+    isPrimary: boolean("is_primary").notNull().default(false),
   },
   (table) => ({
     uniqueId: unique("id_name_url").on(table.daoId, table.url, table.name),
@@ -768,7 +775,7 @@ export const daoDetails = pgTable(
 
 export const proposalDetails = pgTable("proposal_details", {
   // This table holds details for proposals which are not part of the indexing service.
-  proposalId: bigint("proposal_id", { mode: "bigint" }).primaryKey(),
+  proposalId: bigserial("proposal_id", { mode: "bigint" }).primaryKey(),
   // Our reference to on-chain data
   proposalAcct: pubkey("proposal_acct").references(
     () => proposals.proposalAcct
@@ -791,6 +798,11 @@ export const proposalDetails = pgTable("proposal_details", {
   quote_cond_vault_acct: pubkey("quote_cond_vault_acct"),
   pass_market_acct: pubkey("pass_market_acct"),
   fail_market_acct: pubkey("fail_market_acct"),
+  discussion_link: text("discussion_link"),
+  state: text("state").notNull().default("draft"),
+  summary: text("summary"),
+  organizationId: bigint("organization_id", { mode: "bigint" })
+    .references(() => organizations.organizationId),
 });
 
 export const programSystem = pgTable("program_system", {
@@ -1004,6 +1016,10 @@ export const v0_4_metric_decisions = pgTable("v0_4_metric_decisions", {
   }),
   isBinary: boolean("is_binary").notNull().default(false),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  metricThreshold: numeric("metric_threshold"),
+  discussionLink: text("discussion_link"),
+  state: text("state").notNull().default("draft"),
+  summary: text("summary"),
 });
 
 // TODO rename `created_at` to `inserted_at`
@@ -1338,6 +1354,7 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  telegramChannel: text("telegram_channel"),
 },
 (table) => ({
   uniqueId: unique("id_name_url").on(table.organizationId, table.url, table.name),

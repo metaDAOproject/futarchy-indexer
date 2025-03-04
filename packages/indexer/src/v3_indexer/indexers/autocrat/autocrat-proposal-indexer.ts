@@ -444,19 +444,209 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
     }
   },
 
+  indexFromLogs: async (logs: string[]) => {
+    try {
+
+      //TODO: leaving this here for now, maybe one day we will revisit and do it more efficiently.
+      console.log("AutocratProposalIndexer::indexFromLogs::logs", logs);
+      // Find the relevant log that contains the proposal data
+      const proposalLog = logs.find(log => 
+        log.includes("Instruction:") && 
+        (log.includes("InitializeProposal") || 
+         log.includes("FinalizeProposal") || 
+         log.includes("ExecuteProposal"))
+      );
+      console.log("AutocratProposalIndexer::indexFromLogs::proposalLog", proposalLog);
+
+      if (!proposalLog) {
+        console.log("AutocratProposalIndexer::indexFromLogs::proposalLog not found");
+        return Err({ type: AutocratDaoIndexerError.MissingParamError });
+      }
+
+      // Extract proposal account from logs
+      const proposalAcctMatch = logs.find(log => log.includes("Proposal:"));
+      if (!proposalAcctMatch) {
+        console.log("AutocratProposalIndexer::indexFromLogs::proposalAcctMatch not found");
+        return Err({ type: AutocratDaoIndexerError.MissingParamError });
+      }
+
+      const proposalAcct = new PublicKey(proposalAcctMatch.split(": ")[1]);
+      console.log("AutocratProposalIndexer::indexFromLogs::proposalAcct", proposalAcct);
+      
+      // Fetch the proposal data since we need the full account data
+      const protocolV0_3 = rpcReadClient.futarchyProtocols.find(
+        (protocol) => protocol.deploymentVersion == "V0.3"
+      );
+      
+      if (!protocolV0_3) {
+        return Err({ type: AutocratDaoIndexerError.MissingProtocolError });
+      }
+
+      const proposal = await protocolV0_3.autocrat.account.proposal.fetch(proposalAcct);
+      if (!proposal) {
+        return Err({ type: AutocratDaoIndexerError.NotFoundError });
+      }
+      console.log("AutocratProposalIndexer::indexFromLogs::proposal", proposal);
+
+      // Get current slot and time for calculations
+      const { currentSlot, currentTime } = (
+        await usingDb((db) =>
+          db
+            .select({
+              currentSlot: schema.prices.updatedSlot,
+              currentTime: schema.prices.createdAt,
+            })
+            .from(schema.prices)
+            .orderBy(sql`${schema.prices.updatedSlot} DESC`)
+            .limit(1)
+            .execute()
+        )
+      )?.[0] ?? {};
+
+      if (!currentSlot || !currentTime) {
+        return Err({ type: AutocratDaoIndexerError.MissingParamError });
+      }
+
+      // If this is a new proposal, insert associated accounts data
+      if (proposalLog.includes("InitializeProposal")) {
+        console.log("indexFromLogs::inserting associated accounts data for proposal", proposalAcct);
+        // NOTE: The relationship requirement is now  that we must have the markets before the proposal is inserted.
+        await insertAssociatedAccountsDataForProposal(
+          { publicKey: proposalAcct, account: proposal },
+          currentTime
+        );
+        await upsertProposal({ publicKey: proposalAcct, account: proposal }, currentTime);
+        // Once we have the proposal inserted, we go in and update the markets with the proposal.
+        await updateMarketsWithProposal({ publicKey: proposalAcct, account: proposal });
+      }
+
+      // Handle different proposal states
+      if (proposal.state.pending) {
+        // Update proposal as pending
+        if (!proposalLog.includes("InitializeProposal")) { // If this is a new proposal, we dont need to update the status
+          await updateProposalStatus(proposalAcct, ProposalStatus.Pending, currentTime);
+        }
+      } else if (proposal.state.passed) {
+        // Update proposal as passed
+        await updateProposalStatus(proposalAcct, ProposalStatus.Passed, currentTime);
+        await updateVaultStatuses(proposal.baseVault, proposal.quoteVault, "finalized");
+        await calculateUserPerformance({ publicKey: proposalAcct, account: proposal });
+      } else if (proposal.state.failed) {
+        // Update proposal as failed
+        await updateProposalStatus(proposalAcct, ProposalStatus.Failed, currentTime);
+        await updateVaultStatuses(proposal.baseVault, proposal.quoteVault, "reverted");
+        await calculateUserPerformance({ publicKey: proposalAcct, account: proposal });
+      }
+
+      console.log("AutocratProposalIndexer::indexFromLogs::done");
+      return Ok({ acct: "Updated proposal from logs" });
+    } catch (err) {
+      logger.error("error with proposal indexer:", err);
+      return Err({ type: AutocratDaoIndexerError.GeneralError });
+    }
+  }
 };
 
-async function updateMarketsWithProposal(
-  proposal: ProposalAccountWithKey,
-) {
-  if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+// helper function to upsert proposal
+async function upsertProposal(proposal: ProposalAccountWithKey, currentTime: Date) {
+  const daoAcct = proposal.account.dao;
+  if (!daoAcct) {
+    console.log("AutocratProposalIndexer::upsertProposal::daoAcct not found");
+    return Err({ type: AutocratDaoIndexerError.MissingParamError });
+  }
 
+  // Get DAO details
+  const dbDao: DaoRecord | undefined = (
+    await usingDb((db) =>
+      db
+        .select()
+        .from(schema.daos)
+        .where(eq(schema.daos.daoAcct, daoAcct.toBase58()))
+        .execute()
+    )
+  )?.[0];
+
+  if (!dbDao) return;
+
+  // Calculate end slot
+  const initialSlot = proposal.account.slotEnqueued;
+  const endSlot = initialSlot.add(new BN(dbDao.slotsPerProposal?.toString()));
+
+  // Prepare proposal record
+  const dbProposal: ProposalRecord = {
+    proposalAcct: proposal.publicKey.toString(),
+    proposalNum: BigInt(proposal.account.number.toString()),
+    autocratVersion: 0.3,
+    daoAcct: daoAcct.toString(),
+    proposerAcct: proposal.account.proposer.toString(),
+    status: ProposalStatus.Pending,
+    descriptionURL: proposal.account.descriptionUrl,
+    initialSlot: initialSlot.toString(),
+    passMarketAcct: proposal.account.passAmm?.toString() ?? null,
+    failMarketAcct: proposal.account.failAmm?.toString() ?? null,
+    baseVault: proposal.account.baseVault.toString(),
+    quoteVault: proposal.account.quoteVault.toString(),
+    endSlot: endSlot.toString(),
+    durationInSlots: dbDao.slotsPerProposal,
+    minBaseFutarchicLiquidity: dbDao.minBaseFutarchicLiquidity ?? null,
+    minQuoteFutarchicLiquidity: dbDao.minQuoteFutarchicLiquidity ?? null,
+    passThresholdBps: dbDao.passThresholdBps,
+    twapInitialObservation: dbDao.twapInitialObservation ?? null,
+    twapMaxObservationChangePerUpdate: dbDao.twapMaxObservationChangePerUpdate ?? null,
+  };
+
+  // Insert or update the proposal
   await usingDb((db) =>
     db
-      .update(schema.markets)
-      .set({
-        proposalAcct: proposal.publicKey.toString(),
+      .insert(schema.proposals)
+      .values([dbProposal])
+      .onConflictDoUpdate({
+        target: [schema.proposals.proposalAcct],
+        set: {
+          status: dbProposal.status,
+          descriptionURL: dbProposal.descriptionURL,
+          initialSlot: dbProposal.initialSlot,
+          endSlot: dbProposal.endSlot,
+          updatedAt: sql`NOW()`,
+        },
       })
+      .execute()
+  );
+
+  return Ok({ acct: "Proposal upserted successfully" });
+}
+
+// Helper function to update proposal status
+async function updateProposalStatus(
+  proposalAcct: PublicKey,
+  status: ProposalStatus,
+  currentTime: Date
+) {
+  await usingDb((db) =>
+    db
+      .update(schema.proposals)
+      .set({ 
+        status,
+        completedAt: status !== ProposalStatus.Pending ? currentTime : null,
+        updatedAt: sql`NOW()`
+      })
+      .where(
+        eq(schema.proposals.proposalAcct, proposalAcct.toString())
+      )
+      .execute()
+  );
+}
+
+// Helper function to update vault statuses
+async function updateVaultStatuses(
+  baseVault: PublicKey,
+  quoteVault: PublicKey,
+  status: "finalized" | "reverted"
+) {
+  await usingDb((db) =>
+    db
+      .update(schema.conditionalVaults)
+      .set({ status })
       .where(
         or(
           eq(schema.markets.marketAcct, passMarket.marketAcct),
@@ -467,6 +657,28 @@ async function updateMarketsWithProposal(
   );
 }
 
+async function updateMarketsWithProposal(
+  proposal: ProposalAccountWithKey,
+) {
+
+  if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
+
+  await usingDb((db) =>
+    db
+      .update(schema.markets)
+      .set({
+        proposalAcct: proposal.publicKey.toString(),
+      })
+      .where(
+        or(
+          eq(schema.markets.marketAcct, proposal.account.passAmm.toString()),
+          eq(schema.markets.marketAcct, proposal.account.failAmm.toString())
+        )
+      )
+      .execute()
+  );
+
+}
 
 async function insertAssociatedAccountsDataForProposal(
   proposal: ProposalAccountWithKey,
@@ -623,36 +835,9 @@ async function insertAssociatedAccountsDataForProposal(
       .execute()
   );
 
-  for (const [mint, owner] of [
-    [basePass, proposal.account.passAmm],
-    [baseFail, proposal.account.failAmm],
-    [quotePass, proposal.account.passAmm],
-    [quoteFail, proposal.account.failAmm],
-  ]) {
-    if(!mint || !owner) continue;
-    let tokenAcct: TokenAcctRecord = {
-      mintAcct: mint.toString(),
-      updatedAt: currentTime,
-      tokenAcct: getAssociatedTokenAddressSync(mint, owner, true).toString(),
-      ownerAcct: owner.toString(),
-      amount: await getAccount(
-        provider.connection,
-        getAssociatedTokenAddressSync(mint, owner, true)
-      ).then((account) => account.amount.toString()),
-    };
-    tokenAcctsToInsert.push(tokenAcct);
-  }
-
-  await usingDb((db) =>
-    db
-      .insert(schema.tokenAccts)
-      .values(tokenAcctsToInsert)
-      .onConflictDoNothing()
-      .execute()
-  );
-
   if(!proposal.account.passAmm || !proposal.account.failAmm) return Err({ type: AutocratDaoIndexerError.MissingParamError });
 
+  // NOTE: Took out the proposalAcct from the market record as it is now a foreign key
   let passMarket: MarketRecord = {
     marketAcct: proposal.account.passAmm.toString(),
     marketType: MarketType.FUTARCHY_AMM,

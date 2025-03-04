@@ -24,13 +24,6 @@ array_relationships:
         table:
           name: token_acct_balances
           schema: public
-  - name: transactionWatchersByLatestTxSig
-    using:
-      foreign_key_constraint_on:
-        column: latest_tx_sig
-        table:
-          name: transaction_watchers
-          schema: public
   - name: transaction_watcher_transactions
     using:
       foreign_key_constraint_on:
