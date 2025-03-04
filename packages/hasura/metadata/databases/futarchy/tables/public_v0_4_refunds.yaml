@@ -5,3 +5,16 @@ object_relationships:
   - name: v0_4_launch
     using:
       foreign_key_constraint_on: launch_addr
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - slot
+        - funder_addr
+        - launch_addr
+        - usdc_amount
+        - created_at
+        - timestamp
+        - refund_id
+      filter: {}
+    comment: ""

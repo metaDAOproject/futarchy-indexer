@@ -20,3 +20,27 @@ object_relationships:
   - name: v0_4_question
     using:
       foreign_key_constraint_on: question_addr
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - nonce
+        - base_vault_addr
+        - dao_addr
+        - fail_amm_addr
+        - pass_amm_addr
+        - proposal_addr
+        - proposer
+        - question_addr
+        - quote_vault_addr
+        - state
+        - number
+        - instruction
+        - fail_lp_tokens_locked
+        - pass_lp_tokens_locked
+        - slot_enqueued
+        - pda_bump
+        - description_url
+        - created_at
+      filter: {}
+    comment: ""

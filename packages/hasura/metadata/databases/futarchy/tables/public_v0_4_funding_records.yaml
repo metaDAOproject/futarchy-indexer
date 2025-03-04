@@ -13,3 +13,17 @@ array_relationships:
         table:
           name: v0_4_claims
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - committed_amount
+        - latest_funding_record_seq_num_applied
+        - is_claimed
+        - is_refunded
+        - funder_addr
+        - funding_record_addr
+        - launch_addr
+        - created_at
+      filter: {}
+    comment: ""

@@ -44,3 +44,26 @@ array_relationships:
         table:
           name: v0_4_refunds
           schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - committed_amount
+        - latest_launch_seq_num_applied
+        - minimum_raise_amount
+        - slot_started
+        - creator
+        - dao_addr
+        - dao_treasury_addr
+        - launch_addr
+        - launch_signer
+        - launch_token_vault
+        - launch_usdc_vault
+        - state
+        - token_mint_acct
+        - treasury_usdc_acct
+        - launch_signer_pda_bump
+        - pda_bump
+        - created_at
+      filter: {}
+    comment: ""
