@@ -524,7 +524,7 @@ async function handleLaunchClaimEvent(event: LaunchClaimEvent, signature: string
       await db.insert(schema.v0_4_claims).values({
         launchAddr: event.launch.toString(),
         funderAddr: event.funder.toString(),
-        tokensClaimed: event.tokensClaimed,
+        tokensClaimed: event.tokensClaimed.toString(),
         fundingRecordAddr: event.fundingRecord.toString(),
         slot: event.common.slot.toString(),
         timestamp: new Date(event.common.unixTimestamp * 1000),
@@ -544,8 +544,8 @@ async function handleLaunchCompletedEvent(event: LaunchCompletedEvent, signature
     await usingDb(async (db: DBConnection) => {
       await db.update(schema.v0_4_launches).set({
         state: event.finalState as V04LaunchState,
-        committedAmount: event.totalCommitted,
-        latestLaunchSeqNumApplied: event.common.launchSeqNum,
+        committedAmount: event.totalCommitted.toString(),
+        latestLaunchSeqNumApplied: event.common.launchSeqNum.toString(),
       }).where(eq(schema.v0_4_launches.launchAddr, event.launch.toString()));
     });
   } catch (error) {
@@ -561,28 +561,28 @@ async function handleLaunchFundedEvent(event: LaunchFundedEvent, signature: stri
         funderAddr: event.funder.toString(),
         slot: event.common.slot.toString(),
         timestamp: new Date(event.common.unixTimestamp * 1000),
-        usdcAmount: event.amount,
+        usdcAmount: event.amount.toString(),
       }).onConflictDoNothing();
 
       await db.insert(schema.v0_4_funding_records).values({
         fundingRecordAddr: event.fundingRecord.toString(),
         launchAddr: event.launch.toString(),
         funderAddr: event.funder.toString(),
-        committedAmount: event.totalCommittedByFunder,
-        latestFundingRecordSeqNumApplied: event.fundingRecordSeqNum,
+        committedAmount: event.totalCommittedByFunder.toString(),
+        latestFundingRecordSeqNumApplied: event.fundingRecordSeqNum.toString(),
         isClaimed: false,
         isRefunded: false,
       }).onConflictDoUpdate({
         target: schema.v0_4_funding_records.fundingRecordAddr,
         set: {
-          committedAmount: event.totalCommittedByFunder,
-          latestFundingRecordSeqNumApplied: event.fundingRecordSeqNum,
+          committedAmount: event.totalCommittedByFunder.toString(),
+          latestFundingRecordSeqNumApplied: event.fundingRecordSeqNum.toString(),
         }
       });
 
       await db.update(schema.v0_4_launches).set({
-        committedAmount: event.totalCommitted,
-        latestLaunchSeqNumApplied: event.common.launchSeqNum,
+        committedAmount: event.totalCommitted.toString(),
+        latestLaunchSeqNumApplied: event.common.launchSeqNum.toString(),
       }).where(eq(schema.v0_4_launches.launchAddr, event.launch.toString()));
     });
   } catch (error) {
@@ -597,7 +597,7 @@ async function handleLaunchInitializedEvent(event: LaunchInitializedEvent, signa
 
       await db.insert(schema.v0_4_launches).values({
         launchAddr: event.launch.toString(),
-        minimumRaiseAmount: event.minimumRaiseAmount,
+        minimumRaiseAmount: event.minimumRaiseAmount.toString(),
         creator: event.creator.toString(),
         launchSigner: event.launchSigner.toString(),
         launchSignerPdaBump: event.launchSignerPdaBump,
@@ -627,7 +627,7 @@ async function handleLaunchRefundedEvent(event: LaunchRefundedEvent, signature: 
         funderAddr: event.funder.toString(),
         slot: event.common.slot.toString(),
         timestamp: new Date(event.common.unixTimestamp * 1000),
-        usdcAmount: event.usdcRefunded, // TODO: Pileks - check if this is correct
+        usdcAmount: event.usdcRefunded.toString(),
       }).onConflictDoNothing();
 
       await db.update(schema.v0_4_funding_records).set({
@@ -644,8 +644,8 @@ async function handleLaunchStartedEvent(event: LaunchStartedEvent, signature: st
     await usingDb(async (db: DBConnection) => {
       await db.update(schema.v0_4_launches).set({
         state: V04LaunchState.Live,
-        slotStarted: event.slotStarted,
-        latestLaunchSeqNumApplied: event.common.launchSeqNum,
+        slotStarted: event.slotStarted.toString(),
+        latestLaunchSeqNumApplied: event.common.launchSeqNum.toString(),
       }).where(eq(schema.v0_4_launches.launchAddr, event.launch.toString()));
     });
   } catch (error) {
