@@ -1,6 +1,6 @@
 {
-  "id": "af261d9f-b07b-4544-abd4-691732fe08f6",
-  "prevId": "df4d3c6d-acfa-4837-97c7-93532ebe3bff",
+  "id": "19875166-5033-4d5e-8922-f286ca202b7b",
+  "prevId": "3a5b634a-9ccf-4c04-8c16-e9c76516b1ee",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1630,7 +1630,7 @@
       "columns": {
         "proposal_id": {
           "name": "proposal_id",
-          "type": "bigserial",
+          "type": "bigint",
           "primaryKey": true,
           "notNull": true
         },
@@ -1702,19 +1702,6 @@
         },
         "discussion_link": {
           "name": "discussion_link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'draft'"
-        },
-        "summary": {
-          "name": "summary",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -3780,19 +3767,6 @@
         },
         "discussion_link": {
           "name": "discussion_link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'draft'"
-        },
-        "summary": {
-          "name": "summary",
           "type": "text",
           "primaryKey": false,
           "notNull": false

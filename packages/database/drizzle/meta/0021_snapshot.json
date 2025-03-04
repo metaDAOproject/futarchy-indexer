@@ -1,6 +1,6 @@
 {
-  "id": "df2e6e37-246b-4c57-bd37-b9ba189707db",
-  "prevId": "af261d9f-b07b-4544-abd4-691732fe08f6",
+  "id": "71f463c4-26e6-46ca-8161-fc6d1faf1cde",
+  "prevId": "19875166-5033-4d5e-8922-f286ca202b7b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1630,7 +1630,7 @@
       "columns": {
         "proposal_id": {
           "name": "proposal_id",
-          "type": "bigserial",
+          "type": "bigint",
           "primaryKey": true,
           "notNull": true
         },
@@ -1712,18 +1712,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'draft'"
-        },
-        "summary": {
-          "name": "summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -1737,19 +1725,6 @@
           ],
           "columnsTo": [
             "proposal_acct"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "proposal_details_organization_id_organizations_organization_id_fk": {
-          "name": "proposal_details_organization_id_organizations_organization_id_fk",
-          "tableFrom": "proposal_details",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -3809,12 +3784,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'draft'"
-        },
-        "summary": {
-          "name": "summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},

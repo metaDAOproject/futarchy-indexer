@@ -1,6 +1,6 @@
 {
-  "id": "71f463c4-26e6-46ca-8161-fc6d1faf1cde",
-  "prevId": "19875166-5033-4d5e-8922-f286ca202b7b",
+  "id": "589a7849-af36-4502-abcb-a40f0af83e85",
+  "prevId": "59efc177-30cc-4541-9011-fcd90ddb6028",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1699,19 +1699,6 @@
           "type": "varchar(44)",
           "primaryKey": false,
           "notNull": false
-        },
-        "discussion_link": {
-          "name": "discussion_link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'draft'"
         }
       },
       "indexes": {},
@@ -3771,19 +3758,6 @@
           "type": "numeric",
           "primaryKey": false,
           "notNull": false
-        },
-        "discussion_link": {
-          "name": "discussion_link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'draft'"
         }
       },
       "indexes": {},

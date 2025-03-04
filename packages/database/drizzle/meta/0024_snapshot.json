@@ -1,6 +1,6 @@
 {
-  "id": "641c8e79-1f61-466a-9c8e-1494dfe1fdb4",
-  "prevId": "a6c62ec0-c670-477f-9fae-e63b66263819",
+  "id": "df2e6e37-246b-4c57-bd37-b9ba189707db",
+  "prevId": "af261d9f-b07b-4544-abd4-691732fe08f6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -377,26 +377,6 @@
           "type": "varchar(44)",
           "primaryKey": false,
           "notNull": false
-        },
-        "dao_acct": {
-          "name": "dao_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "is_primary": {
-          "name": "is_primary",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
       "indexes": {},
@@ -410,6 +390,32 @@
           ],
           "columnsTo": [
             "organization_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "dao_details_base_mint_tokens_mint_acct_fk": {
+          "name": "dao_details_base_mint_tokens_mint_acct_fk",
+          "tableFrom": "dao_details",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "base_mint"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "dao_details_quote_mint_tokens_mint_acct_fk": {
+          "name": "dao_details_quote_mint_tokens_mint_acct_fk",
+          "tableFrom": "dao_details",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "quote_mint"
+          ],
+          "columnsTo": [
+            "mint_acct"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1322,12 +1328,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "telegram_channel": {
-          "name": "telegram_channel",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -2332,18 +2332,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
-        },
-        "base_decimals": {
-          "name": "base_decimals",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "quote_decimals": {
-          "name": "quote_decimals",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -3329,32 +3317,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "user_name": {
-          "name": "user_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "image_url": {
-          "name": "image_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "users_user_name_unique": {
-          "name": "users_user_name_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_name"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

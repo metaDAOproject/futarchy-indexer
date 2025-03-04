@@ -1,6 +1,6 @@
 {
-  "id": "a6c62ec0-c670-477f-9fae-e63b66263819",
-  "prevId": "ff70aaf3-cb75-4847-8a29-ec01c078c970",
+  "id": "af261d9f-b07b-4544-abd4-691732fe08f6",
+  "prevId": "df4d3c6d-acfa-4837-97c7-93532ebe3bff",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -377,26 +377,6 @@
           "type": "varchar(44)",
           "primaryKey": false,
           "notNull": false
-        },
-        "dao_acct": {
-          "name": "dao_acct",
-          "type": "varchar(44)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "is_primary": {
-          "name": "is_primary",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
       "indexes": {},
@@ -410,6 +390,32 @@
           ],
           "columnsTo": [
             "organization_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "dao_details_base_mint_tokens_mint_acct_fk": {
+          "name": "dao_details_base_mint_tokens_mint_acct_fk",
+          "tableFrom": "dao_details",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "base_mint"
+          ],
+          "columnsTo": [
+            "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "dao_details_quote_mint_tokens_mint_acct_fk": {
+          "name": "dao_details_quote_mint_tokens_mint_acct_fk",
+          "tableFrom": "dao_details",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "quote_mint"
+          ],
+          "columnsTo": [
+            "mint_acct"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1712,12 +1718,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -1731,19 +1731,6 @@
           ],
           "columnsTo": [
             "proposal_acct"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "proposal_details_organization_id_organizations_organization_id_fk": {
-          "name": "proposal_details_organization_id_organizations_organization_id_fk",
-          "tableFrom": "proposal_details",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -2326,18 +2313,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
-        },
-        "base_decimals": {
-          "name": "base_decimals",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "quote_decimals": {
-          "name": "quote_decimals",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -3323,32 +3298,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "user_name": {
-          "name": "user_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "image_url": {
-          "name": "image_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "users_user_name_unique": {
-          "name": "users_user_name_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_name"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
