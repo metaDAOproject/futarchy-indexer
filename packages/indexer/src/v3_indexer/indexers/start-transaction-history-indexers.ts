@@ -6,8 +6,8 @@ import {
 } from "@metadaoproject/indexer-db/lib/schema";
 
 import { IndexerWithAccountDeps } from "../types";
-import { AmmMarketInstructionsIndexer } from "./amm-market/amm-market-instruction-indexer";
-import { InstructionIndexer } from "./instruction-indexer";
+import { AmmMarketInstructionsIndexer } from "./amm/amm-market-instruction-indexer";
+import { InstructionIndexer } from "../types/instruction-indexer";
 import { Idl } from "@coral-xyz/anchor";
 import { schema, usingDb, eq, and, gte } from "@metadaoproject/indexer-db";
 import * as fastq from "fastq";

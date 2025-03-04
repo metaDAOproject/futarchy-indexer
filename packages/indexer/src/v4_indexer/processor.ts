@@ -1,10 +1,22 @@
-import { AddLiquidityEvent, AmmEvent, ConditionalVaultEvent, CreateAmmEvent, getVaultAddr, InitializeConditionalVaultEvent, InitializeQuestionEvent, SwapEvent, PriceMath, SplitTokensEvent, MergeTokensEvent, RemoveLiquidityEvent } from "@metadaoproject/futarchy/v0.4";
-import { schema, usingDb, eq, and, desc, gt } from "@metadaoproject/indexer-db";
+import { AddLiquidityEvent,
+  AmmEvent,
+  ConditionalVaultEvent,
+  CreateAmmEvent,
+  getVaultAddr,
+  InitializeConditionalVaultEvent,
+  InitializeQuestionEvent,
+  ResolveQuestionEvent,
+  SwapEvent,
+  PriceMath,
+  SplitTokensEvent,
+  MergeTokensEvent,
+  RemoveLiquidityEvent } from "@metadaoproject/futarchy/v0.4";
+import { schema, usingDb, eq, and, or } from "@metadaoproject/indexer-db";
 import { PublicKey, VersionedTransactionResponse } from "@solana/web3.js";
 import { PricesType, V04SwapType } from "@metadaoproject/indexer-db/lib/schema";
 import * as token from "@solana/spl-token";
 
-import { connection, conditionalVaultClient } from "../connection";
+import { connection, v4ConditionalVaultClient as conditionalVaultClient } from "../connection";
 
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
@@ -271,6 +283,9 @@ export async function processVaultEvent(event: { name: string; data: Conditional
     case "InitializeQuestionEvent":
       await handleInitializeQuestionEvent(event.data as InitializeQuestionEvent);
       break;
+    case "ResolveQuestionEvent":
+      await handleResolveQuestionEvent(event.data as ResolveQuestionEvent);
+      break;
     case "InitializeConditionalVaultEvent":
       await handleInitializeConditionalVaultEvent(event.data as InitializeConditionalVaultEvent);
       break;
@@ -285,9 +300,52 @@ export async function processVaultEvent(event: { name: string; data: Conditional
   }
 }
 
+async function handleResolveQuestionEvent(event: ResolveQuestionEvent) {
+  try {
+    console.log("v4_indexer::processor::handleResolveQuestionEvent", event);
+    // update v0_4_questions table
+    await usingDb(async (db) => {
+      await db.update(schema.v0_4_questions).set({
+        isResolved: true,
+        payoutNumerators: event.payoutNumerators,
+        payoutDenominator: BigInt(Math.floor(event.payoutNumerators.reduce((acc, curr) => acc + curr, 0))),
+      }).where(eq(schema.v0_4_questions.questionAddr, event.question.toString()));
+
+      //check if both outcome and metric questions are resolved in v0_4_metric_decisions table
+      const metricDecisions = await db.select()
+        .from(schema.v0_4_metric_decisions)
+        .where(
+          or(
+            eq(schema.v0_4_metric_decisions.outcomeQuestionAddr, event.question.toString()),
+            eq(schema.v0_4_metric_decisions.metricQuestionAddr, event.question.toString())
+          )
+        )
+        .limit(1);
+      if (metricDecisions.length === 0) {
+        console.log("No metric decisions found for question", event.question.toString());
+        throw new Error("No metric decisions found for question");
+      }
+
+      //check if the question is the outcome question, if it is, we set the metric decision to completed
+      const decision = metricDecisions[0];
+      if (decision.outcomeQuestionAddr === event.question.toString()) {
+        await db.update(schema.v0_4_metric_decisions).set({
+          completedAt: new Date(),
+        }).where(eq(schema.v0_4_metric_decisions.id, decision.id));
+      }
+    });
+  } catch (error) {
+    logger.errorWithChatBotAlert([
+      error instanceof Error
+        ? `Error in handleResolveQuestionEvent: ${error.message}`
+        : "Unknown error in handleResolveQuestionEvent"
+    ]);
+  }
+}
+
 async function handleInitializeQuestionEvent(event: InitializeQuestionEvent) {
   try {
-      await usingDb(async (db) => {
+    await usingDb(async (db) => {
       await db.insert(schema.v0_4_questions).values({
         questionAddr: event.question.toString(),
         isResolved: false,
@@ -332,17 +390,6 @@ async function handleInitializeConditionalVaultEvent(event: InitializeConditiona
 async function doesQuestionExist(db: DBConnection, event: InitializeConditionalVaultEvent): Promise<boolean> {
   const existingQuestion = await db.select().from(schema.v0_4_questions).where(eq(schema.v0_4_questions.questionAddr, event.question.toString())).limit(1);
   return existingQuestion.length > 0;
-  // if (existingQuestion.length === 0) {
-  //   await trx.insert(schema.v0_4_questions).values({
-  //     questionAddr: event.question.toString(),
-  //     isResolved: false,
-  //     oracleAddr: event.oracle.toString(),
-  //     numOutcomes: event.numOutcomes,
-  //     payoutNumerators: Array(event.numOutcomes).fill(0),
-  //     payoutDenominator: 0n,
-  //     questionId: event.questionId,
-  //   });
-  // }
 }
 
 async function insertTokenAccountIfNotExists(db: DBConnection, event: InitializeConditionalVaultEvent) {
@@ -437,20 +484,3 @@ async function insertConditionalVault(db: DBConnection, event: InitializeConditi
     latestVaultSeqNumApplied: 0n,
   }).onConflictDoNothing();
 }
-
-
-// async function fetchTransactionResponses(eligibleSignatures: { signature: string }[]) {
-//   try {
-//     return await connection.getTransactions(
-//       eligibleSignatures.map(s => s.signature),
-//       { commitment: "confirmed", maxSupportedTransactionVersion: 1 }
-//     );
-//   } catch (error: unknown) {
-//     logger.errorWithChatBotAlert([
-//       error instanceof Error
-//         ? `Error fetching transaction responses: ${error.message}`
-//         : "Unknown error fetching transaction responses"
-//     ]);
-//     return [];
-//   }
-// }

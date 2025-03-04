@@ -32,5 +32,14 @@
       query_name: proposals_by_pk
   methods:
     - GET
+  name: getProposalDescription
+  url: proposal-description/:pk
+- comment: ""
+  definition:
+    query:
+      collection_name: allowed-queries
+      query_name: proposals_by_pk
+  methods:
+    - GET
   name: proposals_by_pk
   url: proposals/:proposal_acct

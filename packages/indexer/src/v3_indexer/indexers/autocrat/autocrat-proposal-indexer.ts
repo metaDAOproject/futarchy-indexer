@@ -1,9 +1,9 @@
-import { IntervalFetchIndexer } from "../interval-fetch-indexer";
+import { IntervalFetchIndexer } from "../../types/interval-fetch-indexer";
 import {
   rpcReadClient,
-  conditionalVaultClient,
+  v3ConditionalVaultClient as conditionalVaultClient,
   provider,
-} from "../../connection";
+} from "../../../connection";
 import {
   usingDb,
   schema,
@@ -16,8 +16,8 @@ import {
   sql,
   inArray,
 } from "@metadaoproject/indexer-db";
-import { Err, Ok } from "../../match";
-import { PublicKey } from "@solana/web3.js";
+import { Err, Ok } from "../../utils/match";
+import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
 import {
   ConditionalVaultRecord,
   DaoRecord,
@@ -44,6 +44,9 @@ import { logger } from "../../../logger";
 import { PriceMath } from "@metadaoproject/futarchy/v0.3";
 import { UserPerformanceTotals } from "../../types";
 import { alias } from "drizzle-orm/pg-core";
+import { indexAmmMarketAccountWithContext } from "../amm/utils";
+import { rpc } from "../../../rpc-wrapper";
+
 
 export enum AutocratDaoIndexerError {
   GeneralError = "GeneralError",
@@ -59,7 +62,6 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
   cronExpression: "5 * * * * *",
   index: async () => {
     try {
-      console.log("AutocratProposalIndexer::index::starting");
       const { currentSlot, currentTime } =
         (
           await usingDb((db) =>
@@ -75,10 +77,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           )
         )?.[0] ?? {};
 
-      console.log("currentSlot", currentSlot);
       if (!currentSlot || !currentTime) return Err({ type: AutocratDaoIndexerError.MissingParamError });
 
-      logger.log("Autocrat proposal indexer");
       const dbProposals: ProposalRecord[] =
         (await usingDb((db) => db.select().from(schema.proposals).execute())) ??
         [];
@@ -92,12 +92,15 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
       const proposalsToInsert = [];
       for (const proposal of onChainProposals) {
-        if (
-          !dbProposals.find((dbProposal) =>
-            new PublicKey(dbProposal.proposalAcct).equals(proposal.publicKey) &&
-            dbProposal.endedAt === null
-          )
-        ) {
+        // Check if proposal exists in DB at all
+        const existingProposal = dbProposals.find(dbProposal => 
+          new PublicKey(dbProposal.proposalAcct).equals(proposal.publicKey)
+        );
+        
+        // Only insert if:
+        // 1. Proposal doesn't exist in DB at all, or
+        // 2. Proposal exists but is still active (endedAt is null)
+        if (!existingProposal || !existingProposal.endedAt) {
           proposalsToInsert.push(proposal);
         }
       }
@@ -206,7 +209,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           twapMaxObservationChangePerUpdate:
             dbDao.twapMaxObservationChangePerUpdate ?? null,
         };
-
+        // NOTE: We insert the markets first so that we can update the proposal with the market accounts
         await insertAssociatedAccountsDataForProposal(proposal, currentTime);
 
         await usingDb((db) =>
@@ -217,6 +220,7 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
             .execute()
         );
 
+        // NOTE: We update the markets with the proposal after the proposal is inserted
         await updateMarketsWithProposal(proposal);
         
       });
@@ -261,12 +265,8 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
 
           // Setup time to add to the date..
           const timeLeftSecondsEstimate = (slotDifference.toNumber() * 400) / 1000 // MS to seconds
-          // const timeLeftMinutesEstimate = timeLeftSecondsEstimate / 60 // MS to seconds to minutes
-          // const timeLeftHoursEstimate = timeLeftMinutesEstimate / 60
 
           const endedAt = new Date(currentTime.toUTCString());
-          // endedAt.setHours(endedAt.getHours() + timeLeftHoursEstimate);
-          // endedAt.setMinutes(endedAt.getMinutes() + timeLeftMinutesEstimate);
           endedAt.setSeconds(endedAt.getSeconds() + timeLeftSecondsEstimate); // setSeconds accepts float and will increase to hours etc.
 
           await usingDb((db) =>
@@ -392,7 +392,6 @@ export const AutocratProposalIndexer: IntervalFetchIndexer = {
           await calculateUserPerformance(onChainProposal);
         }
 
-        // check if markets are there, if they aren't insert them
         // Check if markets are there, if they aren't, insert them
         const passAmm = onChainProposal.account.passAmm;
         const failAmm = onChainProposal.account.failAmm;
@@ -650,8 +649,8 @@ async function updateVaultStatuses(
       .set({ status })
       .where(
         or(
-          eq(schema.conditionalVaults.condVaultAcct, baseVault.toString()),
-          eq(schema.conditionalVaults.condVaultAcct, quoteVault.toString())
+          eq(schema.markets.marketAcct, passMarket.marketAcct),
+          eq(schema.markets.marketAcct, failMarket.marketAcct)
         )
       )
       .execute()
@@ -896,6 +895,30 @@ async function insertAssociatedAccountsDataForProposal(
       .onConflictDoNothing()
       .execute()
   );
+
+  [passMarket, failMarket].map(async (market) => {
+    try { 
+      console.log("autocrat-proposal-indexer::insertAssociatedAccountsDataForProposal::inserting price for market", market.marketAcct);
+      const account = new PublicKey(market.marketAcct);
+      const resWithContext = await rpc.call(
+        "getAccountInfoAndContext",
+        [account],
+        "Get account info for amm market account interval fetcher"
+      ) as RpcResponseAndContext<AccountInfo<Buffer> | null>;
+      if (!resWithContext.value) {
+        logger.error("Failed to get account info for market", market.marketAcct);
+        return;
+      }
+
+      await indexAmmMarketAccountWithContext(
+        resWithContext.value,
+        account,
+        resWithContext.context
+      );
+    } catch (err) {
+      logger.error("Failed to index price for market", market.marketAcct, err instanceof Error ? err.message : err);
+    }
+  });
 }
 
 async function calculateUserPerformance(

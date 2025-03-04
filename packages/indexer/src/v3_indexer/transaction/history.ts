@@ -1,5 +1,6 @@
-import { connection } from "../connection";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, ConfirmedSignatureInfo } from "@solana/web3.js";
+import { rpc } from "../../rpc-wrapper";
+import { connection } from "../../connection";
 import { logger } from "../../logger";
 
 export type TransactionMeta = Awaited<
@@ -33,11 +34,11 @@ export async function getTransactionHistory(
   let page = 1;
   while (true) {
     // The Solana RPC tx API has us do a backwards walk
-    const transactions = await connection.getSignaturesForAddress(
-      account,
-      { before: earliestSig },
-      "confirmed"
-    );
+    const transactions = await rpc.call(
+      "getSignaturesForAddress",
+      [account, { before: earliestSig }, "confirmed"],
+      "Get historical signatures"
+    ) as ConfirmedSignatureInfo[];
     if (transactions.length === 0) {
       break;
     }

@@ -1,4 +1,4 @@
-import { serialize, deserialize, Transaction } from "./serializer";
+import { serialize, deserialize, Transaction } from "../src/v3_indexer/transaction/serializer";
 import { expect, describe, test } from "bun:test";
 
 describe("serializer", async () => {

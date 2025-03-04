@@ -1,5 +1,5 @@
 import { Context } from "@solana/web3.js";
-import { Err, Ok, Result, TaggedUnion } from "../match";
+import { Err, Ok, Result, TaggedUnion } from "../utils/match";
 import {
   AmmInstructionIndexerError,
   SwapPersistableError,
@@ -25,9 +25,9 @@ import {
 import { logger } from "../../logger";
 import { getMainIxTypeFromTransaction } from "../transaction/watcher";
 import { getHumanPrice } from "../usecases/math";
-import { connection } from "../connection";
-import { AmmMarketAccountUpdateIndexer } from '../indexers/amm-market/amm-market-account-indexer';
-import { PublicKey } from "@solana/web3.js";
+import { indexAmmMarketAccountWithContext } from '../indexers/amm/utils';
+import { PublicKey, RpcResponseAndContext, AccountInfo } from "@solana/web3.js";
+import { rpc } from "../../rpc-wrapper";
 
 
 export class SwapPersistable {
@@ -221,7 +221,6 @@ export class SwapBuilder {
       } else {
         // handle non-swap transactions (add/remove liquidity, crank, etc)
         // find market account from instructions
-        console.log("builder::buildOrderFromSwapIx::looking for market account in non swap txn");
         let marketAcct: PublicKey | undefined;
         for (const ix of tx.instructions) {
           const candidate = ix.accountsWithData.find((a) => a.name === "amm");
@@ -231,7 +230,6 @@ export class SwapBuilder {
           }
         }
         if (marketAcct) {
-          console.log("builder::buildOrderFromSwapIx::market found for non swap txn, indexing price and twap", marketAcct);
           this.indexPriceAndTWAPForAccount(marketAcct);
         }
       }
@@ -256,13 +254,14 @@ export class SwapBuilder {
 
   async indexPriceAndTWAPForAccount(account: PublicKey) {
     console.log("indexing price and twap for account", account.toBase58());
-    const accountInfo = await connection.getAccountInfoAndContext(
-      account
-    );
+    const accountInfo = await rpc.call(
+      "getAccountInfoAndContext",
+      [account],
+      "Get account info for swap"
+    ) as RpcResponseAndContext<AccountInfo<Buffer> | null>;
 
-    //index refresh on startup
     if (accountInfo.value) {
-      const res = await AmmMarketAccountUpdateIndexer.index(
+      const res = await indexAmmMarketAccountWithContext(
         accountInfo.value,
         account,
         accountInfo.context

@@ -1,0 +1,2 @@
+ALTER TABLE "v0_4_funds" ADD COLUMN "fund_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "v0_4_refunds" ADD COLUMN "refund_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;

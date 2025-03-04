@@ -77,6 +77,20 @@ export enum V04SwapType {
   Sell = "Sell",
 }
 
+export enum V04ProposalState {
+  Pending = "Pending",
+  Passed = "Passed",
+  Failed = "Failed",
+  Executed = "Executed",
+}
+
+export enum V04LaunchState {
+  Initialized = "Initialized",
+  Live = "Live",
+  Complete = "Complete",
+  Refunding = "Refunding",
+}
+
 type NonEmptyList<E> = [E, ...E[]];
 
 function pgEnum<T extends string>(columnName: string, enumObj: Record<any, T>) {
@@ -1096,6 +1110,111 @@ export const v0_4_conditional_vaults = pgTable("v0_4_conditional_vaults", {
   latestVaultSeqNumApplied: bigint("latest_vault_seq_num_applied", {
     mode: "bigint",
   }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const v0_4_daos = pgTable("v0_4_daos", {
+  daoAddr: pubkey("dao_addr").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  treasuryAddr: pubkey("treasury_addr").notNull(),
+  treasuryPdaBump: smallint("treasury_pda_bump").notNull(),
+  tokenMintAcct: pubkey("token_mint_acct").notNull().references(() => tokens.mintAcct),
+  usdcMintAcct: pubkey("usdc_mint_acct").notNull().references(() => tokens.mintAcct),
+  proposalCount: bigint("proposal_count", { mode: "bigint" }).notNull(),
+  passThresholdBps: smallint("pass_threshold_bps").notNull(),
+  slotsPerProposal: bigint("slots_per_proposal", { mode: "bigint" }).notNull(),
+  twapInitialObservation: numeric("twap_initial_observation", { precision: 40, scale: 0 }).notNull(),
+  twapMaxObservationChangePerUpdate: numeric("twap_max_observation_change_per_update", { precision: 40, scale: 0 }).notNull(),
+  twapStartDelaySlots: bigint("twap_start_delay_slots", { mode: "bigint" }).notNull(),
+  minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", { mode: "bigint" }).notNull(),
+  minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", { mode: "bigint" }).notNull(),
+  latestDaoSeqNumApplied: bigint("latest_dao_seq_num_applied", { mode: "bigint" }).notNull(),
+});
+
+export const v0_4_proposals = pgTable("v0_4_proposals", {
+  proposalAddr: pubkey("proposal_addr").primaryKey(),
+  number: integer("number").notNull(),
+  proposer: pubkey("proposer").notNull(),
+  descriptionUrl: text("description_url").notNull(),
+  slotEnqueued: biggerSlot("slot_enqueued").notNull(),
+  state: pgEnum("state", V04ProposalState).notNull(),
+  instruction: jsonb("instruction"),
+  passAmmAddr: pubkey("pass_amm_addr")
+    .notNull()
+    .references(() => v0_4_amms.ammAddr),
+  failAmmAddr: pubkey("fail_amm_addr")
+    .notNull()
+    .references(() => v0_4_amms.ammAddr),
+  baseVaultAddr: pubkey("base_vault_addr")
+    .notNull()
+    .references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+  quoteVaultAddr: pubkey("quote_vault_addr")
+    .notNull()
+    .references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+  daoAddr: pubkey("dao_addr")
+    .notNull()
+    .references(() => v0_4_daos.daoAddr),
+  passLpTokensLocked: numeric("pass_lp_tokens_locked", { precision: 20, scale: 0 }).notNull(),
+  failLpTokensLocked: numeric("fail_lp_tokens_locked", { precision: 20, scale: 0 }).notNull(),
+  nonce: bigint("nonce", { mode: "bigint" }).notNull(),
+  pdaBump: smallint("pda_bump").notNull(),
+  questionAddr: pubkey("question_addr")
+    .notNull()
+    .references(() => v0_4_questions.questionAddr),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const v0_4_launches = pgTable("v0_4_launches", {
+  launchAddr: pubkey("launch_addr").primaryKey(),
+  minimumRaiseAmount: bigint("minimum_raise_amount", { mode: "bigint" }).notNull(),
+  creator: pubkey("creator").notNull(),
+  launchSigner: pubkey("launch_signer").notNull(),
+  launchSignerPdaBump: smallint("launch_signer_pda_bump").notNull(),
+  launchUsdcVault: pubkey("launch_usdc_vault").notNull(),
+  launchTokenVault: pubkey("launch_token_vault").notNull(),
+  tokenMintAcct: pubkey("token_mint_acct")
+    .notNull()
+    .references(() => tokens.mintAcct),
+  pdaBump: smallint("pda_bump").notNull(),
+  daoAddr: pubkey("dao_addr")
+    .notNull()
+    .references(() => v0_4_daos.daoAddr),
+  daoTreasuryAddr: pubkey("dao_treasury_addr").notNull(),
+  treasuryUsdcAcct: pubkey("treasury_usdc_acct").notNull(),
+  committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
+  latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
+  state: pgEnum("state", V04LaunchState).notNull(),
+  slotStarted: slot("slot_started").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const v0_4_funds = pgTable("v0_4_funds", {
+  fundId: uuid("fund_id").notNull().defaultRandom().primaryKey(),
+  launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
+  funderAddr: pubkey("funder_addr").notNull(),
+  slot: slot("slot").notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
+  usdcAmount: numeric("usdc_amount", { precision: 20, scale: 0 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const v0_4_refunds = pgTable("v0_4_refunds", {
+  refundId: uuid("refund_id").notNull().defaultRandom().primaryKey(),
+  launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
+  funderAddr: pubkey("funder_addr").notNull(),
+  slot: slot("slot").notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
+  usdcAmount: numeric("usdc_amount", { precision: 20, scale: 0 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
