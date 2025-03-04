@@ -1,4 +1,4 @@
-import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
+import { AMM_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID, LAUNCHPAD_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
 import * as anchor from "@coral-xyz/anchor";
 import { CompiledInnerInstruction, PublicKey, TransactionResponse, VersionedTransactionResponse } from "@solana/web3.js";
 
@@ -93,7 +93,7 @@ const parseEvents = (transactionResponse: VersionedTransactionResponse | Transac
 //indexes signature
 export async function index(signature: string, programId: PublicKey) {
   try {
-    if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID)) {
+    if (!programId.equals(AMM_PROGRAM_ID) && !programId.equals(CONDITIONAL_VAULT_PROGRAM_ID) && !programId.equals(LAUNCHPAD_PROGRAM_ID)) {
       //autocrat program id, we aren't indexing these for now
       console.log("Unknown program id: ", programId.toBase58());
       return;
