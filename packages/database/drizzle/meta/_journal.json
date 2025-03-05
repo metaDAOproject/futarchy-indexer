@@ -155,6 +155,13 @@
       "when": 1741103806771,
       "tag": "0021_green_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1741199660082,
+      "tag": "0022_fearless_boomerang",
+      "breakpoints": true
     }
   ]
 }
