@@ -1116,6 +1116,7 @@ export const v0_4_daos = pgTable("v0_4_daos", {
   minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", { mode: "bigint" }).notNull(),
   minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", { mode: "bigint" }).notNull(),
   latestDaoSeqNumApplied: bigint("latest_dao_seq_num_applied", { mode: "bigint" }).notNull(),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
 });
 
 export const v0_4_proposals = pgTable("v0_4_proposals", {
