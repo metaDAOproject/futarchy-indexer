@@ -1157,7 +1157,7 @@ export const v0_4_proposals = pgTable("v0_4_proposals", {
 export const v0_4_launches = pgTable("v0_4_launches", {
   launchAddr: pubkey("launch_addr").primaryKey(),
   minimumRaiseAmount: bigint("minimum_raise_amount", { mode: "bigint" }).notNull(),
-  creator: pubkey("creator").notNull(),
+  launch_authority: pubkey("launch_authority").notNull(),
   launchSigner: pubkey("launch_signer").notNull(),
   launchSignerPdaBump: smallint("launch_signer_pda_bump").notNull(),
   launchUsdcVault: pubkey("launch_usdc_vault").notNull(),
@@ -1173,7 +1173,8 @@ export const v0_4_launches = pgTable("v0_4_launches", {
   committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
   latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
   state: pgEnum("state", V04LaunchState).notNull(),
-  slotStarted: slot("slot_started").notNull(),
+  unixTimestampStarted: bigint("unix_timestamp_started", { mode: "bigint" }).default(sql`0`).notNull(),
+  secondsForLaunch: integer("seconds_for_launch").default(sql`0`).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),

@@ -169,6 +169,13 @@
       "when": 1741204743565,
       "tag": "0023_burly_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1741287328067,
+      "tag": "0024_sudden_norrin_radd",
+      "breakpoints": true
     }
   ]
 }
