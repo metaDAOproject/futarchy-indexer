@@ -1116,6 +1116,7 @@ export const v0_4_daos = pgTable("v0_4_daos", {
   minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", { mode: "bigint" }).notNull(),
   minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", { mode: "bigint" }).notNull(),
   latestDaoSeqNumApplied: bigint("latest_dao_seq_num_applied", { mode: "bigint" }).notNull(),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
 });
 
 export const v0_4_proposals = pgTable("v0_4_proposals", {
@@ -1166,10 +1167,9 @@ export const v0_4_launches = pgTable("v0_4_launches", {
     .references(() => tokens.mintAcct),
   pdaBump: smallint("pda_bump").notNull(),
   daoAddr: pubkey("dao_addr")
-    .notNull()
     .references(() => v0_4_daos.daoAddr),
-  daoTreasuryAddr: pubkey("dao_treasury_addr").notNull(),
-  treasuryUsdcAcct: pubkey("treasury_usdc_acct").notNull(),
+  daoTreasuryAddr: pubkey("dao_treasury_addr"),
+  treasuryUsdcAcct: pubkey("treasury_usdc_acct"),
   committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
   latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
   state: pgEnum("state", V04LaunchState).notNull(),
@@ -1177,6 +1177,7 @@ export const v0_4_launches = pgTable("v0_4_launches", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
 });
 
 export const v0_4_funding_records = pgTable("v0_4_funding_records", {
@@ -1192,6 +1193,7 @@ export const v0_4_funding_records = pgTable("v0_4_funding_records", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
 });
 
 export const launchDetails = pgTable("launch_details", {
