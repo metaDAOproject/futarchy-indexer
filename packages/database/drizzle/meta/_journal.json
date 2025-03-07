@@ -267,6 +267,13 @@
       "when": 1741336735008,
       "tag": "0037_free_polaris",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1741376011087,
+      "tag": "0038_supreme_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }
