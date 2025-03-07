@@ -1,6 +1,6 @@
 {
-  "id": "25e1b8c6-c5ed-4371-97d9-d5f181bff566",
-  "prevId": "641c8e79-1f61-466a-9c8e-1494dfe1fdb4",
+  "id": "77ebbd92-b6fc-4249-bd45-ca55d1c59b36",
+  "prevId": "2d8f1cfb-00ee-45a8-9f85-bc6119343733",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -377,6 +377,26 @@
           "type": "varchar(44)",
           "primaryKey": false,
           "notNull": false
+        },
+        "dao_acct": {
+          "name": "dao_acct",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_primary": {
+          "name": "is_primary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
@@ -390,32 +410,6 @@
           ],
           "columnsTo": [
             "organization_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "dao_details_base_mint_tokens_mint_acct_fk": {
-          "name": "dao_details_base_mint_tokens_mint_acct_fk",
-          "tableFrom": "dao_details",
-          "tableTo": "tokens",
-          "columnsFrom": [
-            "base_mint"
-          ],
-          "columnsTo": [
-            "mint_acct"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "dao_details_quote_mint_tokens_mint_acct_fk": {
-          "name": "dao_details_quote_mint_tokens_mint_acct_fk",
-          "tableFrom": "dao_details",
-          "tableTo": "tokens",
-          "columnsFrom": [
-            "quote_mint"
-          ],
-          "columnsTo": [
-            "mint_acct"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -504,7 +498,7 @@
           "name": "quote_acct",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "treasury_acct": {
           "name": "treasury_acct",
@@ -808,7 +802,7 @@
         "launch_addr": {
           "name": "launch_addr",
           "type": "varchar(44)",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
         "title": {
@@ -1416,6 +1410,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "telegram_channel": {
+          "name": "telegram_channel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1718,7 +1718,7 @@
       "columns": {
         "proposal_id": {
           "name": "proposal_id",
-          "type": "bigint",
+          "type": "bigserial",
           "primaryKey": true,
           "notNull": true
         },
@@ -1787,6 +1787,31 @@
           "type": "varchar(44)",
           "primaryKey": false,
           "notNull": false
+        },
+        "discussion_link": {
+          "name": "discussion_link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1800,6 +1825,19 @@
           ],
           "columnsTo": [
             "proposal_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "proposal_details_organization_id_organizations_organization_id_fk": {
+          "name": "proposal_details_organization_id_organizations_organization_id_fk",
+          "tableFrom": "proposal_details",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1893,25 +1931,25 @@
           "name": "pass_market_acct",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "fail_market_acct": {
           "name": "fail_market_acct",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "base_vault": {
           "name": "base_vault",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "quote_vault": {
           "name": "quote_vault",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "duration_in_slots": {
           "name": "duration_in_slots",
@@ -2382,6 +2420,18 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "base_decimals": {
+          "name": "base_decimals",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote_decimals": {
+          "name": "quote_decimals",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3367,12 +3417,32 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "user_name": {
+          "name": "user_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "users_user_name_unique": {
+          "name": "users_user_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_name"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -3474,6 +3544,96 @@
           ],
           "columnsTo": [
             "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.v0_4_claims": {
+      "name": "v0_4_claims",
+      "schema": "",
+      "columns": {
+        "claim_id": {
+          "name": "claim_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "launch_addr": {
+          "name": "launch_addr",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "funder_addr": {
+          "name": "funder_addr",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tokens_claimed": {
+          "name": "tokens_claimed",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "funding_record_addr": {
+          "name": "funding_record_addr",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slot": {
+          "name": "slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "v0_4_claims_launch_addr_v0_4_launches_launch_addr_fk": {
+          "name": "v0_4_claims_launch_addr_v0_4_launches_launch_addr_fk",
+          "tableFrom": "v0_4_claims",
+          "tableTo": "v0_4_launches",
+          "columnsFrom": [
+            "launch_addr"
+          ],
+          "columnsTo": [
+            "launch_addr"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "v0_4_claims_funding_record_addr_v0_4_funding_records_funding_record_addr_fk": {
+          "name": "v0_4_claims_funding_record_addr_v0_4_funding_records_funding_record_addr_fk",
+          "tableFrom": "v0_4_claims",
+          "tableTo": "v0_4_funding_records",
+          "columnsFrom": [
+            "funding_record_addr"
+          ],
+          "columnsTo": [
+            "funding_record_addr"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -3652,6 +3812,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "twap_start_delay_slots": {
+          "name": "twap_start_delay_slots",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
         "min_quote_futarchic_liquidity": {
           "name": "min_quote_futarchic_liquidity",
           "type": "bigint",
@@ -3669,6 +3835,13 @@
           "type": "bigint",
           "primaryKey": false,
           "notNull": true
+        },
+        "updated_at_slot": {
+          "name": "updated_at_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "0"
         }
       },
       "indexes": {},
@@ -3695,6 +3868,91 @@
           ],
           "columnsTo": [
             "mint_acct"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.v0_4_funding_records": {
+      "name": "v0_4_funding_records",
+      "schema": "",
+      "columns": {
+        "funding_record_addr": {
+          "name": "funding_record_addr",
+          "type": "varchar(44)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "launch_addr": {
+          "name": "launch_addr",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "funder_addr": {
+          "name": "funder_addr",
+          "type": "varchar(44)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "committed_amount": {
+          "name": "committed_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latest_funding_record_seq_num_applied": {
+          "name": "latest_funding_record_seq_num_applied",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_claimed": {
+          "name": "is_claimed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_refunded": {
+          "name": "is_refunded",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at_slot": {
+          "name": "updated_at_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "0"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "v0_4_funding_records_launch_addr_v0_4_launches_launch_addr_fk": {
+          "name": "v0_4_funding_records_launch_addr_v0_4_launches_launch_addr_fk",
+          "tableFrom": "v0_4_funding_records",
+          "tableTo": "v0_4_launches",
+          "columnsFrom": [
+            "launch_addr"
+          ],
+          "columnsTo": [
+            "launch_addr"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -3793,8 +4051,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "creator": {
-          "name": "creator",
+        "launch_authority": {
+          "name": "launch_authority",
           "type": "varchar(44)",
           "primaryKey": false,
           "notNull": true
@@ -3839,19 +4097,19 @@
           "name": "dao_addr",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "dao_treasury_addr": {
           "name": "dao_treasury_addr",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "treasury_usdc_acct": {
           "name": "treasury_usdc_acct",
           "type": "varchar(44)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "committed_amount": {
           "name": "committed_amount",
@@ -3871,11 +4129,19 @@
           "primaryKey": false,
           "notNull": true
         },
-        "slot_started": {
-          "name": "slot_started",
+        "unix_timestamp_started": {
+          "name": "unix_timestamp_started",
           "type": "bigint",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "0"
+        },
+        "seconds_for_launch": {
+          "name": "seconds_for_launch",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "0"
         },
         "created_at": {
           "name": "created_at",
@@ -3883,6 +4149,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at_slot": {
+          "name": "updated_at_slot",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "0"
         }
       },
       "indexes": {},
@@ -4177,6 +4450,31 @@
         "completed_at": {
           "name": "completed_at",
           "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metric_threshold": {
+          "name": "metric_threshold",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "discussion_link": {
+          "name": "discussion_link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }

@@ -253,6 +253,13 @@
       "when": 1741287328067,
       "tag": "0035_sudden_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1741319824863,
+      "tag": "0036_funny_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

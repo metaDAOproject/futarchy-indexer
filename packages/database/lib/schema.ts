@@ -1215,7 +1215,7 @@ export const v0_4_funding_records = pgTable("v0_4_funding_records", {
 });
 
 export const launchDetails = pgTable("launch_details", {
-  launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
+  launchAddr: pubkey("launch_addr").primaryKey().notNull().references(() => v0_4_launches.launchAddr),
   title: text("title").notNull(),
   description: text("description").notNull(),
   imageUrl: text("image_url"),
