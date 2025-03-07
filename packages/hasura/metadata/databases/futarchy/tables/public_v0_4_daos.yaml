@@ -30,8 +30,10 @@ select_permissions:
         - latest_dao_seq_num_applied
         - min_base_futarchic_liquidity
         - min_quote_futarchic_liquidity
+        - organization_id
         - proposal_count
         - slots_per_proposal
+        - twap_start_delay_slots
         - updated_at_slot
         - dao_addr
         - token_mint_acct

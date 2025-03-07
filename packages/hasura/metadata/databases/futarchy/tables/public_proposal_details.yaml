@@ -38,6 +38,7 @@ select_permissions:
       columns:
         - organization_id
         - proposal_id
+        - proposal_index
         - base_cond_vault_acct
         - description
         - fail_market_acct
