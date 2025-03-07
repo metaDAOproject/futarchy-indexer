@@ -2,6 +2,15 @@ table:
   name: tokens
   schema: public
 object_relationships:
+  - name: dao_details
+    using:
+      manual_configuration:
+        column_mapping:
+          mint_acct: base_mint
+        insertion_order: null
+        remote_table:
+          name: dao_details
+          schema: public
   - name: vault_by_finalize
     using:
       manual_configuration:
@@ -30,16 +39,11 @@ array_relationships:
           schema: public
   - name: daoDetailsByQuoteMint
     using:
-      foreign_key_constraint_on:
-        column: quote_mint
-        table:
-          name: dao_details
-          schema: public
-  - name: dao_details
-    using:
-      foreign_key_constraint_on:
-        column: base_mint
-        table:
+      manual_configuration:
+        column_mapping:
+          mint_acct: quote_mint
+        insertion_order: null
+        remote_table:
           name: dao_details
           schema: public
   - name: daos
@@ -105,6 +109,13 @@ array_relationships:
         table:
           name: v0_4_amms
           schema: public
+  - name: v04DaosByUsdcMintAcct
+    using:
+      foreign_key_constraint_on:
+        column: usdc_mint_acct
+        table:
+          name: v0_4_daos
+          schema: public
   - name: v0_4_amms
     using:
       foreign_key_constraint_on:
@@ -118,6 +129,20 @@ array_relationships:
         column: underlying_mint_acct
         table:
           name: v0_4_conditional_vaults
+          schema: public
+  - name: v0_4_daos
+    using:
+      foreign_key_constraint_on:
+        column: token_mint_acct
+        table:
+          name: v0_4_daos
+          schema: public
+  - name: v0_4_launches
+    using:
+      foreign_key_constraint_on:
+        column: token_mint_acct
+        table:
+          name: v0_4_launches
           schema: public
 select_permissions:
   - role: anonymous

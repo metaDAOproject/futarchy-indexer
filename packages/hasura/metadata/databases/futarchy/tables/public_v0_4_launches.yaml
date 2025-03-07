@@ -1,0 +1,69 @@
+table:
+  name: v0_4_launches
+  schema: public
+object_relationships:
+  - name: token
+    using:
+      foreign_key_constraint_on: token_mint_acct
+  - name: v0_4_dao
+    using:
+      foreign_key_constraint_on: dao_addr
+array_relationships:
+  - name: launch_details
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: launch_details
+          schema: public
+  - name: v0_4_claims
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_claims
+          schema: public
+  - name: v0_4_funding_records
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_funding_records
+          schema: public
+  - name: v0_4_funds
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_funds
+          schema: public
+  - name: v0_4_refunds
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: v0_4_refunds
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - committed_amount
+        - latest_launch_seq_num_applied
+        - minimum_raise_amount
+        - slot_started
+        - creator
+        - dao_addr
+        - dao_treasury_addr
+        - launch_addr
+        - launch_signer
+        - launch_token_vault
+        - launch_usdc_vault
+        - state
+        - token_mint_acct
+        - treasury_usdc_acct
+        - launch_signer_pda_bump
+        - pda_bump
+        - created_at
+      filter: {}
+    comment: ""

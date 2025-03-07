@@ -23,9 +23,36 @@ object_relationships:
   - name: fail_market
     using:
       foreign_key_constraint_on: fail_market_acct
+  - name: fail_twap
+    using:
+      manual_configuration:
+        column_mapping:
+          fail_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: twaps
+          schema: public
   - name: pass_market
     using:
       foreign_key_constraint_on: pass_market_acct
+  - name: pass_twap
+    using:
+      manual_configuration:
+        column_mapping:
+          pass_market_acct: market_acct
+        insertion_order: null
+        remote_table:
+          name: twaps
+          schema: public
+  - name: proposal_details
+    using:
+      manual_configuration:
+        column_mapping:
+          proposal_acct: proposal_acct
+        insertion_order: null
+        remote_table:
+          name: proposal_details
+          schema: public
 array_relationships:
   - name: comments
     using:
@@ -40,13 +67,6 @@ array_relationships:
         column: proposal_acct
         table:
           name: markets
-          schema: public
-  - name: proposal_details
-    using:
-      foreign_key_constraint_on:
-        column: proposal_acct
-        table:
-          name: proposal_details
           schema: public
   - name: reactions
     using:

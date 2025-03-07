@@ -35,6 +35,8 @@ select_permissions:
     permission:
       columns:
         - user_acct
+        - image_url
+        - user_name
         - created_at
       filter: {}
     comment: ""

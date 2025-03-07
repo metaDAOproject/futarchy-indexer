@@ -1,0 +1,45 @@
+table:
+  name: v0_4_daos
+  schema: public
+object_relationships:
+  - name: token
+    using:
+      foreign_key_constraint_on: token_mint_acct
+  - name: tokenByUsdcMintAcct
+    using:
+      foreign_key_constraint_on: usdc_mint_acct
+array_relationships:
+  - name: v0_4_launches
+    using:
+      foreign_key_constraint_on:
+        column: dao_addr
+        table:
+          name: v0_4_launches
+          schema: public
+  - name: v0_4_proposals
+    using:
+      foreign_key_constraint_on:
+        column: dao_addr
+        table:
+          name: v0_4_proposals
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - latest_dao_seq_num_applied
+        - min_base_futarchic_liquidity
+        - min_quote_futarchic_liquidity
+        - proposal_count
+        - slots_per_proposal
+        - dao_addr
+        - token_mint_acct
+        - treasury_addr
+        - usdc_mint_acct
+        - twap_initial_observation
+        - twap_max_observation_change_per_update
+        - pass_threshold_bps
+        - treasury_pda_bump
+        - created_at
+      filter: {}
+    comment: ""

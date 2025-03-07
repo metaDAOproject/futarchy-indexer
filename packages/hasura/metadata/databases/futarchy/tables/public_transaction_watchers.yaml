@@ -5,9 +5,6 @@ object_relationships:
   - name: transaction
     using:
       foreign_key_constraint_on: first_tx_sig
-  - name: transactionByLatestTxSig
-    using:
-      foreign_key_constraint_on: latest_tx_sig
 array_relationships:
   - name: transaction_watcher_transactions
     using:

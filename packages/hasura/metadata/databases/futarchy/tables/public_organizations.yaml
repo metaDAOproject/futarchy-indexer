@@ -16,6 +16,13 @@ array_relationships:
         table:
           name: daos
           schema: public
+  - name: proposal_details
+    using:
+      foreign_key_constraint_on:
+        column: organization_id
+        table:
+          name: proposal_details
+          schema: public
 select_permissions:
   - role: anonymous
     permission:
@@ -33,4 +40,20 @@ select_permissions:
         - created_at
       filter: {}
       allow_aggregations: true
+    comment: ""
+  - role: user
+    permission:
+      columns:
+        - organization_id
+        - is_hide
+        - creator_acct
+        - image_url
+        - slug
+        - url
+        - admin_accts
+        - socials
+        - description
+        - name
+        - created_at
+      filter: {}
     comment: ""

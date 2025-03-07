@@ -29,7 +29,7 @@
   definition:
     query:
       collection_name: allowed-queries
-      query_name: getProposalDescription
+      query_name: proposals_by_pk
   methods:
     - GET
   name: getProposalDescription

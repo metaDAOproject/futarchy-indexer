@@ -1,0 +1,1 @@
+-- ALTER TABLE "proposal_details" ALTER COLUMN "proposal_id" SET DATA TYPE bigserial;
