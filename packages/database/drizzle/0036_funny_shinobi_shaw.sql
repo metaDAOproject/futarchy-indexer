@@ -21,7 +21,7 @@ ALTER TABLE "proposals" ALTER COLUMN "quote_vault" SET NOT NULL;--> statement-br
 -- ALTER TABLE "takes" ADD COLUMN "quote_decimals" smallint;--> statement-breakpoint
 -- ALTER TABLE "users" ADD COLUMN "user_name" text;--> statement-breakpoint
 -- ALTER TABLE "users" ADD COLUMN "image_url" text;--> statement-breakpoint
-ALTER TABLE "v0_4_daos" ADD COLUMN "twap_start_delay_slots" bigint DEFAULT NULL;--> statement-breakpoint
+-- ALTER TABLE "v0_4_daos" ADD COLUMN "twap_start_delay_slots" bigint DEFAULT NULL;--> statement-breakpoint
 -- ALTER TABLE "v0_4_metric_decisions" ADD COLUMN "metric_threshold" numeric;--> statement-breakpoint
 -- ALTER TABLE "v0_4_metric_decisions" ADD COLUMN "discussion_link" text;--> statement-breakpoint
 -- ALTER TABLE "v0_4_metric_decisions" ADD COLUMN "state" text DEFAULT 'draft' NOT NULL;--> statement-breakpoint
