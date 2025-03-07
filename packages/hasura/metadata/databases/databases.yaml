@@ -155,48 +155,6 @@
             filter: {}
           role: anonymous
     - fields:
-        - name: dao_image
-          type:
-            nullable: true
-            scalar: text
-        - name: proposal_title
-          type:
-            nullable: true
-            scalar: text
-        - name: proposal_account
-          type:
-            nullable: true
-            scalar: text
-        - name: trade_count
-          type:
-            nullable: true
-            scalar: numeric
-        - name: volume_traded
-          type:
-            nullable: true
-            scalar: numeric
-        - name: proposal_status
-          type:
-            nullable: true
-            scalar: text
-        - name: chart_data
-          type:
-            nullable: true
-            scalar: jsonb
-      name: linked_recent_proposals
-      select_permissions:
-        - permission:
-            columns:
-              - dao_image
-              - proposal_title
-              - proposal_account
-              - trade_count
-              - volume_traded
-              - proposal_status
-              - chart_data
-            filter: {}
-          role: anonymous
-    - fields:
         - name: proposal_acct
           type:
             nullable: false
@@ -545,23 +503,6 @@
             filter: {}
           role: anonymous
     - fields:
-        - name: user_acct
-          type:
-            nullable: false
-            scalar: text
-        - name: proposal_acct
-          type:
-            nullable: false
-            scalar: text
-      name: users_proposals
-      select_permissions:
-        - permission:
-            columns:
-              - user_acct
-              - proposal_acct
-            filter: {}
-          role: anonymous
-    - fields:
         - name: dao_image
           type:
             nullable: true
@@ -685,6 +626,26 @@
         SELECT * FROM proposals UNION ALL SELECT * FROM metrics;
       returns: all_live_proposals
       root_field_name: all_live_proposals
+    - arguments:
+        bucket_size:
+          description: ""
+          nullable: false
+          type: text
+        end_time:
+          description: ""
+          nullable: true
+          type: text
+        market:
+          description: ""
+          nullable: false
+          type: text
+        start_time:
+          description: ""
+          nullable: true
+          type: text
+      code: "SELECT  \n    time_bucket(CAST({{bucket_size}} AS INTERVAL), interv) as bucket_time,\n    first(interv, interv)::TIMESTAMPTZ AS exact_time,\n    first(price, interv)::NUMERIC AS price\nFROM prices_chart_data \nWHERE market_acct = {{market}}\n    AND ({{start_time}}::TIMESTAMPTZ IS NULL OR interv > {{start_time}}::TIMESTAMPTZ)\n    AND ({{end_time}}::TIMESTAMPTZ IS NULL OR interv < {{end_time}}::TIMESTAMPTZ)\nGROUP BY time_bucket(CAST({{bucket_size}} AS INTERVAL), interv)\nORDER BY bucket_time DESC;"
+      returns: historical_prices
+      root_field_name: historical_prices
     - arguments:
         end_time:
           description: ""
@@ -878,14 +839,6 @@
       code: "SELECT \n    t.order_tx_sig::text,\n    t.base_amount,\n    t.quote_price,\n    t.market_acct::text,\n    t.order_time,\n    o.actor_acct::text,\n    o.side::text,\n    CASE \n        WHEN t.market_acct = p.pass_market_acct THEN 'pass'\n        ELSE 'fail'\n    END as market_type\nFROM \n    takes t\n    INNER JOIN orders o \n        ON o.order_tx_sig = t.order_tx_sig\n        AND o.market_acct IS NOT NULL \n    INNER JOIN proposals p \n        ON (t.market_acct = p.pass_market_acct \n            OR t.market_acct = p.fail_market_acct)\n    INNER JOIN transactions tx \n        ON tx.tx_sig = o.order_tx_sig\n        AND tx.failed IS FALSE\nWHERE \n    p.proposal_acct = {{proposal_acct}}\nORDER BY t.order_time DESC;"
       returns: trades
       root_field_name: proposal_trades
-    - arguments:
-        proposal_acct:
-          description: ""
-          nullable: false
-          type: text
-      code: "WITH proposal_data AS (\n    SELECT \n        p.created_at,\n        p.ended_at,\n        p.pass_market_acct,\n        p.fail_market_acct,\n        d.base_acct as spot_market_acct,\n        CASE \n            WHEN p.ended_at IS NULL OR p.ended_at > now() THEN now() - interval '1 hour'\n            ELSE p.ended_at - interval '1 hour'\n        END as recent_1h_start,\n        CASE \n            WHEN p.ended_at IS NULL OR p.ended_at > now() THEN now() - interval '4 hours'\n            ELSE p.ended_at - interval '4 hours'\n        END as recent_4h_start,\n        p.created_at as start_time,\n        CASE \n            WHEN p.ended_at IS NULL OR p.ended_at > now() THEN now()\n            ELSE p.ended_at\n        END as end_time\n    FROM proposals p\n    LEFT JOIN daos d ON p.dao_acct = d.dao_acct\n    WHERE p.proposal_acct = {{proposal_acct}}\n),\npass_15m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('15 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.pass_market_acct\n            AND pc.interv >= p.start_time\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\npass_5m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('5 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.pass_market_acct\n            AND pc.interv >= p.recent_4h_start\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\npass_1m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('1 minute'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.pass_market_acct\n            AND pc.interv >= p.recent_1h_start\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\nfail_15m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('15 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.fail_market_acct\n            AND pc.interv >= p.start_time\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\nfail_5m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('5 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.fail_market_acct\n            AND pc.interv >= p.recent_4h_start\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\nfail_1m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('1 minute'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.fail_market_acct\n            AND pc.interv >= p.recent_1h_start\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\nspot_15m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('15 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.spot_market_acct\n            AND pc.interv >= p.start_time\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\nspot_5m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('5 minutes'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.spot_market_acct\n            AND pc.interv >= p.recent_4h_start\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\nspot_1m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('1 minute'::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM proposal_data p\n        LEFT JOIN prices_chart_data_test_test pc ON \n            pc.market_acct = p.spot_market_acct\n            AND pc.interv >= p.recent_1h_start\n            AND pc.interv <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\npass_twap_15m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('15 minutes'::interval, t.created_at) as bucket_time,\n            first(t.token_amount, t.created_at) AS price\n        FROM proposal_data p\n\t    LEFT JOIN twaps t ON\n\t        t.market_acct = p.pass_market_acct\n\t        AND t.created_at >= p.start_time\n\t        AND t.created_at <= p.end_time\n        GROUP BY bucket_time\n    ) t\n),\nfail_twap_15m AS (\n    SELECT array_agg(\n        json_build_array(price, bucket_time::text)\n        ORDER BY bucket_time DESC\n    ) as prices\n    FROM (\n        SELECT \n            time_bucket('15 minutes'::interval, t.created_at) as bucket_time,\n            first(t.token_amount, t.created_at) AS price\n        FROM proposal_data p\n\t    LEFT JOIN twaps t ON\n\t        t.market_acct = p.fail_market_acct\n\t        AND t.created_at >= p.start_time\n\t        AND t.created_at <= p.end_time\n        GROUP BY bucket_time\n    ) t\n)\nSELECT json_build_object(\n    'pass_15m', (SELECT prices FROM pass_15m),\n    'pass_5m', (SELECT prices FROM pass_5m),\n    'pass_1m', (SELECT prices FROM pass_1m),\n    'fail_15m', (SELECT prices FROM fail_15m),\n    'fail_5m', (SELECT prices FROM fail_5m),\n    'fail_1m', (SELECT prices FROM fail_1m),\n    'spot_15m', (SELECT prices FROM spot_15m),\n    'spot_5m', (SELECT prices FROM spot_5m),\n    'spot_1m', (SELECT prices FROM spot_1m),\n    'pass_twap_15m', (SELECT prices FROM pass_twap_15m),\n    'fail_twap_15m', (SELECT prices FROM fail_twap_15m)\n) as prices;"
-      returns: chart_prices_twap
-      root_field_name: testing_chart_data_gap
     - arguments:
         dao_slug:
           description: Slug of the DAO
