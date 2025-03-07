@@ -132,70 +132,133 @@
       "idx": 18,
       "version": "7",
       "when": 1736449347092,
-      "tag": "0015_secret_captain_britain",
+      "tag": "0018_secret_captain_britain",
       "breakpoints": true
     },
     {
       "idx": 19,
       "version": "7",
       "when": 1736643991271,
-      "tag": "0016_useful_the_stranger",
+      "tag": "0019_useful_the_stranger",
       "breakpoints": true
     },
     {
       "idx": 20,
       "version": "7",
       "when": 1736644601840,
-      "tag": "0017_loving_adam_destine",
+      "tag": "0020_loving_adam_destine",
       "breakpoints": true
     },
     {
       "idx": 21,
       "version": "7",
       "when": 1737400753884,
-      "tag": "0018_dizzy_cardiac",
+      "tag": "0021_dizzy_cardiac",
       "breakpoints": true
     },
     {
       "idx": 22,
       "version": "7",
       "when": 1737401464505,
-      "tag": "0019_luxuriant_the_anarchist",
+      "tag": "0022_luxuriant_the_anarchist",
       "breakpoints": true
     },
     {
       "idx": 23,
       "version": "7",
       "when": 1738530566413,
-      "tag": "0020_illegal_scourge",
+      "tag": "0023_illegal_scourge",
       "breakpoints": true
     },
     {
       "idx": 24,
       "version": "7",
       "when": 1738697422141,
-      "tag": "0021_nasty_darwin",
+      "tag": "0024_nasty_darwin",
       "breakpoints": true
     },
     {
       "idx": 25,
       "version": "7",
       "when": 1739379132600,
-      "tag": "0022_moaning_lorna_dane",
+      "tag": "0025_moaning_lorna_dane",
       "breakpoints": true
     },
     {
       "idx": 26,
       "version": "7",
       "when": 1739464698759,
-      "tag": "0023_modern_human_robot",
+      "tag": "0026_modern_human_robot",
       "breakpoints": true
     },
     {
       "idx": 27,
       "version": "7",
       "when": 1739668674696,
-      "tag": "0024_steep_thor_girl",
+      "tag": "0027_steep_thor_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1740696098767,
+      "tag": "0028_tiresome_black_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1740699923228,
+      "tag": "0029_third_darkstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1740769001422,
+      "tag": "0030_cloudy_the_phantom",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1740769081796,
+      "tag": "0031_worthless_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1741103806771,
+      "tag": "0032_green_stature",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1741199660082,
+      "tag": "0033_fearless_boomerang",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1741204743565,
+      "tag": "0034_burly_photon",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1741287328067,
+      "tag": "0035_sudden_norrin_radd",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1741319824863,
+      "tag": "0036_funny_shinobi_shaw",
       "breakpoints": true
     }
   ]

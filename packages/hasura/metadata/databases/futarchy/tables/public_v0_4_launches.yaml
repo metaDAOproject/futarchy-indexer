@@ -2,6 +2,13 @@ table:
   name: v0_4_launches
   schema: public
 object_relationships:
+  - name: launch_detail
+    using:
+      foreign_key_constraint_on:
+        column: launch_addr
+        table:
+          name: launch_details
+          schema: public
   - name: token
     using:
       foreign_key_constraint_on: token_mint_acct
@@ -52,6 +59,7 @@ select_permissions:
         - latest_launch_seq_num_applied
         - minimum_raise_amount
         - slot_started
+        - updated_at_slot
         - creator
         - dao_addr
         - dao_treasury_addr

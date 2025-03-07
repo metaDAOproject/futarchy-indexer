@@ -1,4 +1,4 @@
-import { SQL, sql } from "drizzle-orm";
+import { desc, SQL, sql } from "drizzle-orm";
 import {
   bigint,
   doublePrecision,
@@ -1133,6 +1133,7 @@ export const v0_4_daos = pgTable("v0_4_daos", {
   minQuoteFutarchicLiquidity: bigint("min_quote_futarchic_liquidity", { mode: "bigint" }).notNull(),
   minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", { mode: "bigint" }).notNull(),
   latestDaoSeqNumApplied: bigint("latest_dao_seq_num_applied", { mode: "bigint" }).notNull(),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
 });
 
 export const v0_4_proposals = pgTable("v0_4_proposals", {
@@ -1173,7 +1174,7 @@ export const v0_4_proposals = pgTable("v0_4_proposals", {
 export const v0_4_launches = pgTable("v0_4_launches", {
   launchAddr: pubkey("launch_addr").primaryKey(),
   minimumRaiseAmount: bigint("minimum_raise_amount", { mode: "bigint" }).notNull(),
-  creator: pubkey("creator").notNull(),
+  launch_authority: pubkey("launch_authority").notNull(),
   launchSigner: pubkey("launch_signer").notNull(),
   launchSignerPdaBump: smallint("launch_signer_pda_bump").notNull(),
   launchUsdcVault: pubkey("launch_usdc_vault").notNull(),
@@ -1183,14 +1184,46 @@ export const v0_4_launches = pgTable("v0_4_launches", {
     .references(() => tokens.mintAcct),
   pdaBump: smallint("pda_bump").notNull(),
   daoAddr: pubkey("dao_addr")
-    .notNull()
     .references(() => v0_4_daos.daoAddr),
-  daoTreasuryAddr: pubkey("dao_treasury_addr").notNull(),
-  treasuryUsdcAcct: pubkey("treasury_usdc_acct").notNull(),
+  daoTreasuryAddr: pubkey("dao_treasury_addr"),
+  treasuryUsdcAcct: pubkey("treasury_usdc_acct"),
   committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
   latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
   state: pgEnum("state", V04LaunchState).notNull(),
-  slotStarted: slot("slot_started").notNull(),
+  unixTimestampStarted: bigint("unix_timestamp_started", { mode: "bigint" }).default(sql`0`).notNull(),
+  secondsForLaunch: integer("seconds_for_launch").default(sql`0`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
+});
+
+export const v0_4_funding_records = pgTable("v0_4_funding_records", {
+  fundingRecordAddr: pubkey("funding_record_addr").primaryKey(),
+  launchAddr: pubkey("launch_addr")
+    .notNull()
+    .references(() => v0_4_launches.launchAddr),
+  funderAddr: pubkey("funder_addr").notNull(),
+  committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
+  latestFundingRecordSeqNumApplied: bigint("latest_funding_record_seq_num_applied", { mode: "bigint" }).notNull(),
+  isClaimed: boolean("is_claimed").notNull().default(false),
+  isRefunded: boolean("is_refunded").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
+});
+
+export const launchDetails = pgTable("launch_details", {
+  launchAddr: pubkey("launch_addr").primaryKey().notNull().references(() => v0_4_launches.launchAddr),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url"),
+  videoUrl: text("video_url"),
+  websiteUrl: text("website_url"),
+  twitterUrl: text("twitter_url"),
+  telegramUrl: text("telegram_url"),
+  discordUrl: text("discord_url"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
@@ -1219,6 +1252,20 @@ export const v0_4_refunds = pgTable("v0_4_refunds", {
     .notNull()
     .default(sql`now()`),
 });
+
+export const v0_4_claims = pgTable("v0_4_claims", {
+  claimId: uuid("claim_id").notNull().defaultRandom().primaryKey(),
+  launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
+  funderAddr: pubkey("funder_addr").notNull(),
+  tokensClaimed: numeric("tokens_claimed", { precision: 20, scale: 0 }).notNull(),
+  fundingRecordAddr: pubkey("funding_record_addr").notNull().references(() => v0_4_funding_records.fundingRecordAddr),
+  slot: slot("slot").notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
 
 // TODO: This is commented out give these are timescale views, but I wanted to include them
 export const twapChartData = pgView("twap_chart_data", {

@@ -19,6 +19,7 @@ select_permissions:
       columns:
         - committed_amount
         - latest_funding_record_seq_num_applied
+        - updated_at_slot
         - is_claimed
         - is_refunded
         - funder_addr

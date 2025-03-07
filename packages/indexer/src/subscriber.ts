@@ -1,6 +1,6 @@
 import { connection } from "./connection";
 import { Context, Logs, PublicKey } from "@solana/web3.js";
-import { AMM_PROGRAM_ID as V4_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V4_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V4_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
+import { LAUNCHPAD_PROGRAM_ID, AMM_PROGRAM_ID as V4_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V4_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V4_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.4";
 import { AMM_PROGRAM_ID as V3_AMM_PROGRAM_ID, AUTOCRAT_PROGRAM_ID as V3_AUTOCRAT_PROGRAM_ID, CONDITIONAL_VAULT_PROGRAM_ID as V3_CONDITIONAL_VAULT_PROGRAM_ID } from "@metadaoproject/futarchy/v0.3";
 import { logger } from "./logger";
 import { indexFromLogs as indexV4 } from "./v4_indexer/indexer";
@@ -9,7 +9,7 @@ import { indexFromLogs as indexV3 } from "./v3_indexer/indexer";
 
 async function processLogs(logs: Logs, ctx: Context, programId: PublicKey) {
   //check if programId is v3 or v4
-  if (programId.equals(V4_AMM_PROGRAM_ID) || programId.equals(V4_AUTOCRAT_PROGRAM_ID) || programId.equals(V4_CONDITIONAL_VAULT_PROGRAM_ID)) {
+  if (programId.equals(V4_AMM_PROGRAM_ID) || programId.equals(V4_AUTOCRAT_PROGRAM_ID) || programId.equals(V4_CONDITIONAL_VAULT_PROGRAM_ID) || programId.equals(LAUNCHPAD_PROGRAM_ID)) {
     await indexV4(logs, ctx, programId);
   } else if (programId.equals(V3_AMM_PROGRAM_ID) || programId.equals(V3_AUTOCRAT_PROGRAM_ID) || programId.equals(V3_CONDITIONAL_VAULT_PROGRAM_ID)) {
     await indexV3(logs, ctx, programId);
@@ -27,7 +27,7 @@ async function subscribe(accountPubKey: PublicKey) {
       console.log("Logs received for account", accountPubKey.toString());
       console.log("Logs", logs);
       await new Promise((resolve) => setTimeout(resolve, 500));
-      processLogs(logs, ctx,  accountPubKey); //trigger processing of logs
+      processLogs(logs, ctx, accountPubKey); //trigger processing of logs
     } catch (error) {
       logger.errorWithChatBotAlert(`Error processing logs for account ${accountPubKey.toString()}`, error);
     }
@@ -42,7 +42,8 @@ export async function subscribeAll() {
     V4_CONDITIONAL_VAULT_PROGRAM_ID,
     // V3_AMM_PROGRAM_ID,
     V3_AUTOCRAT_PROGRAM_ID,
-    // V3_CONDITIONAL_VAULT_PROGRAM_ID
+    // V3_CONDITIONAL_VAULT_PROGRAM_ID,
+    LAUNCHPAD_PROGRAM_ID
   ];
   console.log("Subscribing to logs");
   Promise.all(programIds.map(async (programId) => subscribe(programId)));

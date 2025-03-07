@@ -32,6 +32,7 @@ select_permissions:
         - min_quote_futarchic_liquidity
         - proposal_count
         - slots_per_proposal
+        - updated_at_slot
         - dao_addr
         - token_mint_acct
         - treasury_addr
