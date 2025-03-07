@@ -58,18 +58,19 @@ select_permissions:
         - committed_amount
         - latest_launch_seq_num_applied
         - minimum_raise_amount
-        - slot_started
+        - unix_timestamp_started
         - updated_at_slot
-        - creator
         - dao_addr
         - dao_treasury_addr
         - launch_addr
+        - launch_authority
         - launch_signer
         - launch_token_vault
         - launch_usdc_vault
         - state
         - token_mint_acct
         - treasury_usdc_acct
+        - seconds_for_launch
         - launch_signer_pda_bump
         - pda_bump
         - created_at
