@@ -803,6 +803,7 @@ export const proposalDetails = pgTable("proposal_details", {
   summary: text("summary"),
   organizationId: bigint("organization_id", { mode: "bigint" })
     .references(() => organizations.organizationId),
+  proposalIndex: bigint("proposal_index", { mode: "bigint" }).notNull().default(0 as unknown as bigint),
 });
 
 export const programSystem = pgTable("program_system", {
@@ -1134,6 +1135,8 @@ export const v0_4_daos = pgTable("v0_4_daos", {
   minBaseFutarchicLiquidity: bigint("min_base_futarchic_liquidity", { mode: "bigint" }).notNull(),
   latestDaoSeqNumApplied: bigint("latest_dao_seq_num_applied", { mode: "bigint" }).notNull(),
   updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
+  organizationId: bigint("organization_id", { mode: "bigint" })
+    .references(() => organizations.organizationId),
 });
 
 export const v0_4_proposals = pgTable("v0_4_proposals", {
