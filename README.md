@@ -1,4 +1,61 @@
-# Futarchy Indexer
+# Managing Database Migrations
+
+IMPORTANT - If you run a migration, the graphql and permissions for hasura are not automatically updated. You must manually update the hasura schema and permissions via the web UI. Once you do this you MUST update the hasura package syncing from the live client to this repo. If you don't do this we have no guarantees that the CI/CD will function properly. Instructions to do this are below.
+
+## Generate Migration
+Generating migrations are the recommended first step.
+
+```
+cd packages/database
+bun run migrate:create
+```
+
+This will create the files for migration which can be put into a PR for review (this helps to make sure we've got the data model correct before we actually run the migration).
+
+## Run Migration
+Once the migration is approved, you can run it with:
+
+```
+cd packages/database
+FUTARCHY_PG_URL=... bun migrate
+```
+
+## Update Hasura permissions on columns and tables
+Assuming you need permissions for the graphql client, you'll want to login and track everything in hasura.
+1. This begins with tracking the tables (if you created any).
+2. Then you'll want to track the relationships between tables.
+3. Then you'll want to update the permissions on the columns and tables via the UI.
+
+Once this is done you can export the metadata to bring into your PR with the following:
+
+## Export Hasura metadata
+```
+cd packages/hasura
+pnpm hasura metadata export --admin-secret "" --endpoint ""
+```
+
+## Merge PR
+Once the above is completed, the PR is good to merge.
+
+## Update GraphQL client
+Assuming everything is sync'd up then you can update all the graphql clients with the genql command, importantly with that command it will override the index.ts file importing ONLY the url used to call the genql command. It is recommended that you copy the ENV lines from the existing index.ts before you run the genql command.
+
+AN EXAMPLE, BE SURE TO MATCH YOUR OUTPUT PATH AND ENV VARS
+```
+genql --endpoint <> --output ./__generated__ -H "X-Hasura-Admin-Secret: <>"
+```
+
+## Running For Production
+
+We do our best to match staging with production, however there may be some differences before we go live with a new feature or implement changes.
+
+You will use the same migration command above with the URL pointing to the production database. And then what we've done is to export the hasura metadata from staging as a .json file and then import it into production.
+
+This ensures all the systems are in sync.
+
+# Previous README for Futarchy Indexer (DEPRECATED)
+
+For current indexer see [futarchy-indexer-v2](https://github.com/metaDAOproject/futarchy-indexer-v2)
 
 This project aims to index order data from each of The Meta DAO's proposals into candlestick data. 
 This way we can show charts on how the proposals do over time in the UI.
