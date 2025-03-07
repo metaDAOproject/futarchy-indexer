@@ -1,6 +1,6 @@
-ALTER TABLE "dao_details" DROP CONSTRAINT "dao_details_base_mint_tokens_mint_acct_fk";
+-- ALTER TABLE "dao_details" DROP CONSTRAINT "dao_details_base_mint_tokens_mint_acct_fk";
 --> statement-breakpoint
-ALTER TABLE "dao_details" DROP CONSTRAINT "dao_details_quote_mint_tokens_mint_acct_fk";
+-- ALTER TABLE "dao_details" DROP CONSTRAINT "dao_details_quote_mint_tokens_mint_acct_fk";
 --> statement-breakpoint
 ALTER TABLE "dao_details" ADD COLUMN "dao_acct" varchar(44);--> statement-breakpoint
 ALTER TABLE "dao_details" ADD COLUMN "is_active" boolean DEFAULT false NOT NULL;--> statement-breakpoint
