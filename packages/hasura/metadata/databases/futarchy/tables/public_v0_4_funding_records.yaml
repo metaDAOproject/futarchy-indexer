@@ -2,9 +2,23 @@ table:
   name: v0_4_funding_records
   schema: public
 object_relationships:
+  - name: v0_4_claim
+    using:
+      foreign_key_constraint_on:
+        column: funding_record_addr
+        table:
+          name: v0_4_claims
+          schema: public
   - name: v0_4_launch
     using:
       foreign_key_constraint_on: launch_addr
+  - name: v0_4_refund
+    using:
+      foreign_key_constraint_on:
+        column: funding_record_addr
+        table:
+          name: v0_4_refunds
+          schema: public
 array_relationships:
   - name: v0_4_claims
     using:
@@ -12,6 +26,13 @@ array_relationships:
         column: funding_record_addr
         table:
           name: v0_4_claims
+          schema: public
+  - name: v0_4_funds
+    using:
+      foreign_key_constraint_on:
+        column: funding_record_addr
+        table:
+          name: v0_4_funds
           schema: public
 select_permissions:
   - role: anonymous

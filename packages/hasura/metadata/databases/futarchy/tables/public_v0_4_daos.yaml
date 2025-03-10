@@ -2,6 +2,9 @@ table:
   name: v0_4_daos
   schema: public
 object_relationships:
+  - name: organization
+    using:
+      foreign_key_constraint_on: organization_id
   - name: token
     using:
       foreign_key_constraint_on: token_mint_acct

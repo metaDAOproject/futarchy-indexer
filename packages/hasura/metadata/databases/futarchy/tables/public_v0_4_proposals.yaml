@@ -2,6 +2,15 @@ table:
   name: v0_4_proposals
   schema: public
 object_relationships:
+  - name: proposal_details
+    using:
+      manual_configuration:
+        column_mapping:
+          proposal_addr: proposal_acct
+        insertion_order: null
+        remote_table:
+          name: proposal_details
+          schema: public
   - name: v04AmmByPassAmmAddr
     using:
       foreign_key_constraint_on: pass_amm_addr
