@@ -10,6 +10,9 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 
+DELETE FROM "v0_4_claims";--> statement-breakpoint
+DELETE FROM "v0_4_refunds";--> statement-breakpoint
+
 ALTER TABLE "v0_4_claims" DROP COLUMN IF EXISTS "claim_id";--> statement-breakpoint
 ALTER TABLE "v0_4_refunds" DROP COLUMN IF EXISTS "refund_id";--> statement-breakpoint
 ALTER TABLE "v0_4_claims" ADD PRIMARY KEY ("funding_record_addr");--> statement-breakpoint
