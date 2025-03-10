@@ -1,4 +1,3 @@
-DELETE FROM "v0_4_funds";--> statement-breakpoint
 ALTER TABLE "v0_4_funds" DROP COLUMN IF EXISTS "fund_id";--> statement-breakpoint
 ALTER TABLE "v0_4_funds" ADD COLUMN "funding_record_addr" varchar(44) NOT NULL;--> statement-breakpoint
 ALTER TABLE "v0_4_funds" ADD COLUMN "funding_record_seq_num" bigint NOT NULL;--> statement-breakpoint
@@ -9,9 +8,6 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-
-DELETE FROM "v0_4_claims";--> statement-breakpoint
-DELETE FROM "v0_4_refunds";--> statement-breakpoint
 
 ALTER TABLE "v0_4_claims" DROP COLUMN IF EXISTS "claim_id";--> statement-breakpoint
 ALTER TABLE "v0_4_refunds" DROP COLUMN IF EXISTS "refund_id";--> statement-breakpoint
