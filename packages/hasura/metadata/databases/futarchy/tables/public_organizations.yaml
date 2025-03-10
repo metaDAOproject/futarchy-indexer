@@ -23,6 +23,13 @@ array_relationships:
         table:
           name: proposal_details
           schema: public
+  - name: v0_4_daos
+    using:
+      foreign_key_constraint_on:
+        column: organization_id
+        table:
+          name: v0_4_daos
+          schema: public
 select_permissions:
   - role: anonymous
     permission:

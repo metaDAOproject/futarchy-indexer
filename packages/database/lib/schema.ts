@@ -1177,7 +1177,7 @@ export const v0_4_proposals = pgTable("v0_4_proposals", {
 export const v0_4_launches = pgTable("v0_4_launches", {
   launchAddr: pubkey("launch_addr").primaryKey(),
   minimumRaiseAmount: bigint("minimum_raise_amount", { mode: "bigint" }).notNull(),
-  launch_authority: pubkey("launch_authority").notNull(),
+  launchAuthority: pubkey("launch_authority").notNull(),
   launchSigner: pubkey("launch_signer").notNull(),
   launchSignerPdaBump: smallint("launch_signer_pda_bump").notNull(),
   launchUsdcVault: pubkey("launch_usdc_vault").notNull(),
@@ -1233,7 +1233,8 @@ export const launchDetails = pgTable("launch_details", {
 });
 
 export const v0_4_funds = pgTable("v0_4_funds", {
-  fundId: uuid("fund_id").notNull().defaultRandom().primaryKey(),
+  fundingRecordAddr: pubkey("funding_record_addr").notNull().references(() => v0_4_funding_records.fundingRecordAddr),
+  fundingRecordSeqNum: bigint("funding_record_seq_num", { mode: "bigint" }).notNull(),
   launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
   funderAddr: pubkey("funder_addr").notNull(),
   slot: slot("slot").notNull(),
@@ -1242,10 +1243,12 @@ export const v0_4_funds = pgTable("v0_4_funds", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
-});
+}, (table) => ({
+  pk: primaryKey({ columns: [table.fundingRecordAddr, table.fundingRecordSeqNum]}),
+}));
 
 export const v0_4_refunds = pgTable("v0_4_refunds", {
-  refundId: uuid("refund_id").notNull().defaultRandom().primaryKey(),
+  fundingRecordAddr: pubkey("funding_record_addr").primaryKey().notNull().references(() => v0_4_funding_records.fundingRecordAddr),
   launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
   funderAddr: pubkey("funder_addr").notNull(),
   slot: slot("slot").notNull(),
@@ -1257,11 +1260,10 @@ export const v0_4_refunds = pgTable("v0_4_refunds", {
 });
 
 export const v0_4_claims = pgTable("v0_4_claims", {
-  claimId: uuid("claim_id").notNull().defaultRandom().primaryKey(),
+  fundingRecordAddr: pubkey("funding_record_addr").primaryKey().notNull().references(() => v0_4_funding_records.fundingRecordAddr),
   launchAddr: pubkey("launch_addr").notNull().references(() => v0_4_launches.launchAddr),
   funderAddr: pubkey("funder_addr").notNull(),
   tokensClaimed: numeric("tokens_claimed", { precision: 20, scale: 0 }).notNull(),
-  fundingRecordAddr: pubkey("funding_record_addr").notNull().references(() => v0_4_funding_records.fundingRecordAddr),
   slot: slot("slot").notNull(),
   timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })

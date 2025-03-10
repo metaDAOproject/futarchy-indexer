@@ -19,6 +19,5 @@ select_permissions:
         - tokens_claimed
         - created_at
         - timestamp
-        - claim_id
       filter: {}
     comment: ""
