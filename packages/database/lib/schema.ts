@@ -1221,6 +1221,8 @@ export const launchDetails = pgTable("launch_details", {
   launchAddr: pubkey("launch_addr").primaryKey().notNull().references(() => v0_4_launches.launchAddr),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  subDescription: text("sub_description"),
+  creatorName: text("creator_name"),
   imageUrl: text("image_url"),
   videoUrl: text("video_url"),
   websiteUrl: text("website_url"),
