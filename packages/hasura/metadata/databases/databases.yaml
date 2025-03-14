@@ -779,7 +779,7 @@
         ), agg AS (
         	SELECT
         		*
-        	FROM splits UNION ALL SELECT * FROM merges
+        	FROM splits UNION SELECT * FROM merges
         ), calculations AS (
         	SELECT
         		SUM(size) / POWER(10, 6) AS total_size,
