@@ -9,15 +9,17 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
-        - launch_addr
+        - created_at
+        - creator_name
         - description
         - discord_url
         - image_url
+        - launch_addr
+        - sub_description
         - telegram_url
         - title
         - twitter_url
         - video_url
         - website_url
-        - created_at
       filter: {}
     comment: ""
