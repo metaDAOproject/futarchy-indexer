@@ -1414,7 +1414,120 @@ export const organizations = pgTable("organizations", {
   uniqueId: unique("id_name_url").on(table.organizationId, table.url, table.name),
 })
 );
-  
+
+export enum MemberRole {
+  ADMIN = "ADMIN",
+  MODERATOR = "MODERATOR",
+  GUEST = "GUEST",
+}
+
+export enum ChannelType {
+  TEXT = "TEXT",
+  AUDIO = "AUDIO",
+}
+
+export const profiles = pgTable("profiles", {
+  profileId: uuid("profile_id").primaryKey().defaultRandom(),
+  userId: text("user_id").unique().notNull(),
+  name: text("name").notNull(),
+  imageUrl: text("image_url"),
+  wallet: pubkey("wallet").unique().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const servers = pgTable("servers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name").notNull(),
+  imageUrl: varchar("image_url"),
+  inviteCode: varchar("invite_code").unique().notNull(),
+  profileId: uuid("profile_id").notNull().references(() => profiles.profileId),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+}, (table) => ({
+  uniqueServer: unique("unique_server").on(table.profileId, table.id),
+}));
+
+export const members = pgTable("members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  role: pgEnum("role", MemberRole).notNull().default(MemberRole.GUEST),
+  profileId: uuid("profile_id").notNull().references(() => profiles.profileId),
+  serverId: uuid("server_id").notNull().references(() => servers.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+}, (table) => ({
+  uniqueMember: unique("unique_member").on(table.profileId, table.serverId),
+}));
+
+export const channels = pgTable("channels", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  type: pgEnum("type", ChannelType).notNull().default(ChannelType.TEXT),
+  profileId: uuid("profile_id").notNull().references(() => profiles.profileId),
+  serverId: uuid("server_id").notNull().references(() => servers.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  content: text("content").notNull(),
+  fileUrl: text("file_url"),
+  memberId: uuid("member_id").notNull().references(() => members.id),
+  channelId: uuid("channel_id").notNull().references(() => channels.id),
+  deleted: boolean("deleted").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  memberOneId: uuid("member_one_id").notNull().references(() => members.id),
+  memberTwoId: uuid("member_two_id").notNull().references(() => members.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+}, (table) => ({
+  uniqueConversation: unique("unique_conversation").on(table.memberOneId, table.memberTwoId),
+}));
+
+export const directMessages = pgTable("direct_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  content: text("content").notNull(),
+  fileUrl: text("file_url"),
+  memberId: uuid("member_id").notNull().references(() => members.id),
+  conversationId: uuid("conversation_id").notNull().references(() => conversations.id),
+  deleted: boolean("deleted").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
 
 export type IndexerRecord = typeof indexers._.inferInsert;
 export type IndexerAccountDependencyReadRecord =
@@ -1433,3 +1546,10 @@ export type ProposalRecord = typeof proposals._.inferInsert;
 export type ConditionalVaultRecord = typeof conditionalVaults._.inferInsert;
 export type TokenAcctRecord = typeof tokenAccts._.inferInsert;
 export type UserPerformanceRecord = typeof userPerformance._.inferInsert;
+export type ProfileRecord = typeof profiles._.inferInsert;
+export type ServerRecord = typeof servers._.inferInsert;
+export type MemberRecord = typeof members._.inferInsert;
+export type ChannelRecord = typeof channels._.inferInsert;
+export type MessageRecord = typeof messages._.inferInsert;
+export type ConversationRecord = typeof conversations._.inferInsert;
+export type DirectMessageRecord = typeof directMessages._.inferInsert;
