@@ -281,6 +281,13 @@
       "when": 1741970594359,
       "tag": "0039_fluffy_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1742227033197,
+      "tag": "0040_large_ikaris",
+      "breakpoints": true
     }
   ]
 }

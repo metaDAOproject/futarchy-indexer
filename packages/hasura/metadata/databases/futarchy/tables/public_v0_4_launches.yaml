@@ -60,6 +60,7 @@ select_permissions:
         - minimum_raise_amount
         - unix_timestamp_started
         - updated_at_slot
+        - is_hidden
         - dao_addr
         - dao_treasury_addr
         - launch_addr
