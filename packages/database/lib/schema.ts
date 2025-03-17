@@ -1199,6 +1199,7 @@ export const v0_4_launches = pgTable("v0_4_launches", {
     .notNull()
     .default(sql`now()`),
   updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
+  isHidden: boolean("is_hidden").notNull().default(true),
 });
 
 export const v0_4_funding_records = pgTable("v0_4_funding_records", {
