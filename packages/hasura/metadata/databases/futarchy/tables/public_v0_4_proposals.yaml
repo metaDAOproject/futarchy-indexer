@@ -33,7 +33,9 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
+        - duration_in_slots
         - nonce
+        - updated_at_slot
         - base_vault_addr
         - dao_addr
         - fail_amm_addr
@@ -51,5 +53,6 @@ select_permissions:
         - pda_bump
         - description_url
         - created_at
+        - finalized_at
       filter: {}
     comment: ""
