@@ -288,6 +288,13 @@
       "when": 1742227033197,
       "tag": "0040_large_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1742412382765,
+      "tag": "0041_spicy_hulk",
+      "breakpoints": true
     }
   ]
 }

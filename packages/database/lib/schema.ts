@@ -1172,6 +1172,9 @@ export const v0_4_proposals = pgTable("v0_4_proposals", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
+  finalizedAt: timestamp("finalized_at", { withTimezone: true }),
+  durationInSlots: bigint("duration_in_slots", { mode: "bigint" }).default(sql`0`).notNull(),
+  updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
 });
 
 export const v0_4_launches = pgTable("v0_4_launches", {
