@@ -553,34 +553,6 @@ export const orders = pgTable(
   })
 );
 
-export const makes = pgTable(
-  "makes",
-  {
-    orderTxSig: transaction("order_tx_sig")
-      .references(() => orders.orderTxSig)
-      .primaryKey(),
-    // Explicitly denormalizing order for improved querying speed directly on makes
-    marketAcct: pubkey("market_acct")
-      .references(() => markets.marketAcct)
-      .notNull(),
-    isActive: boolean("is_active").notNull(),
-
-    // Represents unfilled volume
-    unfilledBaseAmount: biggerTokenAmount("unfilled_base_amount").notNull(),
-    // Starts at 0, increases as more is filled
-    filledBaseAmount: biggerTokenAmount("filled_base_amount").notNull(),
-    quotePrice: numeric("quote_price", {
-      precision: 40,
-      scale: 20,
-    }).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
-  },
-  (table) => ({
-    // For displaying current order book
-    marketIdx: index("market_index").on(table.marketAcct),
-  })
-);
-
 // Potentially many takes for one taker order (if multiple makes are being matched)
 export const takes = pgTable(
   "takes",
@@ -597,10 +569,6 @@ export const takes = pgTable(
     takerQuoteFee: tokenAmount("taker_quote_fee")
       .notNull()
       .default(0 as unknown as bigint),
-    // Maker fields will be NULL on pure AMMs
-    makerOrderTxSig: transaction("maker_order_tx_sig").references(
-      () => makes.orderTxSig
-    ),
     makerBaseFee: tokenAmount("maker_base_fee"),
     makerQuoteFee: tokenAmount("maker_quote_fee"),
 
@@ -617,36 +585,6 @@ export const takes = pgTable(
     // For aggregating into candles and showing latest trades
     blockIdx: index("block_index").on(table.marketAcct, table.orderBlock),
     timeIdx: index("time_index").on(table.marketAcct, table.orderTime),
-    // For finding all matches related to a maker order
-    makerIdx: index("maker_index").on(table.makerOrderTxSig),
-  })
-);
-
-export const candles = pgTable(
-  "candles",
-  {
-    marketAcct: pubkey("market_acct")
-      .references(() => markets.marketAcct)
-      .notNull(),
-    // In seconds
-    candleDuration: integer("candle_duration").notNull(),
-    // Repeats every duration
-    timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
-    // (base token amount)
-    volume: biggerTokenAmount("volume").notNull(),
-    // Nullable in case where there were no trades
-    // (quote token amounts)
-    open: biggerTokenAmount("open"),
-    high: biggerTokenAmount("high"),
-    low: biggerTokenAmount("low"),
-    close: biggerTokenAmount("close"),
-    // time-weighted average of the candle. If candle was empty, set to prior close
-    candleAverage: biggerTokenAmount("candle_average").notNull(),
-    // Nullable in case market is not a futarchy market
-    condMarketTwap: biggerTokenAmount("cond_market_twap"),
-  },
-  (table) => ({
-    pk: primaryKey(table.marketAcct, table.candleDuration, table.timestamp),
   })
 );
 
@@ -696,19 +634,6 @@ export const users = pgTable("users", {
   imageUrl: text("image_url"),
 });
 
-export const sessions = pgTable("sessions", {
-  id: uuid("id")
-    .default(sql`gen_random_uuid()`)
-    .primaryKey(),
-  userAcct: pubkey("user_acct").references(() => users.userAcct, {
-    onDelete: "restrict",
-    onUpdate: "restrict",
-  }),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  expiresAt: timestamp("expires_at"),
-});
 export const programs = pgTable(
   "programs",
   {
@@ -1278,24 +1203,6 @@ export const v0_4_claims = pgTable("v0_4_claims", {
 });
 
 
-// TODO: This is commented out give these are timescale views, but I wanted to include them
-export const twapChartData = pgView("twap_chart_data", {
-  interv: timestamp("interv", { withTimezone: true }),
-  tokenAmount: biggerTokenAmount("token_amount"),
-  marketAcct: pubkey("market_acct")
-    .notNull()
-    .references(() => markets.marketAcct),
-}).as(sql`
-  SELECT
-      TIME_BUCKET('30 SECONDS'::INTERVAL, ${twaps.createdAt}) AS interv,
-      last(token_amount, ${twaps.createdAt}) FILTER(WHERE ${twaps.createdAt} IS NOT NULL AND ${twaps.createdAt} <= ${markets.createdAt} + '5 DAYS'::INTERVAL) AS token_amount,
-      ${twaps.marketAcct} AS market_acct
-  FROM ${twaps}
-  JOIN ${markets} ON ${markets.marketAcct} = ${twaps.marketAcct}
-  WHERE ${twaps.createdAt} <= ${markets.createdAt} + '5 DAYS'::INTERVAL
-  GROUP BY interv, ${twaps.marketAcct}
-  `);
-
 export const pricesChartData = pgView("prices_chart_data", {
   interv: timestamp("interv", { withTimezone: true }),
   price: numeric("price", {
@@ -1321,78 +1228,6 @@ export const pricesChartData = pgView("prices_chart_data", {
   WHERE CASE WHEN prices_type = 'spot' THEN TRUE ELSE prices.created_at <= markets.created_at + '5 DAYS'::INTERVAL END
   GROUP BY interv, prices.market_acct, prices_type
   `);
-
-export const proposalTotalTradeVolume = pgView("proposal_total_trade_volume", {
-  proposalAcct: pubkey("proposal_acct")
-    .notNull()
-    .references(() => proposals.proposalAcct),
-  passVolume: numeric("pass_volume", {
-    precision: 40,
-    scale: 20,
-  }).notNull(),
-  failVolume: numeric("fail_volume", {
-    precision: 40,
-    scale: 20,
-  }).notNull(),
-  passAcct: pubkey("pass_market_acct")
-    .notNull()
-    .references(() => markets.marketAcct),
-  failAcct: pubkey("fail_market_acct")
-    .notNull()
-    .references(() => markets.marketAcct),
-}).as(sql`
-  WITH pass_market AS (
-    SELECT
-    	  proposal_acct,
-    	  orders.market_acct AS pass_market_acct,
-          TIME_BUCKET('1 DAYS'::INTERVAL, orders.order_time) AS interv,
-          SUM(filled_base_amount * quote_price) FILTER(WHERE orders.order_time IS NOT NULL) AS pass_volume
-    FROM proposals
-    JOIN orders
-    ON proposals.pass_market_acct = orders.market_acct
-    GROUP BY proposal_acct, interv, orders.market_acct
-  ),
-  fail_market AS (
-    SELECT
-    	  proposal_acct,
-    	  orders.market_acct AS fail_market_acct,
-          TIME_BUCKET('1 DAYS'::INTERVAL, orders.order_time) AS interv,
-          SUM(filled_base_amount * quote_price) FILTER(WHERE orders.order_time IS NOT NULL) AS fail_volume
-    FROM proposals
-    JOIN orders
-    ON proposals.fail_market_acct = orders.market_acct
-    GROUP BY proposal_acct, interv, orders.market_acct
-  )
-  SELECT
-    pass_market.proposal_acct AS proposal_acct,
-    pass_market_acct,
-    fail_market_acct,
-    SUM(pass_volume) AS pass_volume,
-    SUM(fail_volume) AS fail_volume
-  FROM pass_market
-  JOIN fail_market ON fail_market.proposal_acct = pass_market.proposal_acct
-  GROUP BY pass_market.proposal_acct, pass_market_acct, fail_market_acct
-  `);
-
-export const userDeposits = pgTable("user_deposits", {
-  txSig: transaction("tx_sig")
-    .references(() => transactions.txSig)
-    .notNull(),
-
-  userAcct: pubkey("user_acct")
-    .notNull()
-    .references(() => users.userAcct),
-
-  tokenAmount: biggerTokenAmount("token_amount").notNull(),
-
-  mintAcct: pubkey("mint_acct")
-    .references(() => tokens.mintAcct)
-    .notNull(),
-
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .default(sql`now()`),
-});
 
 export const organizations = pgTable("organizations", {
   organizationId: bigserial("organization_id", { mode: "bigint" }).primaryKey(),
