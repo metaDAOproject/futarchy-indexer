@@ -20,15 +20,6 @@
   definition:
     query:
       collection_name: allowed-queries
-      query_name: fetchLatestFourProposals
-  methods:
-    - GET
-  name: fetchLatestFourProposals
-  url: fetchlatestfourproposals
-- comment: ""
-  definition:
-    query:
-      collection_name: allowed-queries
       query_name: proposals_by_pk
   methods:
     - GET
