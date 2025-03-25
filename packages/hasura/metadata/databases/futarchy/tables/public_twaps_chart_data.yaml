@@ -1,0 +1,13 @@
+table:
+  name: twaps_chart_data
+  schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - bar_size
+        - token_amount
+        - market_acct
+        - interv
+      filter: {}
+    comment: ""
