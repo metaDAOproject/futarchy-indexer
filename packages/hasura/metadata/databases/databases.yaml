@@ -195,6 +195,10 @@
           type:
             nullable: false
             scalar: numeric
+        - name: version
+          type:
+            nullable: false
+            scalar: text
       name: live_proposals
       select_permissions:
         - permission:
@@ -209,6 +213,7 @@
               - amm_addr
               - status
               - pass_threshold
+              - version
             filter: {}
           role: anonymous
     - fields:
@@ -689,6 +694,7 @@
             	dd.slug::TEXT AS dao_slug,
             	p.ended_at AS ends_at,
             	'proposal' AS proposal_type,
+            	'0.3' AS version,
             	p.created_at AS created_at,
             	''::TEXT AS amm_addr,
             	'Pending' AS status,
@@ -698,7 +704,8 @@
             JOIN daos d ON d.dao_acct = p.dao_acct
             JOIN dao_details dd ON dd.dao_id = d.dao_id
             WHERE p.status = 'Pending'
-        ), metrics AS (
+        ),
+        metrics AS (
         	SELECT
         		md.id::TEXT AS proposal_acct,
         		md.title::TEXT,
@@ -706,6 +713,7 @@
         		dd.slug::TEXT AS dao_slug,
         		md.committee_evaluation AS ends_at,
         		'metric' AS proposal_type,
+        		'0.4' AS version,
         		md.created_at AS created_at,
         		md.amm_addr::TEXT AS amm_addr,
         		'Pending' AS status,
@@ -713,8 +721,27 @@
         	FROM v0_4_metric_decisions md
         	JOIN dao_details dd ON dd.dao_id = md.dao_id
         	WHERE completed_at IS NULL
+        ),
+        v4proposals AS (
+            SELECT
+                p.proposal_addr::TEXT AS proposal_acct,
+                pd.title::TEXT,
+                o.name::TEXT AS dao_name,
+                o.slug::TEXT AS dao_slug,
+                p.finalized_at AS ends_at,
+                'proposal' AS proposal_type,
+                '0.4' AS version,
+                p.created_at AS created_at,
+                ''::TEXT AS amm_addr,
+                'Pending' AS status,
+                d.pass_threshold_bps AS pass_threshold
+            FROM v0_4_proposals p
+            JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct
+            JOIN v0_4_daos d ON p.dao_addr = d.dao_addr
+            JOIN organizations o ON d.organization_id = o.organization_id
+            WHERE finalized_at IS NULL
         )
-        SELECT * FROM proposals UNION ALL SELECT * FROM metrics;
+        SELECT * FROM proposals UNION ALL SELECT * FROM metrics UNION ALL SELECT * FROM v4proposals;
       returns: live_proposals
       root_field_name: live_proposals
     - arguments:
@@ -956,6 +983,22 @@
       code: "SELECT \n  up.user_acct::TEXT,\n  up.proposal_acct::TEXT,\n  p.completed_at::TIMESTAMPTZ,\n  pd.title::TEXT,\n  p.status::TEXT,\n  dd.name::TEXT AS dao_name\nFROM user_performance up\nJOIN proposal_details pd ON pd.proposal_acct = up.proposal_acct\nJOIN proposals p ON up.proposal_acct = p.proposal_acct\nJOIN daos d ON d.dao_acct = p.dao_acct\nJOIN dao_details dd ON dd.dao_id = d.dao_id\nWHERE \n  ({{user_acct}}::TEXT IS NULL OR user_acct = {{user_acct}}::TEXT)"
       returns: user_proposals_traded
       root_field_name: users_proposals
+    - arguments:
+        market_acct:
+          description: ""
+          nullable: true
+          type: text
+        organization_slug:
+          description: ""
+          nullable: true
+          type: text
+        proposal_acct:
+          description: ""
+          nullable: true
+          type: text
+      code: "WITH base_trades AS (\n    SELECT \n        s.amm_addr AS market_acct,\n        s.user_addr AS actor_acct,\n        CASE \n         WHEN s.swap_type = 'Buy' \n         \tTHEN (s.input_amount / POW(10, tokens.decimals))\n         ELSE (s.output_amount / POW(10, tokens.decimals))\n        END AS trade_volume,\n        o.slug,\n        p.proposal_addr,\n        COUNT(*) OVER () as total_takes\n    FROM \n        v0_4_swaps s\n        INNER JOIN v0_4_amms m \n            ON m.amm_addr = s.amm_addr\n        INNER JOIN v0_4_proposals p \n            ON p.pass_amm_addr = m.amm_addr OR p.fail_amm_addr = m.amm_addr\n        INNER JOIN v0_4_daos d \n            ON d.dao_addr = p.dao_addr\n        INNER JOIN tokens \n            ON tokens.mint_acct = d.usdc_mint_acct\n        INNER JOIN organizations o \n            ON o.organization_id = d.organization_id\n    WHERE \n        -- Optional filters that can be commented out or dynamically included\n        (NULLIF({{organization_slug}}, '') IS NULL OR o.slug = {{organization_slug}})\n        AND (NULLIF({{proposal_acct}}, '') IS NULL OR p.proposal_addr = {{proposal_acct}})\n        AND (NULLIF({{market_acct}}, '') IS NULL OR m.amm_addr = {{market_acct}})\n),\naggregated_stats AS (\n    SELECT \n        COUNT(DISTINCT actor_acct) AS unique_trader_count,\n        SUM(trade_volume) AS total_volume,\n        MAX(total_takes) AS total_trades,  -- Use MAX since the value is the same for all rows\n        -- Include these in output for verification/grouping if needed\n        NULLIF({{organization_slug}}, '') AS filtered_org_slug,\n        NULLIF({{proposal_acct}}, '') AS filtered_proposal_acct,\n        NULLIF({{market_acct}}, '') AS filtered_market_acct\n    FROM base_trades\n)\nSELECT \n    total_volume::numeric, \n    unique_trader_count::numeric AS unique_accounts,\n    total_trades::numeric\nFROM aggregated_stats;"
+      returns: performance_stats
+      root_field_name: v0_4_performance_stats
     - arguments: {}
       code: "WITH base_trades AS (\n    SELECT \n        t.market_acct,\n        o.actor_acct,\n        (t.base_amount / POW(10, tokens.decimals)) * t.quote_price AS trade_volume,\n        dd.slug,\n        m.proposal_acct,\n        COUNT(*) OVER () as total_takes  -- Count all takes that match our filters\n    FROM \n        takes t\n        INNER JOIN orders o \n            ON o.order_tx_sig = t.order_tx_sig\n            AND o.market_acct IS NOT NULL \n            AND o.quote_price > 0\n        INNER JOIN transactions tx \n            ON tx.tx_sig = o.order_tx_sig\n            AND tx.failed IS FALSE\n        INNER JOIN markets m \n            ON m.market_acct = o.market_acct\n        INNER JOIN proposals p \n            ON p.proposal_acct = m.proposal_acct\n        INNER JOIN daos d \n            ON d.dao_acct = p.dao_acct\n        INNER JOIN tokens \n            ON tokens.mint_acct = d.base_acct\n        INNER JOIN dao_details dd \n            ON dd.dao_id = d.dao_id\n),\naggregated_stats AS (\n    SELECT \n        COUNT(DISTINCT actor_acct) AS unique_trader_count,\n        COUNT(DISTINCT proposal_acct) AS proposal_count,\n        COUNT(DISTINCT market_acct) AS market_count,\n        SUM(trade_volume) AS total_volume,\n        MAX(total_takes) AS total_trades,  -- Use MAX since the value is the same for all rows\n        COUNT(DISTINCT slug) AS dao_count\n    FROM base_trades\n)\nSELECT \n    total_volume::numeric AS volume_traded,\n    NULL::numeric AS profits_earned,\n    unique_trader_count::numeric AS unique_traders,\n    dao_count::numeric AS number_of_daos,\n    proposal_count::numeric AS total_proposals,\n    market_count::numeric AS total_markets,\n    total_trades::numeric\nFROM aggregated_stats;"
       returns: website_stats
