@@ -1,12 +1,13 @@
 table:
-  name: prices_15m
+  name: twaps_chart_data
   schema: public
 select_permissions:
   - role: anonymous
     permission:
       columns:
+        - bar_size
+        - token_amount
         - market_acct
-        - price
         - interv
       filter: {}
     comment: ""
