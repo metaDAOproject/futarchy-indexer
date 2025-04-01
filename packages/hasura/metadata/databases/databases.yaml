@@ -217,6 +217,38 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: launch_addr
+          type:
+            nullable: false
+            scalar: varchar
+        - name: unix_timestamp_started
+          type:
+            nullable: false
+            scalar: bigint
+        - name: unix_timestamp_ended
+          type:
+            nullable: false
+            scalar: bigint
+        - name: num_funders
+          type:
+            nullable: false
+            scalar: bigint
+        - name: total_funded
+          type:
+            nullable: false
+            scalar: numeric
+      name: live_v0_4_launch_stats
+      select_permissions:
+        - permission:
+            columns:
+              - launch_addr
+              - unix_timestamp_started
+              - unix_timestamp_ended
+              - num_funders
+              - total_funded
+            filter: {}
+          role: anonymous
+    - fields:
         - name: total_volume
           type:
             nullable: false
@@ -631,6 +663,10 @@
         SELECT * FROM proposals UNION ALL SELECT * FROM metrics;
       returns: all_live_proposals
       root_field_name: all_live_proposals
+    - arguments: {}
+      code: "WITH proposals AS (\r\n    SELECT\r\n    \tp.proposal_acct::TEXT,\r\n    \tpd.title::TEXT,\r\n    \tdd.name::TEXT AS dao_name,\r\n    \tdd.slug::TEXT AS dao_slug,\r\n    \tp.ended_at AS ends_at,\r\n    \t'proposal' AS proposal_type,\r\n    \t'0.3' AS version,\r\n    \tp.created_at AS created_at,\r\n    \t''::TEXT AS amm_addr,\r\n    \tp.status::TEXT AS status,\r\n    \tp.pass_threshold_bps AS pass_threshold\r\n    FROM proposals p\r\n    JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct\r\n    JOIN daos d ON d.dao_acct = p.dao_acct\r\n    JOIN dao_details dd ON dd.dao_id = d.dao_id\r\n    WHERE p.status <> 'Pending'\r\n),\r\nmetrics AS (\r\n\tSELECT\r\n\t\tmd.id::TEXT AS proposal_acct,\r\n\t\tmd.title::TEXT,\r\n\t\tdd.name::TEXT AS dao_name,\r\n\t\tdd.slug::TEXT AS dao_slug,\r\n\t\tmd.committee_evaluation AS ends_at,\r\n\t\t'metric' AS proposal_type,\r\n\t\t'0.4' AS version,\r\n\t\tmd.created_at AS created_at,\r\n\t\tmd.amm_addr::TEXT AS amm_addr,\r\n\t\t(CASE\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '1' THEN 'Rejected'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS false THEN 'Evaluating'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS true THEN 'Evaluated'\r\n\t\t\tELSE 'Unknown'\r\n\t\tEND)::TEXT AS status,\r\n\t\tmd.metric_threshold AS pass_threshold\r\n\tFROM v0_4_metric_decisions md\r\n\tJOIN dao_details dd ON dd.dao_id = md.dao_id\r\n\tJOIN V0_4_questions outcome_q ON md.outcome_question_addr = outcome_q.question_addr\r\n\tJOIN V0_4_questions metric_q ON md.metric_question_addr = metric_q.question_addr\r\n\tWHERE completed_at IS NOT NULL\r\n),\r\nv4proposals AS (\r\n    SELECT\r\n        p.proposal_addr::TEXT AS proposal_acct,\r\n        pd.title::TEXT,\r\n        o.name::TEXT AS dao_name,\r\n        o.slug::TEXT AS dao_slug,\r\n        p.finalized_at AS ends_at,\r\n        'proposal' AS proposal_type,\r\n        '0.4' AS version,\r\n        p.created_at AS created_at,\r\n        ''::TEXT AS amm_addr,\r\n        p.state::TEXT AS status,\r\n        d.pass_threshold_bps AS pass_threshold\r\n    FROM v0_4_proposals p\r\n    JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct\r\n    JOIN v0_4_daos d ON p.dao_addr = d.dao_addr\r\n    JOIN organizations o ON d.organization_id = o.organization_id\r\n    WHERE finalized_at IS NOT NULL\r\n)\r\nSELECT * FROM proposals UNION ALL SELECT * FROM metrics UNION ALL SELECT * FROM v4proposals;"
+      returns: live_proposals
+      root_field_name: completed_proposals
     - arguments:
         bucket_size:
           description: ""
@@ -745,6 +781,14 @@
       returns: live_proposals
       root_field_name: live_proposals
     - arguments:
+        launch_addr:
+          description: The address of the launch
+          nullable: false
+          type: text
+      code: "SELECT\r\n\tL.launch_addr,\r\n    L.unix_timestamp_started,\r\n    (L.seconds_for_launch + L.unix_timestamp_started) as unix_timestamp_ended,\r\n    count(R.*) as num_funders,\r\n    L.committed_amount::NUMERIC as total_funded\r\nFROM\r\n    PUBLIC.V0_4_LAUNCHES L\r\n    LEFT JOIN PUBLIC.V0_4_FUNDING_RECORDS R ON L.LAUNCH_ADDR = R.LAUNCH_ADDR\r\nWHERE\r\n    L.LAUNCH_ADDR = {{launch_addr}}\r\nGROUP BY\r\n\tL.launch_addr,\r\n    L.unix_timestamp_started,\r\n    L.seconds_for_launch"
+      returns: live_v0_4_launch_stats
+      root_field_name: live_v0_4_launch_stats
+    - arguments:
         market_key:
           description: ""
           nullable: false
@@ -826,6 +870,18 @@
         FROM calculations;
       returns: metric_market_performance_stats
       root_field_name: metric_market_performance_stats
+    - arguments:
+        market_key:
+          description: ""
+          nullable: false
+          type: bigint
+        time_interval:
+          description: ""
+          nullable: false
+          type: interval
+      code: "WITH decision_market_data AS (\n\tSELECT\n\t\tamm_addr,\n\t\tCOALESCE(completed_at, committee_evaluation) AS completed_at,\n\t\tcreated_at\n\tFROM v0_4_metric_decisions md\n\tWHERE ({{market_key}}::BIGINT IS NULL OR {{market_key}}::BIGINT = md.id)\n),\nprices_mm AS (\n\tSELECT\n\t\tARRAY_AGG(\n\t\t\tJSON_BUILD_ARRAY(price, bucket_time::TEXT)\n\t\t\tORDER BY bucket_time DESC\n\t\t) AS prices\n\tFROM (\n        SELECT \n            time_bucket({{time_interval}}::interval, pc.interv) as bucket_time,\n            first(pc.price, pc.interv) AS price\n        FROM decision_market_data dmd\n        LEFT JOIN prices_chart_data pc ON \n            pc.market_acct = dmd.amm_addr\n            AND pc.interv >= dmd.created_at\n            AND pc.interv <= dmd.completed_at\n        GROUP BY bucket_time\n    ) t\n)\nSELECT json_build_object(\n\t'prices', (SELECT prices FROM prices_mm)\n) AS prices;"
+      returns: chart_prices_twap
+      root_field_name: metric_market_price_chart_constrained
     - arguments:
         dao_slug:
           description: ""
@@ -1003,4 +1059,8 @@
       code: "WITH base_trades AS (\n    SELECT \n        t.market_acct,\n        o.actor_acct,\n        (t.base_amount / POW(10, tokens.decimals)) * t.quote_price AS trade_volume,\n        dd.slug,\n        m.proposal_acct,\n        COUNT(*) OVER () as total_takes  -- Count all takes that match our filters\n    FROM \n        takes t\n        INNER JOIN orders o \n            ON o.order_tx_sig = t.order_tx_sig\n            AND o.market_acct IS NOT NULL \n            AND o.quote_price > 0\n        INNER JOIN transactions tx \n            ON tx.tx_sig = o.order_tx_sig\n            AND tx.failed IS FALSE\n        INNER JOIN markets m \n            ON m.market_acct = o.market_acct\n        INNER JOIN proposals p \n            ON p.proposal_acct = m.proposal_acct\n        INNER JOIN daos d \n            ON d.dao_acct = p.dao_acct\n        INNER JOIN tokens \n            ON tokens.mint_acct = d.base_acct\n        INNER JOIN dao_details dd \n            ON dd.dao_id = d.dao_id\n),\naggregated_stats AS (\n    SELECT \n        COUNT(DISTINCT actor_acct) AS unique_trader_count,\n        COUNT(DISTINCT proposal_acct) AS proposal_count,\n        COUNT(DISTINCT market_acct) AS market_count,\n        SUM(trade_volume) AS total_volume,\n        MAX(total_takes) AS total_trades,  -- Use MAX since the value is the same for all rows\n        COUNT(DISTINCT slug) AS dao_count\n    FROM base_trades\n)\nSELECT \n    total_volume::numeric AS volume_traded,\n    NULL::numeric AS profits_earned,\n    unique_trader_count::numeric AS unique_traders,\n    dao_count::numeric AS number_of_daos,\n    proposal_count::numeric AS total_proposals,\n    market_count::numeric AS total_markets,\n    total_trades::numeric\nFROM aggregated_stats;"
       returns: website_stats
       root_field_name: website_stats
+    - arguments: {}
+      code: "WITH base_trades_v0_3 AS (\r\n    SELECT \r\n        t.market_acct,\r\n        o.actor_acct,\r\n        (t.base_amount / POW(10, tokens.decimals)) * t.quote_price AS trade_volume,\r\n        dd.slug,\r\n        m.proposal_acct,\r\n        COUNT(*) OVER () as total_takes  -- Count all takes that match our filters\r\n    FROM \r\n        takes t\r\n        INNER JOIN orders o \r\n            ON o.order_tx_sig = t.order_tx_sig\r\n            AND o.market_acct IS NOT NULL \r\n            AND o.quote_price > 0\r\n        INNER JOIN transactions tx \r\n            ON tx.tx_sig = o.order_tx_sig\r\n            AND tx.failed IS FALSE\r\n        INNER JOIN markets m \r\n            ON m.market_acct = o.market_acct\r\n        INNER JOIN proposals p \r\n            ON p.proposal_acct = m.proposal_acct\r\n        INNER JOIN daos d \r\n            ON d.dao_acct = p.dao_acct\r\n        INNER JOIN tokens \r\n            ON tokens.mint_acct = d.base_acct\r\n        INNER JOIN dao_details dd \r\n            ON dd.dao_id = d.dao_id\r\n),\r\nbase_trades_v0_4 AS (\r\n    SELECT \r\n        s.amm_addr AS market_acct,\r\n        s.user_addr AS actor_acct,\r\n        CASE \r\n         WHEN s.swap_type = 'Buy' \r\n         \tTHEN (s.input_amount / POW(10, tokens.decimals))\r\n         ELSE (s.output_amount / POW(10, tokens.decimals))\r\n        END AS trade_volume,\r\n        o.slug,\r\n        p.proposal_addr AS proposal_acct,\r\n        COUNT(*) OVER () as total_takes\r\n    FROM \r\n        v0_4_swaps s\r\n        INNER JOIN v0_4_amms m \r\n            ON m.amm_addr = s.amm_addr\r\n        INNER JOIN v0_4_proposals p \r\n            ON p.pass_amm_addr = m.amm_addr OR p.fail_amm_addr = m.amm_addr\r\n        INNER JOIN v0_4_daos d \r\n            ON d.dao_addr = p.dao_addr\r\n        INNER JOIN tokens \r\n            ON tokens.mint_acct = d.usdc_mint_acct\r\n        INNER JOIN organizations o \r\n            ON o.organization_id = d.organization_id\r\n),\r\nmetric_swaps AS (\r\n    SELECT\r\n        user_addr,\r\n        input_amount,\r\n        output_amount,\r\n        block_time,\r\n        swap_type,\r\n        swap.signature,\r\n        merge.amount AS merge_amount,\r\n        split.amount AS split_amount,\r\n        md.amm_addr,\r\n\t\to.slug,\r\n\t\tCONCAT(md.id::VARCHAR, '-metric'::VARCHAR) as metric_decision_id --Add a `-metric` suffix to ensure uniqueness when we add more markets with a numeric ID\r\n    FROM v0_4_swaps swap\r\n\tINNER JOIN v0_4_metric_decisions md ON swap.amm_addr = md.amm_addr\r\n\tINNER JOIN dao_details dd ON md.dao_id = dd.dao_id\r\n\tINNER JOIN organizations o ON dd.organization_id = o.organization_id\r\n    LEFT JOIN v0_4_splits split ON split.signature = swap.signature\r\n    LEFT JOIN v0_4_merges merge ON merge.signature = swap.signature\r\n),\r\nmetric_splits AS (\r\n\tSELECT\r\n\t\tCASE WHEN swap_type = 'Sell'\r\n\t\tTHEN 'down'\r\n\t\tELSE 'up'\r\n\t\tEND AS asset,\r\n\t\toutput_amount + split_amount AS size,\r\n\t\t'buy' AS side,\r\n\t\tinput_amount AS base_amount,\r\n\t\tinput_amount / (output_amount + split_amount) AS price,\r\n\t\tsignature,\r\n\t\tuser_addr,\r\n\t\tblock_time,\r\n\t\tamm_addr,\r\n\t\tslug,\r\n\t\tmetric_decision_id\r\n\tFROM metric_swaps WHERE split_amount IS NOT NULL\r\n),\r\nmetric_merges AS (\r\n\tSELECT\r\n\t\tCASE WHEN swap_type = 'Buy'\r\n\t\tTHEN 'down'\r\n\t\tELSE 'up'\r\n\t\tEND AS asset,\r\n\t\tinput_amount + merge_amount AS size,\r\n\t\t'sell' AS side,\r\n\t\toutput_amount AS base_amount,\r\n\t\toutput_amount / (input_amount + merge_amount) AS price,\r\n\t\tsignature,\r\n\t\tuser_addr,\r\n\t\tblock_time,\r\n\t\tamm_addr,\r\n\t\tslug,\r\n\t\tmetric_decision_id\r\n\tFROM metric_swaps WHERE merge_amount IS NOT NULL\r\n),\r\nmetric_splits_merges AS (\r\n\tSELECT\r\n\t\tamm_addr AS market_acct,\r\n\t\tuser_addr AS actor_acct,\r\n\t\tsize / POW(10, 6) AS trade_volume,\r\n\t\tslug AS slug,\r\n\t\tmetric_decision_id AS proposal_acct\r\n\tFROM metric_splits UNION SELECT\r\n\t\tamm_addr AS market_acct,\r\n\t\tuser_addr AS actor_acct,\r\n\t\tsize / POW(10, 6) AS trade_volume,\r\n\t\tslug AS slug,\r\n\t\tmetric_decision_id AS proposal_acct\r\n\tFROM metric_merges\r\n),\r\nmetric_trades AS (\r\n\tSELECT\r\n\t\tmarket_acct,\r\n\t\tactor_acct,\r\n\t\ttrade_volume,\r\n\t\tslug,\r\n\t\tproposal_acct,\r\n\t\tCOUNT(*) OVER () as total_takes\r\n\tFROM metric_splits_merges\r\n),\r\nall_trades AS (\r\n\tSELECT * FROM base_trades_v0_3 \r\n\tUNION ALL SELECT * FROM base_trades_v0_4\r\n\tUNION ALL SELECT * from metric_trades\r\n),\r\naggregated_stats AS (\r\n    SELECT \r\n\t\tCOUNT(DISTINCT actor_acct) AS unique_trader_count,\r\n\t\tCOUNT(DISTINCT proposal_acct) AS proposal_count,\r\n\t\tCOUNT(DISTINCT market_acct) AS market_count,\r\n        SUM(trade_volume) AS total_volume,\r\n        MAX(total_takes) AS total_trades,\r\n\t\tCOUNT(DISTINCT slug) AS dao_count\r\n    FROM all_trades\r\n),\r\nusers_pnl AS (\r\n\tSELECT\r\n\t\tSUM(volume_bought_resolving_market - volume_sold_resolving_market)::NUMERIC AS total_pnl\r\n\tFROM user_performance\r\n\tWHERE volume_bought_resolving_market <> 'NaN' AND volume_sold_resolving_market <> 'NaN' --some columns in the table present as NaN, we can't do anything with those\r\n)\r\nSELECT \r\n    total_volume::numeric AS volume_traded,\r\n    (SELECT total_pnl FROM users_pnl) AS profits_earned,\r\n    unique_trader_count::numeric AS unique_traders,\r\n    dao_count::numeric AS number_of_daos,\r\n    proposal_count::numeric AS total_proposals,\r\n    market_count::numeric AS total_markets,\r\n    total_trades::numeric\r\nFROM aggregated_stats;"
+      returns: website_stats
+      root_field_name: website_stats_v2
   tables: "!include futarchy/tables/tables.yaml"
