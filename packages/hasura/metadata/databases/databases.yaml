@@ -199,6 +199,10 @@
           type:
             nullable: false
             scalar: text
+        - name: total_rows
+          type:
+            nullable: false
+            scalar: bigint
       name: live_proposals
       select_permissions:
         - permission:
@@ -214,6 +218,7 @@
               - status
               - pass_threshold
               - version
+              - total_rows
             filter: {}
           role: anonymous
     - fields:
@@ -663,8 +668,20 @@
         SELECT * FROM proposals UNION ALL SELECT * FROM metrics;
       returns: all_live_proposals
       root_field_name: all_live_proposals
-    - arguments: {}
-      code: "WITH proposals AS (\r\n    SELECT\r\n    \tp.proposal_acct::TEXT,\r\n    \tpd.title::TEXT,\r\n    \tdd.name::TEXT AS dao_name,\r\n    \tdd.slug::TEXT AS dao_slug,\r\n    \tp.ended_at AS ends_at,\r\n    \t'proposal' AS proposal_type,\r\n    \t'0.3' AS version,\r\n    \tp.created_at AS created_at,\r\n    \t''::TEXT AS amm_addr,\r\n    \tp.status::TEXT AS status,\r\n    \tp.pass_threshold_bps AS pass_threshold\r\n    FROM proposals p\r\n    JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct\r\n    JOIN daos d ON d.dao_acct = p.dao_acct\r\n    JOIN dao_details dd ON dd.dao_id = d.dao_id\r\n    WHERE p.status <> 'Pending'\r\n),\r\nmetrics AS (\r\n\tSELECT\r\n\t\tmd.id::TEXT AS proposal_acct,\r\n\t\tmd.title::TEXT,\r\n\t\tdd.name::TEXT AS dao_name,\r\n\t\tdd.slug::TEXT AS dao_slug,\r\n\t\tmd.committee_evaluation AS ends_at,\r\n\t\t'metric' AS proposal_type,\r\n\t\t'0.4' AS version,\r\n\t\tmd.created_at AS created_at,\r\n\t\tmd.amm_addr::TEXT AS amm_addr,\r\n\t\t(CASE\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '1' THEN 'Rejected'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS false THEN 'Evaluating'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS true THEN 'Evaluated'\r\n\t\t\tELSE 'Unknown'\r\n\t\tEND)::TEXT AS status,\r\n\t\tmd.metric_threshold AS pass_threshold\r\n\tFROM v0_4_metric_decisions md\r\n\tJOIN dao_details dd ON dd.dao_id = md.dao_id\r\n\tJOIN V0_4_questions outcome_q ON md.outcome_question_addr = outcome_q.question_addr\r\n\tJOIN V0_4_questions metric_q ON md.metric_question_addr = metric_q.question_addr\r\n\tWHERE completed_at IS NOT NULL\r\n),\r\nv4proposals AS (\r\n    SELECT\r\n        p.proposal_addr::TEXT AS proposal_acct,\r\n        pd.title::TEXT,\r\n        o.name::TEXT AS dao_name,\r\n        o.slug::TEXT AS dao_slug,\r\n        p.finalized_at AS ends_at,\r\n        'proposal' AS proposal_type,\r\n        '0.4' AS version,\r\n        p.created_at AS created_at,\r\n        ''::TEXT AS amm_addr,\r\n        p.state::TEXT AS status,\r\n        d.pass_threshold_bps AS pass_threshold\r\n    FROM v0_4_proposals p\r\n    JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct\r\n    JOIN v0_4_daos d ON p.dao_addr = d.dao_addr\r\n    JOIN organizations o ON d.organization_id = o.organization_id\r\n    WHERE finalized_at IS NOT NULL\r\n)\r\nSELECT * FROM proposals UNION ALL SELECT * FROM metrics UNION ALL SELECT * FROM v4proposals;"
+    - arguments:
+        limit:
+          description: ""
+          nullable: true
+          type: integer
+        offset:
+          description: ""
+          nullable: true
+          type: integer
+        organization_id:
+          description: ""
+          nullable: true
+          type: integer
+      code: "WITH proposals AS (\r\n    SELECT\r\n    \tp.proposal_acct::TEXT,\r\n    \tpd.title::TEXT,\r\n    \tdd.name::TEXT AS dao_name,\r\n    \tdd.slug::TEXT AS dao_slug,\r\n    \tp.ended_at AS ends_at,\r\n    \t'proposal' AS proposal_type,\r\n    \t'0.3' AS version,\r\n    \tp.created_at AS created_at,\r\n    \t''::TEXT AS amm_addr,\r\n    \tp.status::TEXT AS status,\r\n    \tp.pass_threshold_bps AS pass_threshold\r\n    FROM proposals p\r\n    JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct\r\n    JOIN daos d ON d.dao_acct = p.dao_acct\r\n    JOIN dao_details dd ON dd.dao_id = d.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n    WHERE p.status <> 'Pending' AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nmetrics AS (\r\n\tSELECT\r\n\t\tmd.id::TEXT AS proposal_acct,\r\n\t\tmd.title::TEXT,\r\n\t\tdd.name::TEXT AS dao_name,\r\n\t\tdd.slug::TEXT AS dao_slug,\r\n\t\tmd.committee_evaluation AS ends_at,\r\n\t\t'metric' AS proposal_type,\r\n\t\t'0.4' AS version,\r\n\t\tmd.created_at AS created_at,\r\n\t\tmd.amm_addr::TEXT AS amm_addr,\r\n\t\t(CASE\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '1' THEN 'Rejected'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS false THEN 'Evaluating'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS true THEN 'Evaluated'\r\n\t\t\tELSE 'Unknown'\r\n\t\tEND)::TEXT AS status,\r\n\t\tmd.metric_threshold AS pass_threshold\r\n\tFROM v0_4_metric_decisions md\r\n\tJOIN dao_details dd ON dd.dao_id = md.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n\tJOIN V0_4_questions outcome_q ON md.outcome_question_addr = outcome_q.question_addr\r\n\tJOIN V0_4_questions metric_q ON md.metric_question_addr = metric_q.question_addr\r\n\tWHERE completed_at IS NOT NULL AND o.is_hide IS FALSE\r\n\tAND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nv4proposals AS (\r\n    SELECT\r\n        p.proposal_addr::TEXT AS proposal_acct,\r\n        pd.title::TEXT,\r\n        o.name::TEXT AS dao_name,\r\n        o.slug::TEXT AS dao_slug,\r\n        p.finalized_at AS ends_at,\r\n        'proposal' AS proposal_type,\r\n        '0.4' AS version,\r\n        p.created_at AS created_at,\r\n        ''::TEXT AS amm_addr,\r\n        p.state::TEXT AS status,\r\n        d.pass_threshold_bps AS pass_threshold\r\n    FROM v0_4_proposals p\r\n    JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct\r\n    JOIN v0_4_daos d ON p.dao_addr = d.dao_addr\r\n    JOIN organizations o ON d.organization_id = o.organization_id\r\n    WHERE finalized_at IS NOT NULL AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR o.organization_id = {{organization_id}}::INTEGER)\r\n),\r\ncombined_data AS (\r\n    SELECT \r\n        *,\r\n        COUNT(*) OVER() AS total_rows\r\n    FROM (\r\n        SELECT * FROM proposals \r\n        UNION ALL \r\n        SELECT * FROM metrics \r\n        UNION ALL \r\n        SELECT * FROM v4proposals\r\n    ) as union_result\r\n)\r\nSELECT * FROM combined_data\r\nORDER BY created_at DESC\r\nLIMIT COALESCE({{limit}}::INTEGER, NULL)\r\nOFFSET COALESCE({{offset}}::INTEGER, 0);"
       returns: live_proposals
       root_field_name: completed_proposals
     - arguments:
@@ -720,64 +737,20 @@
         GROUP BY user_acct;
       returns: leaderboard
       root_field_name: leaderboard_by_user
-    - arguments: {}
-      code: |-
-        WITH proposals AS (
-            SELECT
-            	p.proposal_acct::TEXT,
-            	pd.title::TEXT,
-            	dd.name::TEXT AS dao_name,
-            	dd.slug::TEXT AS dao_slug,
-            	p.ended_at AS ends_at,
-            	'proposal' AS proposal_type,
-            	'0.3' AS version,
-            	p.created_at AS created_at,
-            	''::TEXT AS amm_addr,
-            	'Pending' AS status,
-            	p.pass_threshold_bps AS pass_threshold
-            FROM proposals p
-            JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct
-            JOIN daos d ON d.dao_acct = p.dao_acct
-            JOIN dao_details dd ON dd.dao_id = d.dao_id
-            WHERE p.status = 'Pending'
-        ),
-        metrics AS (
-        	SELECT
-        		md.id::TEXT AS proposal_acct,
-        		md.title::TEXT,
-        		dd.name::TEXT AS dao_name,
-        		dd.slug::TEXT AS dao_slug,
-        		md.committee_evaluation AS ends_at,
-        		'metric' AS proposal_type,
-        		'0.4' AS version,
-        		md.created_at AS created_at,
-        		md.amm_addr::TEXT AS amm_addr,
-        		'Pending' AS status,
-        		md.metric_threshold AS pass_threshold
-        	FROM v0_4_metric_decisions md
-        	JOIN dao_details dd ON dd.dao_id = md.dao_id
-        	WHERE completed_at IS NULL
-        ),
-        v4proposals AS (
-            SELECT
-                p.proposal_addr::TEXT AS proposal_acct,
-                pd.title::TEXT,
-                o.name::TEXT AS dao_name,
-                o.slug::TEXT AS dao_slug,
-                p.finalized_at AS ends_at,
-                'proposal' AS proposal_type,
-                '0.4' AS version,
-                p.created_at AS created_at,
-                ''::TEXT AS amm_addr,
-                'Pending' AS status,
-                d.pass_threshold_bps AS pass_threshold
-            FROM v0_4_proposals p
-            JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct
-            JOIN v0_4_daos d ON p.dao_addr = d.dao_addr
-            JOIN organizations o ON d.organization_id = o.organization_id
-            WHERE finalized_at IS NULL
-        )
-        SELECT * FROM proposals UNION ALL SELECT * FROM metrics UNION ALL SELECT * FROM v4proposals;
+    - arguments:
+        limit:
+          description: ""
+          nullable: true
+          type: integer
+        offset:
+          description: ""
+          nullable: true
+          type: integer
+        organization_id:
+          description: ""
+          nullable: true
+          type: integer
+      code: "WITH proposals AS (\r\n    SELECT\r\n    \tp.proposal_acct::TEXT,\r\n    \tpd.title::TEXT,\r\n    \tdd.name::TEXT AS dao_name,\r\n    \tdd.slug::TEXT AS dao_slug,\r\n    \tp.ended_at AS ends_at,\r\n    \t'proposal' AS proposal_type,\r\n    \t'0.3' AS version,\r\n    \tp.created_at AS created_at,\r\n    \t''::TEXT AS amm_addr,\r\n    \t'Pending' AS status,\r\n    \tp.pass_threshold_bps AS pass_threshold\r\n    FROM proposals p\r\n    JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct\r\n    JOIN daos d ON d.dao_acct = p.dao_acct\r\n    JOIN dao_details dd ON dd.dao_id = d.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n    WHERE p.status = 'Pending' AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nmetrics AS (\r\n\tSELECT\r\n\t\tmd.id::TEXT AS proposal_acct,\r\n\t\tmd.title::TEXT,\r\n\t\tdd.name::TEXT AS dao_name,\r\n\t\tdd.slug::TEXT AS dao_slug,\r\n\t\tmd.committee_evaluation AS ends_at,\r\n\t\t'metric' AS proposal_type,\r\n\t\t'0.4' AS version,\r\n\t\tmd.created_at AS created_at,\r\n\t\tmd.amm_addr::TEXT AS amm_addr,\r\n\t\t'Pending' AS status,\r\n\t\tmd.metric_threshold AS pass_threshold\r\n\tFROM v0_4_metric_decisions md\r\n\tJOIN dao_details dd ON dd.dao_id = md.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n\tWHERE completed_at IS NULL AND o.is_hide IS FALSE\r\n\tAND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nv4proposals AS (\r\n    SELECT\r\n        p.proposal_addr::TEXT AS proposal_acct,\r\n        pd.title::TEXT,\r\n        o.name::TEXT AS dao_name,\r\n        o.slug::TEXT AS dao_slug,\r\n        p.finalized_at AS ends_at,\r\n        'proposal' AS proposal_type,\r\n        '0.4' AS version,\r\n        p.created_at AS created_at,\r\n        ''::TEXT AS amm_addr,\r\n        'Pending' AS status,\r\n        d.pass_threshold_bps AS pass_threshold\r\n    FROM v0_4_proposals p\r\n    JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct\r\n    JOIN v0_4_daos d ON p.dao_addr = d.dao_addr\r\n    JOIN organizations o ON d.organization_id = o.organization_id\r\n    WHERE finalized_at IS NULL AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR o.organization_id = {{organization_id}}::INTEGER)\r\n),\r\ncombined_data AS (\r\n    SELECT \r\n        *,\r\n        COUNT(*) OVER() AS total_rows\r\n    FROM (\r\n        SELECT * FROM proposals \r\n        UNION ALL \r\n        SELECT * FROM metrics \r\n        UNION ALL \r\n        SELECT * FROM v4proposals\r\n    ) as union_result\r\n)\r\nSELECT * FROM combined_data\r\nORDER BY created_at DESC\r\nLIMIT COALESCE({{limit}}::INTEGER, NULL)\r\nOFFSET COALESCE({{offset}}::INTEGER, 0);"
       returns: live_proposals
       root_field_name: live_proposals
     - arguments:
