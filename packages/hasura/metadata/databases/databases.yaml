@@ -204,6 +204,23 @@
             nullable: false
             scalar: bigint
       name: live_proposals
+      select_permissions:
+        - permission:
+            columns:
+              - proposal_acct
+              - title
+              - dao_name
+              - dao_slug
+              - ends_at
+              - proposal_type
+              - created_at
+              - amm_addr
+              - status
+              - pass_threshold
+              - version
+              - total_rows
+            filter: {}
+          role: anonymous
     - fields:
         - name: launch_addr
           type:
