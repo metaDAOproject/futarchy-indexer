@@ -799,6 +799,7 @@ export const proposalDetails = pgTable("proposal_details", {
   pass_market_acct: pubkey("pass_market_acct"),
   fail_market_acct: pubkey("fail_market_acct"),
   discussion_link: text("discussion_link"),
+  proposal_link: text("proposal_link"),
   state: text("state").notNull().default("draft"),
   summary: text("summary"),
   organizationId: bigint("organization_id", { mode: "bigint" })
@@ -1226,6 +1227,7 @@ export const launchDetails = pgTable("launch_details", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   subDescription: text("sub_description"),
+  legalTerms: text("legal_terms"),
   creatorName: text("creator_name"),
   imageUrl: text("image_url"),
   videoUrl: text("video_url"),

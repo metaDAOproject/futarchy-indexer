@@ -1,0 +1,1 @@
+ALTER TABLE "proposal_details" ADD COLUMN "proposal_link" text;
