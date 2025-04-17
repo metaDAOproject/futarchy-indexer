@@ -36,65 +36,68 @@ select_permissions:
   - role: anonymous
     permission:
       columns:
-        - organization_id
-        - proposal_id
-        - proposal_index
         - base_cond_vault_acct
+        - categories
+        - content
         - description
+        - discussion_link
         - fail_market_acct
+        - organization_id
         - pass_market_acct
         - proposal_acct
+        - proposal_id
+        - proposal_index
+        - proposal_link
         - proposer_acct
         - quote_cond_vault_acct
         - slug
-        - title
-        - categories
-        - content
-        - discussion_link
         - state
         - summary
+        - title
       filter: {}
     comment: ""
   - role: proposer
     permission:
       columns:
-        - organization_id
-        - proposal_id
         - base_cond_vault_acct
+        - categories
+        - content
         - description
+        - discussion_link
         - fail_market_acct
+        - organization_id
         - pass_market_acct
         - proposal_acct
+        - proposal_id
+        - proposal_link
         - proposer_acct
         - quote_cond_vault_acct
         - slug
-        - title
-        - categories
-        - content
-        - discussion_link
         - state
         - summary
+        - title
       filter: {}
     comment: ""
   - role: user
     permission:
       columns:
-        - organization_id
-        - proposal_id
         - base_cond_vault_acct
+        - categories
+        - content
         - description
+        - discussion_link
         - fail_market_acct
+        - organization_id
         - pass_market_acct
         - proposal_acct
+        - proposal_id
+        - proposal_link
         - proposer_acct
         - quote_cond_vault_acct
         - slug
-        - title
-        - categories
-        - content
-        - discussion_link
         - state
         - summary
+        - title
       filter: {}
     comment: ""
 update_permissions:

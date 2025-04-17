@@ -55,6 +55,88 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: proposal_acct
+          type:
+            nullable: true
+            scalar: text
+        - name: title
+          type:
+            nullable: true
+            scalar: text
+        - name: description
+          type:
+            nullable: true
+            scalar: text
+        - name: discussion_link
+          type:
+            nullable: true
+            scalar: text
+        - name: ended_at
+          type:
+            nullable: true
+            scalar: timestamptz
+        - name: proposal_index
+          type:
+            nullable: true
+            scalar: numeric
+        - name: version
+          type:
+            nullable: true
+            scalar: text
+        - name: created_at
+          type:
+            nullable: true
+            scalar: timestamptz
+        - name: initial_slot
+          type:
+            nullable: true
+            scalar: numeric
+        - name: proposal_id
+          type:
+            nullable: false
+            scalar: numeric
+        - name: status
+          type:
+            nullable: true
+            scalar: text
+        - name: pass_threshold
+          type:
+            nullable: true
+            scalar: numeric
+        - name: pass_twap
+          type:
+            nullable: true
+            scalar: numeric
+        - name: fail_twap
+          type:
+            nullable: true
+            scalar: numeric
+        - name: state
+          type:
+            nullable: false
+            scalar: text
+      name: all_proposals
+      select_permissions:
+        - permission:
+            columns:
+              - proposal_acct
+              - title
+              - description
+              - discussion_link
+              - ended_at
+              - proposal_index
+              - version
+              - created_at
+              - initial_slot
+              - proposal_id
+              - status
+              - pass_threshold
+              - pass_twap
+              - fail_twap
+              - state
+            filter: {}
+          role: anonymous
+    - fields:
         - name: prices
           type:
             nullable: false
@@ -668,6 +750,18 @@
         SELECT * FROM proposals UNION ALL SELECT * FROM metrics;
       returns: all_live_proposals
       root_field_name: all_live_proposals
+    - arguments:
+        organization_slug:
+          description: ""
+          nullable: true
+          type: text
+        status:
+          description: ""
+          nullable: true
+          type: text
+      code: "WITH v_0_3_proposals AS (\r\n\tSELECT\r\n\t\tp.proposal_acct::TEXT AS proposal_acct,\r\n\t\tpd.title::TEXT AS title,\r\n\t\tpd.description::TEXT AS description,\r\n\t\tpd.discussion_link::TEXT AS discussion_link,\r\n\t\tp.ended_at::TIMESTAMPTZ AS ended_at,\r\n\t\tpd.proposal_index::NUMERIC AS proposal_index,\r\n\t\tp.autocrat_version::TEXT AS version,\r\n\t\tp.created_at::TIMESTAMPTZ AS created_at,\r\n\t\tp.initial_slot::NUMERIC AS initial_slot,\r\n\t\tpd.proposal_id::NUMERIC AS proposal_id,\r\n\t\tp.status::TEXT AS status,\r\n\t\tpd.state::TEXT AS state,\r\n\t\tp.pass_threshold_bps::NUMERIC AS pass_threshold,\r\n\t\ttcd1.token_amount::NUMERIC AS pass_twap,\r\n\t\ttcd2.token_amount::NUMERIC AS fail_twap\r\n\tFROM proposal_details pd\r\n\tLEFT JOIN proposals p ON p.proposal_acct = pd.proposal_acct\r\n\tJOIN organizations o ON o.organization_id = pd.organization_id\r\n\tLEFT JOIN twaps_chart_data tcd1 ON tcd1.market_acct = p.pass_market_acct AND tcd1.interv = (\r\n\t SELECT interv \r\n\t FROM twaps_chart_data\r\n\t WHERE market_acct = p.pass_market_acct\r\n\t AND interv <= COALESCE(p.completed_at, NOW())\r\n\t ORDER BY interv\r\n\t DESC LIMIT 1\r\n\t)\r\n\tLEFT JOIN twaps_chart_data tcd2 ON tcd2.market_acct = p.fail_market_acct AND tcd2.interv = (\r\n\t SELECT interv \r\n\t FROM twaps_chart_data\r\n\t WHERE market_acct = p.fail_market_acct\r\n\t AND interv <= COALESCE(p.completed_at, NOW())\r\n\t ORDER BY interv\r\n\t DESC LIMIT 1\r\n\t)\r\n\tWHERE o.is_hide IS FALSE\r\n\tAND ({{organization_slug}}::TEXT IS NULL OR o.slug = {{organization_slug}}::TEXT)\r\n\tAND ({{status}}::TEXT IS NULL OR p.status <> {{status}}::TEXT)\r\n), v_0_4_proposals AS (\r\n\tSELECT\r\n\t\tp.proposal_addr::TEXT AS proposal_acct,\r\n\t\tpd.title::TEXT AS title,\r\n\t\tpd.description::TEXT AS description,\r\n\t\tpd.discussion_link::TEXT AS discussion_link,\r\n\t\tp.finalized_at::TIMESTAMPTZ AS ended_at,\r\n\t\tpd.proposal_index::NUMERIC AS proposal_index,\r\n\t\t'0.4'::TEXT AS version,\r\n\t\tp.created_at::TIMESTAMPTZ AS created_at,\r\n\t\tp.slot_enqueued::NUMERIC AS initial_slot,\r\n\t\tpd.proposal_id::NUMERIC AS proposal_id,\r\n\t\tp.state::TEXT AS status,\r\n\t\tpd.state::TEXT AS state,\r\n\t\td.pass_threshold_bps::NUMERIC AS pass_threshold,\r\n\t\ttcd1.token_amount::NUMERIC AS pass_twap,\r\n\t\ttcd2.token_amount::NUMERIC AS fail_twap\r\n\tFROM proposal_details pd\r\n\tLEFT JOIN v0_4_proposals p ON p.proposal_addr = pd.proposal_acct\r\n\tJOIN organizations o ON o.organization_id = pd.organization_id\r\n\tJOIN v0_4_daos d ON d.dao_addr = p.dao_addr\r\n\tLEFT JOIN twaps_chart_data tcd1 ON tcd1.market_acct = p.pass_amm_addr AND tcd1.interv = (\r\n\t SELECT interv \r\n\t FROM twaps_chart_data\r\n\t WHERE market_acct = p.pass_amm_addr\r\n\t AND interv <= COALESCE(p.finalized_at, NOW())\r\n\t ORDER BY interv\r\n\t DESC LIMIT 1\r\n\t)\r\n\tLEFT JOIN twaps_chart_data tcd2 ON tcd2.market_acct = p.fail_amm_addr AND tcd2.interv = (\r\n\t SELECT interv \r\n\t FROM twaps_chart_data\r\n\t WHERE market_acct = p.fail_amm_addr\r\n\t AND interv <= COALESCE(p.finalized_at, NOW())\r\n\t ORDER BY interv\r\n\t DESC LIMIT 1\r\n\t)\r\n\tWHERE o.is_hide IS FALSE\r\n\tAND ({{organization_slug}}::TEXT IS NULL OR o.slug = {{organization_slug}}::TEXT)\r\n\tAND ({{status}}::TEXT IS NULL OR p.state <> {{status}}::TEXT)\r\n)\r\nSELECT\r\nproposal_acct,\r\ntitle,\r\ndescription,\r\ndiscussion_link,\r\nended_at,\r\nproposal_index,\r\nversion,\r\ncreated_at,\r\ninitial_slot,\r\nproposal_id,\r\nstatus,\r\nstate,\r\npass_threshold,\r\npass_twap,\r\nfail_twap\r\nFROM v_0_3_proposals\r\nUNION ALL\r\nSELECT\r\nproposal_acct,\r\ntitle,\r\ndescription,\r\ndiscussion_link,\r\nended_at,\r\nproposal_index,\r\nversion,\r\ncreated_at,\r\ninitial_slot,\r\nproposal_id,\r\nstatus,\r\nstate,\r\npass_threshold,\r\npass_twap,\r\nfail_twap\r\nFROM v_0_4_proposals;"
+      returns: all_proposals
+      root_field_name: all_proposals
     - arguments:
         limit:
           description: ""
