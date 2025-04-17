@@ -295,6 +295,13 @@
       "when": 1742412382765,
       "tag": "0041_spicy_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1744902613396,
+      "tag": "0042_lumpy_sumo",
+      "breakpoints": true
     }
   ]
 }
