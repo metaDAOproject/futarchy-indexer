@@ -28,6 +28,7 @@ import { connection, v4ConditionalVaultClient as conditionalVaultClient } from "
 
 import { TelegramBotAPI } from "../adapters/telegram-bot";
 import { Logger } from "../logger";
+import { BN } from "@coral-xyz/anchor";
 
 const logger = new Logger(new TelegramBotAPI({token: process.env.TELEGRAM_BOT_API_KEY ?? ''}));
 
@@ -455,7 +456,16 @@ async function insertPriceIfNotDuplicate(db: DBConnection, amm: any[], event: Ad
     return;
   }
 
-  const ammPrice = PriceMath.getAmmPriceFromReserves(event.common.postBaseReserves, event.common.postQuoteReserves);
+  const postBaseReserves = new BN(event.common.postBaseReserves.toString());
+  const postQuoteReserves = new BN(event.common.postQuoteReserves.toString());
+  let ammPrice = new BN(0)
+
+  if(postBaseReserves.isZero() || postQuoteReserves.isZero()) {
+    console.log("Price is 0", event.common.amm.toBase58(), BigInt(event.common.slot.toString()));
+  } else {
+    ammPrice = PriceMath.getAmmPriceFromReserves(postBaseReserves, postQuoteReserves);
+  }
+  
   const baseToken = await db.select()
     .from(schema.tokens)
     .where(eq(schema.tokens.mintAcct, amm[0].baseMintAddr))
@@ -518,7 +528,7 @@ export async function processLaunchpadEvent(event: { name: string; data: Launchp
   }
 }
 
-async function handleLaunchClaimEvent(event: LaunchClaimEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+async function handleLaunchClaimEvent(event: LaunchClaimEvent, _signature: string, _transactionResponse: VersionedTransactionResponse) {
   try {
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.v0_4_claims).values({
@@ -539,7 +549,7 @@ async function handleLaunchClaimEvent(event: LaunchClaimEvent, signature: string
   }
 }
 
-async function handleLaunchCompletedEvent(event: LaunchCompletedEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+async function handleLaunchCompletedEvent(event: LaunchCompletedEvent, _signature: string, _transactionResponse: VersionedTransactionResponse) {
   try {
     await usingDb(async (db: DBConnection) => {
       await db.update(schema.v0_4_launches).set({
@@ -553,7 +563,7 @@ async function handleLaunchCompletedEvent(event: LaunchCompletedEvent, signature
   }
 }
 
-async function handleLaunchFundedEvent(event: LaunchFundedEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+async function handleLaunchFundedEvent(event: LaunchFundedEvent, _signature: string, _transactionResponse: VersionedTransactionResponse) {
   try {
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.v0_4_funds).values({
@@ -590,7 +600,7 @@ async function handleLaunchFundedEvent(event: LaunchFundedEvent, signature: stri
   }
 }
 
-async function handleLaunchInitializedEvent(event: LaunchInitializedEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+async function handleLaunchInitializedEvent(event: LaunchInitializedEvent, _signature: string, _transactionResponse: VersionedTransactionResponse) {
   try {
     await usingDb(async (db: DBConnection) => {
       await insertTokenIfNotExists(db, event.tokenMint);
@@ -598,7 +608,7 @@ async function handleLaunchInitializedEvent(event: LaunchInitializedEvent, signa
       await db.insert(schema.v0_4_launches).values({
         launchAddr: event.launch.toString(),
         minimumRaiseAmount: event.minimumRaiseAmount.toString(),
-        creator: event.creator.toString(),
+        creator: event.launchAuthority.toString(),
         launchSigner: event.launchSigner.toString(),
         launchSignerPdaBump: event.launchSignerPdaBump,
         launchUsdcVault: event.launchUsdcVault.toString(),
@@ -619,7 +629,7 @@ async function handleLaunchInitializedEvent(event: LaunchInitializedEvent, signa
   }
 }
 
-async function handleLaunchRefundedEvent(event: LaunchRefundedEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+async function handleLaunchRefundedEvent(event: LaunchRefundedEvent, _signature: string, _transactionResponse: VersionedTransactionResponse) {
   try {
     await usingDb(async (db: DBConnection) => {
       await db.insert(schema.v0_4_refunds).values({
@@ -639,7 +649,7 @@ async function handleLaunchRefundedEvent(event: LaunchRefundedEvent, signature: 
   }
 }
 
-async function handleLaunchStartedEvent(event: LaunchStartedEvent, signature: string, transactionResponse: VersionedTransactionResponse) {
+async function handleLaunchStartedEvent(event: LaunchStartedEvent, _signature: string, _transactionResponse: VersionedTransactionResponse) {
   try {
     await usingDb(async (db: DBConnection) => {
       await db.update(schema.v0_4_launches).set({
