@@ -1050,7 +1050,7 @@ export const v0_4_swaps = pgTable("v0_4_swaps", {
 export const v0_4_splits = pgTable(
   "v0_4_splits",
   {
-    vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+    vaultAddr: pubkey("vault_addr").notNull(),
     vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
     signature: transaction("signature").notNull().references(() => signatures.signature),
     slot: biggerSlot("slot").notNull(),
@@ -1149,17 +1149,13 @@ export const v0_4_proposals = pgTable("v0_4_proposals", {
   state: pgEnum("state", V04ProposalState).notNull(),
   instruction: jsonb("instruction"),
   passAmmAddr: pubkey("pass_amm_addr")
-    .notNull()
-    .references(() => v0_4_amms.ammAddr),
+    .notNull(),
   failAmmAddr: pubkey("fail_amm_addr")
-    .notNull()
-    .references(() => v0_4_amms.ammAddr),
+    .notNull(),
   baseVaultAddr: pubkey("base_vault_addr")
-    .notNull()
-    .references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+    .notNull(),
   quoteVaultAddr: pubkey("quote_vault_addr")
-    .notNull()
-    .references(() => v0_4_conditional_vaults.conditionalVaultAddr),
+    .notNull(),
   daoAddr: pubkey("dao_addr")
     .notNull()
     .references(() => v0_4_daos.daoAddr),
