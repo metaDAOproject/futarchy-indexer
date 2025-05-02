@@ -844,7 +844,7 @@
           description: ""
           nullable: true
           type: integer
-      code: "WITH proposals AS (\r\n    SELECT\r\n    \tp.proposal_acct::TEXT,\r\n    \tpd.title::TEXT,\r\n    \tdd.name::TEXT AS dao_name,\r\n    \tdd.slug::TEXT AS dao_slug,\r\n    \tp.ended_at AS ends_at,\r\n    \t'proposal' AS proposal_type,\r\n    \t'0.3' AS version,\r\n    \tp.created_at AS created_at,\r\n    \t''::TEXT AS amm_addr,\r\n    \t'Pending' AS status,\r\n    \tp.pass_threshold_bps AS pass_threshold\r\n    FROM proposals p\r\n    JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct\r\n    JOIN daos d ON d.dao_acct = p.dao_acct\r\n    JOIN dao_details dd ON dd.dao_id = d.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n    WHERE p.status = 'Pending' AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nmetrics AS (\r\n\tSELECT\r\n\t\tmd.id::TEXT AS proposal_acct,\r\n\t\tmd.title::TEXT,\r\n\t\tdd.name::TEXT AS dao_name,\r\n\t\tdd.slug::TEXT AS dao_slug,\r\n\t\tmd.committee_evaluation AS ends_at,\r\n\t\t'metric' AS proposal_type,\r\n\t\t'0.4' AS version,\r\n\t\tmd.created_at AS created_at,\r\n\t\tmd.amm_addr::TEXT AS amm_addr,\r\n\t\t'Pending' AS status,\r\n\t\tmd.metric_threshold AS pass_threshold\r\n\tFROM v0_4_metric_decisions md\r\n\tJOIN dao_details dd ON dd.dao_id = md.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n\tWHERE completed_at IS NULL AND o.is_hide IS FALSE\r\n\tAND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nv4proposals AS (\r\n    SELECT\r\n        p.proposal_addr::TEXT AS proposal_acct,\r\n        pd.title::TEXT,\r\n        o.name::TEXT AS dao_name,\r\n        o.slug::TEXT AS dao_slug,\r\n        p.finalized_at AS ends_at,\r\n        'proposal' AS proposal_type,\r\n        '0.4' AS version,\r\n        p.created_at AS created_at,\r\n        ''::TEXT AS amm_addr,\r\n        'Pending' AS status,\r\n        d.pass_threshold_bps AS pass_threshold\r\n    FROM v0_4_proposals p\r\n    JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct\r\n    JOIN v0_4_daos d ON p.dao_addr = d.dao_addr\r\n    JOIN organizations o ON d.organization_id = o.organization_id\r\n    WHERE finalized_at IS NULL AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR o.organization_id = {{organization_id}}::INTEGER)\r\n),\r\ncombined_data AS (\r\n    SELECT \r\n        *,\r\n        COUNT(*) OVER() AS total_rows\r\n    FROM (\r\n        SELECT * FROM proposals \r\n        UNION ALL \r\n        SELECT * FROM metrics \r\n        UNION ALL \r\n        SELECT * FROM v4proposals\r\n    ) as union_result\r\n)\r\nSELECT * FROM combined_data\r\nORDER BY created_at DESC\r\nLIMIT COALESCE({{limit}}::INTEGER, NULL)\r\nOFFSET COALESCE({{offset}}::INTEGER, 0);"
+      code: "WITH proposals AS (\r\n    SELECT\r\n    \tp.proposal_acct::TEXT,\r\n    \tpd.title::TEXT,\r\n    \tdd.name::TEXT AS dao_name,\r\n    \tdd.slug::TEXT AS dao_slug,\r\n    \tp.ended_at AS ends_at,\r\n    \t'proposal' AS proposal_type,\r\n    \t'0.3' AS version,\r\n    \tp.created_at AS created_at,\r\n    \t''::TEXT AS amm_addr,\r\n    \t'Pending' AS status,\r\n    \tp.pass_threshold_bps AS pass_threshold\r\n    FROM proposals p\r\n    JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct\r\n    JOIN daos d ON d.dao_acct = p.dao_acct\r\n    JOIN dao_details dd ON dd.dao_id = d.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n    WHERE p.status = 'Pending' AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nmetrics AS (\r\n\tSELECT\r\n\t\tmd.id::TEXT AS proposal_acct,\r\n\t\tmd.title::TEXT,\r\n\t\tdd.name::TEXT AS dao_name,\r\n\t\tdd.slug::TEXT AS dao_slug,\r\n\t\tmd.committee_evaluation AS ends_at,\r\n\t\t'metric' AS proposal_type,\r\n\t\t'0.4' AS version,\r\n\t\tmd.created_at AS created_at,\r\n\t\tmd.amm_addr::TEXT AS amm_addr,\r\n\t\t'Pending' AS status,\r\n\t\tmd.metric_threshold AS pass_threshold\r\n\tFROM v0_4_metric_decisions md\r\n\tJOIN dao_details dd ON dd.dao_id = md.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n\tWHERE completed_at IS NULL AND o.is_hide IS FALSE\r\n\tAND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nv4proposals AS (\r\n    SELECT\r\n        p.proposal_addr::TEXT AS proposal_acct,\r\n        pd.title::TEXT,\r\n        o.name::TEXT AS dao_name,\r\n        o.slug::TEXT AS dao_slug,\r\n        CASE WHEN \r\n            p.finalized_at IS NOT NULL THEN p.finalized_at\r\n            ELSE p.created_at + CONCAT((p.duration_in_slots / 216000)::TEXT, 'days')::INTERVAL\r\n        END AS ends_at,\r\n        'proposal' AS proposal_type,\r\n        '0.4' AS version,\r\n        p.created_at AS created_at,\r\n        ''::TEXT AS amm_addr,\r\n        'Pending' AS status,\r\n        d.pass_threshold_bps AS pass_threshold\r\n    FROM v0_4_proposals p\r\n    JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct\r\n    JOIN v0_4_daos d ON p.dao_addr = d.dao_addr\r\n    JOIN organizations o ON d.organization_id = o.organization_id\r\n    WHERE finalized_at IS NULL AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR o.organization_id = {{organization_id}}::INTEGER)\r\n),\r\ncombined_data AS (\r\n    SELECT \r\n        *,\r\n        COUNT(*) OVER() AS total_rows\r\n    FROM (\r\n        SELECT * FROM proposals \r\n        UNION ALL \r\n        SELECT * FROM metrics \r\n        UNION ALL \r\n        SELECT * FROM v4proposals\r\n    ) as union_result\r\n)\r\nSELECT * FROM combined_data\r\nORDER BY created_at DESC\r\nLIMIT COALESCE({{limit}}::INTEGER, NULL)\r\nOFFSET COALESCE({{offset}}::INTEGER, 0);"
       returns: live_proposals
       root_field_name: live_proposals
     - arguments:
@@ -1052,11 +1052,13 @@
                 	THEN 'fail'
                 	WHEN p.pass_market_acct = m.market_acct
                 	THEN 'pass'
-                END AS market_side
+                END AS market_side,
+                t.decimals AS decimals
             FROM markets m
             JOIN proposals p ON p.proposal_acct = m.proposal_acct
             JOIN daos d ON d.dao_acct = p.dao_acct
             JOIN organizations o ON o.organization_id = d.organization_id
+            JOIN tokens t ON t.mint_acct = d.base_acct
             WHERE m.proposal_acct IS NOT NULL
             AND ({{organization_slug}}::TEXT IS NULL OR o.slug = {{organization_slug}}::TEXT)
         ), proposal_orders AS (
@@ -1071,22 +1073,82 @@
                 takes.base_amount AS trade_amount,
                 takes.quote_price AS trade_price,
                 takes.base_decimals AS trade_base_decimals,
-                takes.order_tx_sig AS tx_sig
+                takes.order_tx_sig AS tx_sig,
+                pm.decimals AS decimals
             FROM orders
             LEFT JOIN takes ON orders.order_tx_sig = takes.order_tx_sig
             JOIN proposal_markets pm ON pm.market_acct = orders.market_acct
-            WHERE orders.market_acct IN (SELECT market_acct FROM proposal_markets)
         ), proposal_trades_stats AS (
             SELECT
                 market_acct,
                 actor_acct,
                 COUNT(*) AS trade_count,
-                SUM(order_price * trade_amount / POWER(10, 9)) AS volume,
+                SUM(order_price * trade_amount / POWER(10, decimals)) AS volume,
                 proposal_acct,
                 market_side
             FROM proposal_orders
             WHERE tx_sig IS NOT NULL
             GROUP BY market_acct, actor_acct, proposal_acct, market_side
+        ), v04_proposal_markets AS (
+        	SELECT
+        		vp.fail_amm_addr AS market_acct,
+        		vp.proposal_addr AS proposal_acct,
+        		'fail' AS market_side,
+        		vp.dao_addr AS dao_acct
+        	FROM proposal_details pd
+        	JOIN v0_4_proposals vp ON pd.proposal_acct = vp.proposal_addr
+        	UNION
+        	SELECT
+        		vp.pass_amm_addr AS market_acct,
+        		vp.proposal_addr AS proposal_acct,
+        		'pass' AS market_side,
+        		vp.dao_addr AS dao_acct
+        	FROM proposal_details pd
+        	JOIN v0_4_proposals vp ON pd.proposal_acct = vp.proposal_addr
+        ), usdc_decimals AS (
+        	SELECT
+        		t.decimals,
+        		d.dao_addr AS dao_acct,
+        		o.slug AS slug
+        	FROM v0_4_daos d
+        	JOIN tokens t ON d.usdc_mint_acct = t.mint_acct
+        	JOIN organizations o ON o.organization_id = d.organization_id
+        	WHERE ({{organization_slug}}::TEXT IS NULL OR o.slug = {{organization_slug}}::TEXT)
+        ), amms_with_decimals AS (
+        	SELECT
+        		*
+        	FROM v04_proposal_markets vp
+        	JOIN usdc_decimals ud ON vp.dao_acct = ud.dao_acct
+        ), v04_proposal_swaps AS (
+        	SELECT
+        		vs.amm_addr AS market_acct,
+        		vs.user_addr AS actor_acct,
+        		CASE
+        			WHEN vs.swap_type = 'Buy' THEN vs.input_amount
+        			ELSE vs.output_amount
+        		END / POW(10, amd.decimals) AS trade_volume,
+        		amd.market_side,
+        		amd.proposal_acct,
+        		amd.slug
+        	FROM v0_4_swaps vs
+        	JOIN amms_with_decimals amd ON amd.market_acct = vs.amm_addr
+        ), v04_proposal_trade_stats AS (
+        	SELECT
+        		market_acct,
+        		actor_acct,
+        		COUNT(*) AS trade_count,
+        		SUM(trade_volume) AS volume,
+        		proposal_acct,
+        		market_side
+        	FROM v04_proposal_swaps
+        	GROUP BY market_acct, actor_acct, proposal_acct, market_side
+        ), union_group AS (
+        	SELECT
+        	* FROM v04_proposal_trade_stats
+        	UNION
+        	SELECT
+        	*
+        	FROM proposal_trades_stats
         )
         SELECT
             actor_acct::TEXT AS user_acct,
@@ -1095,7 +1157,7 @@
             market_acct::TEXT AS market_acct,
             market_side::TEXT AS market_side,
             proposal_acct::TEXT AS proposal_acct
-        FROM proposal_trades_stats ORDER BY volume DESC;
+        FROM union_group ORDER BY volume DESC;
       returns: organization_proposal_user_trade_volume
       root_field_name: user_proposal_organization_volume
     - arguments:
