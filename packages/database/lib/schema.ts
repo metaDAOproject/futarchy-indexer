@@ -1164,8 +1164,7 @@ export const v0_4_proposals = pgTable("v0_4_proposals", {
   nonce: bigint("nonce", { mode: "bigint" }).notNull(),
   pdaBump: smallint("pda_bump").notNull(),
   questionAddr: pubkey("question_addr")
-    .notNull()
-    .references(() => v0_4_questions.questionAddr),
+    .notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
