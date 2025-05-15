@@ -178,6 +178,113 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: proposal_id
+          type:
+            nullable: false
+            scalar: text
+        - name: organization_slug
+          type:
+            nullable: false
+            scalar: text
+        - name: proposal_status
+          type:
+            nullable: false
+            scalar: text
+        - name: base_finalize_mint_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: base_revert_mint_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: quote_finalize_mint_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: quote_revert_mint_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: base_finalize_balance
+          type:
+            nullable: true
+            scalar: numeric
+        - name: base_revert_balance
+          type:
+            nullable: true
+            scalar: numeric
+        - name: quote_finalize_balance
+          type:
+            nullable: true
+            scalar: numeric
+        - name: quote_revert_balance
+          type:
+            nullable: true
+            scalar: numeric
+        - name: base_finalize_updated_at
+          type:
+            nullable: true
+            scalar: timestamptz
+        - name: base_revert_updated_at
+          type:
+            nullable: true
+            scalar: timestamptz
+        - name: quote_finalize_updated_at
+          type:
+            nullable: true
+            scalar: timestamptz
+        - name: quote_revert_updated_at
+          type:
+            nullable: true
+            scalar: timestamptz
+        - name: base_vault_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: quote_vault_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: question_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: base_token_addr
+          type:
+            nullable: true
+            scalar: text
+        - name: quote_token_addr
+          type:
+            nullable: true
+            scalar: text
+      name: dashboard_statistics
+      select_permissions:
+        - permission:
+            columns:
+              - proposal_id
+              - organization_slug
+              - proposal_status
+              - base_finalize_mint_addr
+              - base_revert_mint_addr
+              - quote_finalize_mint_addr
+              - quote_revert_mint_addr
+              - base_finalize_balance
+              - base_revert_balance
+              - quote_finalize_balance
+              - quote_revert_balance
+              - base_finalize_updated_at
+              - base_revert_updated_at
+              - quote_finalize_updated_at
+              - quote_revert_updated_at
+              - base_vault_addr
+              - quote_vault_addr
+              - question_addr
+              - base_token_addr
+              - quote_token_addr
+            filter: {}
+          role: anonymous
+    - fields:
         - name: bucket_time
           type:
             nullable: false
@@ -778,6 +885,22 @@
       code: "WITH proposals AS (\r\n    SELECT\r\n    \tp.proposal_acct::TEXT,\r\n    \tpd.title::TEXT,\r\n    \tdd.name::TEXT AS dao_name,\r\n    \tdd.slug::TEXT AS dao_slug,\r\n    \tp.ended_at AS ends_at,\r\n    \t'proposal' AS proposal_type,\r\n    \t'0.3' AS version,\r\n    \tp.created_at AS created_at,\r\n    \t''::TEXT AS amm_addr,\r\n    \tp.status::TEXT AS status,\r\n    \tp.pass_threshold_bps AS pass_threshold\r\n    FROM proposals p\r\n    JOIN proposal_details pd ON p.proposal_acct = pd.proposal_acct\r\n    JOIN daos d ON d.dao_acct = p.dao_acct\r\n    JOIN dao_details dd ON dd.dao_id = d.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n    WHERE p.status <> 'Pending' AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nmetrics AS (\r\n\tSELECT\r\n\t\tmd.id::TEXT AS proposal_acct,\r\n\t\tmd.title::TEXT,\r\n\t\tdd.name::TEXT AS dao_name,\r\n\t\tdd.slug::TEXT AS dao_slug,\r\n\t\tmd.committee_evaluation AS ends_at,\r\n\t\t'metric' AS proposal_type,\r\n\t\t'0.4' AS version,\r\n\t\tmd.created_at AS created_at,\r\n\t\tmd.amm_addr::TEXT AS amm_addr,\r\n\t\t(CASE\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '1' THEN 'Rejected'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS false THEN 'Evaluating'\r\n\t\t\tWHEN outcome_q.is_resolved IS true AND outcome_q.payout_numerators->0 = '0' AND metric_q.is_resolved IS true THEN 'Evaluated'\r\n\t\t\tELSE 'Unknown'\r\n\t\tEND)::TEXT AS status,\r\n\t\tmd.metric_threshold AS pass_threshold\r\n\tFROM v0_4_metric_decisions md\r\n\tJOIN dao_details dd ON dd.dao_id = md.dao_id\r\n\tJOIN organizations o ON o.organization_id = dd.organization_id\r\n\tJOIN V0_4_questions outcome_q ON md.outcome_question_addr = outcome_q.question_addr\r\n\tJOIN V0_4_questions metric_q ON md.metric_question_addr = metric_q.question_addr\r\n\tWHERE completed_at IS NOT NULL AND o.is_hide IS FALSE\r\n\tAND ({{organization_id}}::INTEGER IS NULL OR dd.organization_id = {{organization_id}}::INTEGER)\r\n),\r\nv4proposals AS (\r\n    SELECT\r\n        p.proposal_addr::TEXT AS proposal_acct,\r\n        pd.title::TEXT,\r\n        o.name::TEXT AS dao_name,\r\n        o.slug::TEXT AS dao_slug,\r\n        p.finalized_at AS ends_at,\r\n        'proposal' AS proposal_type,\r\n        '0.4' AS version,\r\n        p.created_at AS created_at,\r\n        ''::TEXT AS amm_addr,\r\n        p.state::TEXT AS status,\r\n        d.pass_threshold_bps AS pass_threshold\r\n    FROM v0_4_proposals p\r\n    JOIN proposal_details pd ON p.proposal_addr = pd.proposal_acct\r\n    JOIN v0_4_daos d ON p.dao_addr = d.dao_addr\r\n    JOIN organizations o ON d.organization_id = o.organization_id\r\n    WHERE finalized_at IS NOT NULL AND o.is_hide IS FALSE\r\n    AND ({{organization_id}}::INTEGER IS NULL OR o.organization_id = {{organization_id}}::INTEGER)\r\n),\r\ncombined_data AS (\r\n    SELECT \r\n        *,\r\n        COUNT(*) OVER() AS total_rows\r\n    FROM (\r\n        SELECT * FROM proposals \r\n        UNION ALL \r\n        SELECT * FROM metrics \r\n        UNION ALL \r\n        SELECT * FROM v4proposals\r\n    ) as union_result\r\n)\r\nSELECT * FROM combined_data\r\nORDER BY created_at DESC\r\nLIMIT COALESCE({{limit}}::INTEGER, NULL)\r\nOFFSET COALESCE({{offset}}::INTEGER, 0);"
       returns: live_proposals
       root_field_name: completed_proposals
+    - arguments:
+        user_acct:
+          description: ""
+          nullable: true
+          type: text
+      code: "WITH specific_user AS (\n  SELECT {{user_acct}}::text AS user_acct\n),\n\nuser_market_participation AS (\n  SELECT DISTINCT market_acct\n  FROM public.orders\n  WHERE actor_acct = (SELECT user_acct FROM specific_user)\n),\n\nuser_proposal_participation AS (\n  SELECT DISTINCT p.proposal_acct\n  FROM public.proposals p\n  WHERE p.pass_market_acct IN (SELECT market_acct FROM user_market_participation)\n     OR p.fail_market_acct IN (SELECT market_acct FROM user_market_participation)\n),\n\nselected_proposals AS (\n  SELECT \n    p.proposal_acct, \n    p.base_vault, \n    p.quote_vault, \n    p.status,\n    -- Include base and quote vaults for the redeem function\n    p.base_vault AS base_vault_addr,\n    p.quote_vault AS quote_vault_addr,\n    NULL::text AS question_addr -- Include with NULL value for consistency with v0.4\n  FROM public.proposals p\n  WHERE p.proposal_acct IN (SELECT proposal_acct FROM user_proposal_participation)\n),\n\nmint_addrs AS (\n  SELECT\n    sp.proposal_acct,\n    sp.status,\n    -- Include vault and question addresses\n    sp.base_vault_addr,\n    sp.quote_vault_addr,\n    sp.question_addr,\n    -- Get the underlying mint accounts for base and quote vaults\n    cv_base.underlying_mint_acct AS base_token_addr,\n    cv_quote.underlying_mint_acct AS quote_token_addr,\n    cv_base.cond_finalize_token_mint_acct  AS base_finalize_mint_addr,\n    cv_base.cond_revert_token_mint_acct    AS base_revert_mint_addr,\n    cv_quote.cond_finalize_token_mint_acct AS quote_finalize_mint_addr,\n    cv_quote.cond_revert_token_mint_acct   AS quote_revert_mint_addr\n  FROM selected_proposals sp\n  LEFT JOIN public.conditional_vaults cv_base  ON sp.base_vault  = cv_base.cond_vault_acct\n  LEFT JOIN public.conditional_vaults cv_quote ON sp.quote_vault = cv_quote.cond_vault_acct\n),\n\nuser_token_accounts AS (\n  SELECT\n    m.*,\n\n    -- balances (cast 0 → numeric to keep the type stable)\n    COALESCE(base_fin_ta.amount , 0::numeric) AS base_finalize_balance,\n    base_fin_ta.updated_at                    AS base_finalize_updated_at,\n\n    COALESCE(base_rev_ta.amount , 0::numeric) AS base_revert_balance,\n    base_rev_ta.updated_at                    AS base_revert_updated_at,\n\n    COALESCE(quote_fin_ta.amount, 0::numeric) AS quote_finalize_balance,\n    quote_fin_ta.updated_at                   AS quote_finalize_updated_at,\n\n    COALESCE(quote_rev_ta.amount, 0::numeric) AS quote_revert_balance,\n    quote_rev_ta.updated_at                   AS quote_revert_updated_at\n  FROM mint_addrs m\n  LEFT JOIN public.token_accts base_fin_ta  ON m.base_finalize_mint_addr  = base_fin_ta.mint_acct  AND base_fin_ta.owner_acct  = (SELECT user_acct FROM specific_user)\n  LEFT JOIN public.token_accts base_rev_ta  ON m.base_revert_mint_addr    = base_rev_ta.mint_acct  AND base_rev_ta.owner_acct  = (SELECT user_acct FROM specific_user)\n  LEFT JOIN public.token_accts quote_fin_ta ON m.quote_finalize_mint_addr = quote_fin_ta.mint_acct AND quote_fin_ta.owner_acct = (SELECT user_acct FROM specific_user)\n  LEFT JOIN public.token_accts quote_rev_ta ON m.quote_revert_mint_addr   = quote_rev_ta.mint_acct AND quote_rev_ta.owner_acct = (SELECT user_acct FROM specific_user)\n)\n\nSELECT\n  pd.proposal_id::text               AS proposal_id,\n  org.slug::text                     AS organization_slug,\n  uta.status::text                   AS proposal_status,\n  -- Include vault and question addresses in the result\n  uta.base_vault_addr::text          AS base_vault_addr,\n  uta.quote_vault_addr::text         AS quote_vault_addr,\n  uta.question_addr::text            AS question_addr,\n  -- Include the underlying mint accounts\n  uta.base_token_addr::text          AS base_token_addr,\n  uta.quote_token_addr::text         AS quote_token_addr,\n  -- Mint addresses (also used as token addresses for the redeem function)\n  uta.base_finalize_mint_addr::text  AS base_finalize_mint_addr,\n  uta.base_revert_mint_addr::text    AS base_revert_mint_addr,\n  uta.quote_finalize_mint_addr::text AS quote_finalize_mint_addr,\n  uta.quote_revert_mint_addr::text   AS quote_revert_mint_addr,\n  -- Balances\n  uta.base_finalize_balance          AS base_finalize_balance,\n  uta.base_revert_balance            AS base_revert_balance,\n  uta.quote_finalize_balance         AS quote_finalize_balance,\n  uta.quote_revert_balance           AS quote_revert_balance,\n  -- Timestamps\n  uta.base_finalize_updated_at       AS base_finalize_updated_at,\n  uta.base_revert_updated_at         AS base_revert_updated_at,\n  uta.quote_finalize_updated_at      AS quote_finalize_updated_at,\n  uta.quote_revert_updated_at        AS quote_revert_updated_at\nFROM public.proposal_details  pd\nJOIN public.proposals         p   ON pd.proposal_acct = p.proposal_acct\nJOIN public.organizations     org ON pd.organization_id = org.organization_id\nJOIN user_token_accounts      uta ON p.proposal_acct = uta.proposal_acct\nWHERE pd.proposal_acct IN (SELECT proposal_acct FROM user_proposal_participation)\nORDER BY pd.proposal_id"
+      returns: dashboard_statistics
+      root_field_name: dashboard_statistics_v3
+    - arguments:
+        user_acct:
+          description: ""
+          nullable: false
+          type: text
+      code: "WITH\nspecific_user AS (\n  SELECT {{user_acct}}::text AS user_acct\n),\n\nuser_tokens AS (\n  SELECT *\n  FROM public.token_accts\n  WHERE owner_acct = (SELECT user_acct FROM specific_user)\n),\n\nall_proposals AS (\n  SELECT\n    pd.proposal_id,\n    pd.proposal_acct,\n    p.pass_amm_addr,\n    p.fail_amm_addr,\n    p.state,\n    pd.organization_id,\n    p.base_vault_addr,\n    p.quote_vault_addr,\n    p.question_addr\n  FROM public.proposal_details  pd\n  JOIN public.v0_4_proposals   p ON pd.proposal_acct = p.proposal_addr\n),\n\nvault_tokens AS (\n  SELECT\n    ap.proposal_id,\n    ap.proposal_acct,\n    cv_base.underlying_mint_acct AS base_token_addr,\n    cv_quote.underlying_mint_acct AS quote_token_addr\n  FROM all_proposals ap\n  LEFT JOIN public.v0_4_conditional_vaults cv_base ON ap.base_vault_addr = cv_base.conditional_vault_addr\n  LEFT JOIN public.v0_4_conditional_vaults cv_quote ON ap.quote_vault_addr = cv_quote.conditional_vault_addr\n),\n\nproposal_mints AS (\n  SELECT\n    ap.*,\n    vt.base_token_addr,\n    vt.quote_token_addr,\n    pass_amm.base_mint_addr  AS pass_base_mint_addr,\n    pass_amm.quote_mint_addr AS pass_quote_mint_addr,\n    fail_amm.base_mint_addr  AS fail_base_mint_addr,\n    fail_amm.quote_mint_addr AS fail_quote_mint_addr\n  FROM all_proposals ap\n  JOIN vault_tokens vt ON ap.proposal_acct = vt.proposal_acct\n  LEFT JOIN public.v0_4_amms pass_amm ON ap.pass_amm_addr = pass_amm.amm_addr\n  LEFT JOIN public.v0_4_amms fail_amm ON ap.fail_amm_addr = fail_amm.amm_addr\n),\n\nproposal_mint_list AS (\n  SELECT proposal_id, proposal_acct, pass_amm_addr, fail_amm_addr, state, organization_id,\n         base_vault_addr, quote_vault_addr, question_addr, base_token_addr, quote_token_addr,\n         pass_base_mint_addr AS mint_addr, 'pass_base' AS mint_type\n  FROM proposal_mints\n  WHERE pass_base_mint_addr IS NOT NULL\n\n  UNION ALL\n  SELECT proposal_id, proposal_acct, pass_amm_addr, fail_amm_addr, state, organization_id,\n         base_vault_addr, quote_vault_addr, question_addr, base_token_addr, quote_token_addr,\n         pass_quote_mint_addr, 'pass_quote'\n  FROM proposal_mints\n  WHERE pass_quote_mint_addr IS NOT NULL\n\n  UNION ALL\n  SELECT proposal_id, proposal_acct, pass_amm_addr, fail_amm_addr, state, organization_id,\n         base_vault_addr, quote_vault_addr, question_addr, base_token_addr, quote_token_addr,\n         fail_base_mint_addr, 'fail_base'\n  FROM proposal_mints\n  WHERE fail_base_mint_addr IS NOT NULL\n\n  UNION ALL\n  SELECT proposal_id, proposal_acct, pass_amm_addr, fail_amm_addr, state, organization_id,\n         base_vault_addr, quote_vault_addr, question_addr, base_token_addr, quote_token_addr,\n         fail_quote_mint_addr, 'fail_quote'\n  FROM proposal_mints\n  WHERE fail_quote_mint_addr IS NOT NULL\n),\n\nuser_participation AS (\n  SELECT\n    pml.*,\n    ut.token_acct,\n    ut.amount,\n    ut.updated_at\n  FROM proposal_mint_list pml\n  JOIN user_tokens ut ON pml.mint_addr = ut.mint_acct\n),\n\nuser_proposals AS (\n  SELECT DISTINCT proposal_id, proposal_acct, pass_amm_addr, fail_amm_addr, state, organization_id,\n                  base_vault_addr, quote_vault_addr, question_addr, base_token_addr, quote_token_addr\n  FROM user_participation\n),\n\nproposal_token_info AS (\n  SELECT\n    pm.*,\n\n    (SELECT token_acct FROM user_tokens WHERE mint_acct = pm.pass_base_mint_addr) AS pass_base_token_acct,\n    (SELECT amount      FROM user_tokens WHERE mint_acct = pm.pass_base_mint_addr) AS pass_base_balance,\n    (SELECT updated_at  FROM user_tokens WHERE mint_acct = pm.pass_base_mint_addr) AS pass_base_updated_at,\n\n    (SELECT token_acct FROM user_tokens WHERE mint_acct = pm.pass_quote_mint_addr) AS pass_quote_token_acct,\n    (SELECT amount      FROM user_tokens WHERE mint_acct = pm.pass_quote_mint_addr) AS pass_quote_balance,\n    (SELECT updated_at  FROM user_tokens WHERE mint_acct = pm.pass_quote_mint_addr) AS pass_quote_updated_at,\n\n    (SELECT token_acct FROM user_tokens WHERE mint_acct = pm.fail_base_mint_addr) AS fail_base_token_acct,\n    (SELECT amount      FROM user_tokens WHERE mint_acct = pm.fail_base_mint_addr) AS fail_base_balance,\n    (SELECT updated_at  FROM user_tokens WHERE mint_acct = pm.fail_base_mint_addr) AS fail_base_updated_at,\n\n    (SELECT token_acct FROM user_tokens WHERE mint_acct = pm.fail_quote_mint_addr) AS fail_quote_token_acct,\n    (SELECT amount      FROM user_tokens WHERE mint_acct = pm.fail_quote_mint_addr) AS fail_quote_balance,\n    (SELECT updated_at  FROM user_tokens WHERE mint_acct = pm.fail_quote_mint_addr) AS fail_quote_updated_at\n  FROM proposal_mints pm\n  JOIN user_proposals up ON pm.proposal_id = up.proposal_id\n)\n\nSELECT\n  pti.proposal_id::text               AS proposal_id,\n  org.slug::text                      AS organization_slug,\n  pti.state::text                     AS proposal_status,\n\n  pti.base_vault_addr::text           AS base_vault_addr,\n  pti.quote_vault_addr::text          AS quote_vault_addr,\n  pti.question_addr::text             AS question_addr,\n  \n  pti.base_token_addr::text           AS base_token_addr,\n  pti.quote_token_addr::text          AS quote_token_addr,\n\n  pti.pass_base_mint_addr::text       AS base_finalize_mint_addr,\n  pti.fail_base_mint_addr::text       AS base_revert_mint_addr,\n  pti.pass_quote_mint_addr::text      AS quote_finalize_mint_addr,\n  pti.fail_quote_mint_addr::text      AS quote_revert_mint_addr,\n\n  COALESCE(pti.pass_base_balance, 0)  AS base_finalize_balance,\n  COALESCE(pti.fail_base_balance, 0)  AS base_revert_balance,\n  COALESCE(pti.pass_quote_balance, 0) AS quote_finalize_balance,\n  COALESCE(pti.fail_quote_balance, 0) AS quote_revert_balance,\n\n  pti.pass_base_updated_at            AS base_finalize_updated_at,\n  pti.fail_base_updated_at            AS base_revert_updated_at,\n  pti.pass_quote_updated_at           AS quote_finalize_updated_at,\n  pti.fail_quote_updated_at           AS quote_revert_updated_at\nFROM proposal_token_info pti\nJOIN public.organizations org ON pti.organization_id = org.organization_id\nORDER BY pti.proposal_id;"
+      returns: dashboard_statistics
+      root_field_name: dashboard_statistics_v4
     - arguments:
         bucket_size:
           description: ""

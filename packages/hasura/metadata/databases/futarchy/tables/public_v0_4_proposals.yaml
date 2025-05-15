@@ -13,22 +13,52 @@ object_relationships:
           schema: public
   - name: v04AmmByPassAmmAddr
     using:
-      foreign_key_constraint_on: pass_amm_addr
+      manual_configuration:
+        column_mapping:
+          pass_amm_addr: amm_addr
+        insertion_order: null
+        remote_table:
+          name: v0_4_amms
+          schema: public
   - name: v04ConditionalVaultByQuoteVaultAddr
     using:
-      foreign_key_constraint_on: quote_vault_addr
+      manual_configuration:
+        column_mapping:
+          quote_vault_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_4_conditional_vaults
+          schema: public
   - name: v0_4_amm
     using:
-      foreign_key_constraint_on: fail_amm_addr
+      manual_configuration:
+        column_mapping:
+          fail_amm_addr: amm_addr
+        insertion_order: null
+        remote_table:
+          name: v0_4_amms
+          schema: public
   - name: v0_4_conditional_vault
     using:
-      foreign_key_constraint_on: base_vault_addr
+      manual_configuration:
+        column_mapping:
+          base_vault_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_4_conditional_vaults
+          schema: public
   - name: v0_4_dao
     using:
       foreign_key_constraint_on: dao_addr
   - name: v0_4_question
     using:
-      foreign_key_constraint_on: question_addr
+      manual_configuration:
+        column_mapping:
+          question_addr: question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_4_questions
+          schema: public
 select_permissions:
   - role: anonymous
     permission:

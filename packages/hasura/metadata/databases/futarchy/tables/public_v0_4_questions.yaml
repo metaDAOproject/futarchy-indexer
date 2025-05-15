@@ -25,9 +25,11 @@ array_relationships:
           schema: public
   - name: v0_4_proposals
     using:
-      foreign_key_constraint_on:
-        column: question_addr
-        table:
+      manual_configuration:
+        column_mapping:
+          question_addr: question_addr
+        insertion_order: null
+        remote_table:
           name: v0_4_proposals
           schema: public
 select_permissions:

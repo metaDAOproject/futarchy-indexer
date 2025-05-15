@@ -30,16 +30,20 @@ array_relationships:
           schema: public
   - name: v04ProposalsByPassAmmAddr
     using:
-      foreign_key_constraint_on:
-        column: pass_amm_addr
-        table:
+      manual_configuration:
+        column_mapping:
+          amm_addr: pass_amm_addr
+        insertion_order: null
+        remote_table:
           name: v0_4_proposals
           schema: public
   - name: v0_4_proposals
     using:
-      foreign_key_constraint_on:
-        column: fail_amm_addr
-        table:
+      manual_configuration:
+        column_mapping:
+          amm_addr: fail_amm_addr
+        insertion_order: null
+        remote_table:
           name: v0_4_proposals
           schema: public
 select_permissions:
