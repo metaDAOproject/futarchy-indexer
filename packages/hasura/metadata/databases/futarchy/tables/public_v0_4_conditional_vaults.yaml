@@ -28,9 +28,11 @@ array_relationships:
           schema: public
   - name: v04ProposalsByQuoteVaultAddr
     using:
-      foreign_key_constraint_on:
-        column: quote_vault_addr
-        table:
+      manual_configuration:
+        column_mapping:
+          conditional_vault_addr: quote_vault_addr
+        insertion_order: null
+        remote_table:
           name: v0_4_proposals
           schema: public
   - name: v0_4_merges
@@ -42,16 +44,20 @@ array_relationships:
           schema: public
   - name: v0_4_proposals
     using:
-      foreign_key_constraint_on:
-        column: base_vault_addr
-        table:
+      manual_configuration:
+        column_mapping:
+          conditional_vault_addr: base_vault_addr
+        insertion_order: null
+        remote_table:
           name: v0_4_proposals
           schema: public
   - name: v0_4_splits
     using:
-      foreign_key_constraint_on:
-        column: vault_addr
-        table:
+      manual_configuration:
+        column_mapping:
+          conditional_vault_addr: vault_addr
+        insertion_order: null
+        remote_table:
           name: v0_4_splits
           schema: public
 select_permissions:
