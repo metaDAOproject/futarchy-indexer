@@ -1376,7 +1376,8 @@ export const v0_5_daos = pgTable("v0_5_daos", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
-  nonce: bigint("nonce", { mode: "bigint" }).notNull(),                    
+  nonce: bigint("nonce", { mode: "bigint" }).notNull(),    
+  initialSpendingLimit: bigint("initial_spending_limit", { mode: "bigint" }).notNull(),                
   daoCreator: pubkey("dao_creator").notNull(),                             
   pdaBump: smallint("pda_bump").notNull(),                                 
   squadsMultisig: pubkey("squads_multisig").notNull(),                     

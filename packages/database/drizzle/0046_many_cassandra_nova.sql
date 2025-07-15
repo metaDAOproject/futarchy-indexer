@@ -1,0 +1,1 @@
+ALTER TABLE "v0_5_daos" ADD COLUMN "initial_spending_limit" bigint NOT NULL;
