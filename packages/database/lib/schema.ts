@@ -100,7 +100,6 @@ export enum V05ProposalState {
   Pending = "Pending",
   Passed = "Passed",
   Failed = "Failed",
-  Executed = "Executed",
 }
 export enum V05LaunchState {
   Initialized = "Initialized",
