@@ -337,6 +337,13 @@
       "when": 1752620100595,
       "tag": "0047_special_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1752620307787,
+      "tag": "0048_late_chimera",
+      "breakpoints": true
     }
   ]
 }
