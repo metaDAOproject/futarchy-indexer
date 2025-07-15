@@ -330,6 +330,13 @@
       "when": 1752619189940,
       "tag": "0046_many_cassandra_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1752620100595,
+      "tag": "0047_special_alex_power",
+      "breakpoints": true
     }
   ]
 }

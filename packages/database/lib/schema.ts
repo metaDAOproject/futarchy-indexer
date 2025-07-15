@@ -1538,6 +1538,8 @@ export const v0_5_launches = pgTable("v0_5_launches", {
     .references(() => v0_5_daos.daoAddr),                    
   squadsMultisigVault: pubkey("squads_multisig_vault").notNull(),      
   squadsMultisig: pubkey("squads_multisig").notNull(),
+  monthlySpendingLimitAmount: bigint("monthly_spending_limit_amount", { mode: "bigint" }).notNull(),
+  monthlySpendingLimitMembers: varchar("monthly_spending_limit_members", { length: 44 }).array(),
   committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
   latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
   state: pgEnum("state", V05LaunchState).notNull(),
