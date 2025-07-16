@@ -1,0 +1,87 @@
+table:
+  name: v0_5_proposals
+  schema: public
+object_relationships:
+  - name: proposal_details
+    using:
+      manual_configuration:
+        column_mapping:
+          proposal_addr: proposal_acct
+        insertion_order: null
+        remote_table:
+          name: proposal_details
+          schema: public
+  - name: v05AmmByPassAmmAddr
+    using:
+      manual_configuration:
+        column_mapping:
+          pass_amm_addr: amm_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_amms
+          schema: public
+  - name: v05ConditionalVaultByQuoteVaultAddr
+    using:
+      manual_configuration:
+        column_mapping:
+          quote_vault_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_conditional_vaults
+          schema: public
+  - name: v0_5_amm
+    using:
+      manual_configuration:
+        column_mapping:
+          fail_amm_addr: amm_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_amms
+          schema: public
+  - name: v0_5_conditional_vault
+    using:
+      manual_configuration:
+        column_mapping:
+          base_vault_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_conditional_vaults
+          schema: public
+  - name: v0_5_dao
+    using:
+      foreign_key_constraint_on: dao_addr
+  - name: v0_5_question
+    using:
+      manual_configuration:
+        column_mapping:
+          question_addr: question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_questions
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - duration_in_slots
+        - updated_at_slot
+        - base_vault_addr
+        - dao_addr
+        - fail_amm_addr
+        - pass_amm_addr
+        - proposal_addr
+        - proposer
+        - question_addr
+        - quote_vault_addr
+        - squads_proposal
+        - state
+        - number
+        - fail_lp_tokens_locked
+        - pass_lp_tokens_locked
+        - slot_enqueued
+        - pda_bump
+        - description_url
+        - created_at
+        - finalized_at
+      filter: {}
+    comment: ""

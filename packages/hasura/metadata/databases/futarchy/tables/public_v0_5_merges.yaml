@@ -1,0 +1,22 @@
+table:
+  name: v0_5_merges
+  schema: public
+object_relationships:
+  - name: signatureBySignature
+    using:
+      foreign_key_constraint_on: signature
+  - name: v0_5_conditional_vault
+    using:
+      foreign_key_constraint_on: vault_addr
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - amount
+        - vault_seq_num
+        - signature
+        - vault_addr
+        - slot
+        - created_at
+      filter: {}
+    comment: ""

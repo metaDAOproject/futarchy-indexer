@@ -1,0 +1,39 @@
+table:
+  name: v0_5_swaps
+  schema: public
+object_relationships:
+  - name: v0_5_merges
+    using:
+      manual_configuration:
+        column_mapping:
+          signature: signature
+        insertion_order: null
+        remote_table:
+          name: v0_5_merges
+          schema: public
+  - name: v0_5_splits
+    using:
+      manual_configuration:
+        column_mapping:
+          signature: signature
+        insertion_order: null
+        remote_table:
+          name: v0_5_splits
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - amm_seq_num
+        - id
+        - amm_addr
+        - signature
+        - swap_type
+        - user_addr
+        - input_amount
+        - output_amount
+        - slot
+        - block_time
+        - created_at
+      filter: {}
+    comment: ""
