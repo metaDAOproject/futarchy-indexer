@@ -313,36 +313,8 @@
     {
       "idx": 44,
       "version": "7",
-      "when": 1752616426778,
-      "tag": "0044_powerful_yellowjacket",
-      "breakpoints": true
-    },
-    {
-      "idx": 45,
-      "version": "7",
-      "when": 1752616611480,
-      "tag": "0045_windy_kitty_pryde",
-      "breakpoints": true
-    },
-    {
-      "idx": 46,
-      "version": "7",
-      "when": 1752619189940,
-      "tag": "0046_many_cassandra_nova",
-      "breakpoints": true
-    },
-    {
-      "idx": 47,
-      "version": "7",
-      "when": 1752620100595,
-      "tag": "0047_special_alex_power",
-      "breakpoints": true
-    },
-    {
-      "idx": 48,
-      "version": "7",
-      "when": 1752620307787,
-      "tag": "0048_late_chimera",
+      "when": 1752635137491,
+      "tag": "0044_clumsy_bloodscream",
       "breakpoints": true
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "id": "fb09f93f-e907-4bdc-babe-e47b87d78aa4",
+  "id": "e6a1f920-e5c5-4791-906c-87d885f83bf5",
   "prevId": "d9600155-8999-4e07-8cc7-bc742bfd9e4a",
   "version": "7",
   "dialect": "postgresql",
@@ -5513,6 +5513,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "initial_spending_limit": {
+          "name": "initial_spending_limit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "dao_creator": {
           "name": "dao_creator",
           "type": "varchar(44)",
@@ -5847,112 +5853,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.v0_5_launch_details": {
-      "name": "v0_5_launch_details",
-      "schema": "",
-      "columns": {
-        "launch_addr": {
-          "name": "launch_addr",
-          "type": "varchar(44)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sub_description": {
-          "name": "sub_description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legal_terms": {
-          "name": "legal_terms",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "creator_name": {
-          "name": "creator_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "image_url": {
-          "name": "image_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "video_url": {
-          "name": "video_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "website_url": {
-          "name": "website_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "twitter_url": {
-          "name": "twitter_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "telegram_url": {
-          "name": "telegram_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "discord_url": {
-          "name": "discord_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "v0_5_launch_details_launch_addr_v0_5_launches_launch_addr_fk": {
-          "name": "v0_5_launch_details_launch_addr_v0_5_launches_launch_addr_fk",
-          "tableFrom": "v0_5_launch_details",
-          "tableTo": "v0_5_launches",
-          "columnsFrom": [
-            "launch_addr"
-          ],
-          "columnsTo": [
-            "launch_addr"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.v0_5_launches": {
       "name": "v0_5_launches",
       "schema": "",
@@ -6028,6 +5928,18 @@
           "type": "varchar(44)",
           "primaryKey": false,
           "notNull": true
+        },
+        "monthly_spending_limit_amount": {
+          "name": "monthly_spending_limit_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monthly_spending_limit_members": {
+          "name": "monthly_spending_limit_members",
+          "type": "varchar(44)[]",
+          "primaryKey": false,
+          "notNull": false
         },
         "committed_amount": {
           "name": "committed_amount",
@@ -6975,8 +6887,8 @@
         }
       },
       "indexes": {
-        "v05_swaps_amm_index": {
-          "name": "v05_swaps_amm_index",
+        "v0_5_swaps_amm_index": {
+          "name": "v0_5_swaps_amm_index",
           "columns": [
             {
               "expression": "amm_addr",
@@ -6990,8 +6902,8 @@
           "method": "btree",
           "with": {}
         },
-        "v05_swaps_signature_index": {
-          "name": "v05_swaps_signature_index",
+        "v0_5_swaps_signature_index": {
+          "name": "v0_5_swaps_signature_index",
           "columns": [
             {
               "expression": "signature",
@@ -7005,8 +6917,8 @@
           "method": "btree",
           "with": {}
         },
-        "v05_swaps_seq_num_amm_index": {
-          "name": "v05_swaps_seq_num_amm_index",
+        "v0_5_swaps_seq_num_amm_index": {
+          "name": "v0_5_swaps_seq_num_amm_index",
           "columns": [
             {
               "expression": "amm_seq_num",

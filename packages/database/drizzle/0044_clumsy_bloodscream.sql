@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS "v0_5_daos" (
 	"dao_addr" varchar(44) PRIMARY KEY NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"nonce" bigint NOT NULL,
+	"initial_spending_limit" bigint,
 	"dao_creator" varchar(44) NOT NULL,
 	"pda_bump" smallint NOT NULL,
 	"squads_multisig" varchar(44) NOT NULL,
@@ -79,22 +80,6 @@ CREATE TABLE IF NOT EXISTS "v0_5_funds" (
 	CONSTRAINT "v0_5_funds_funding_record_addr_funding_record_seq_num_pk" PRIMARY KEY("funding_record_addr","funding_record_seq_num")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "v0_5_launch_details" (
-	"launch_addr" varchar(44) PRIMARY KEY NOT NULL,
-	"title" text NOT NULL,
-	"description" text NOT NULL,
-	"sub_description" text,
-	"legal_terms" text,
-	"creator_name" text,
-	"image_url" text,
-	"video_url" text,
-	"website_url" text,
-	"twitter_url" text,
-	"telegram_url" text,
-	"discord_url" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "v0_5_launches" (
 	"launch_addr" varchar(44) PRIMARY KEY NOT NULL,
 	"minimum_raise_amount" bigint NOT NULL,
@@ -108,6 +93,8 @@ CREATE TABLE IF NOT EXISTS "v0_5_launches" (
 	"dao_addr" varchar(44),
 	"squads_multisig_vault" varchar(44) NOT NULL,
 	"squads_multisig" varchar(44) NOT NULL,
+	"monthly_spending_limit_amount" bigint NOT NULL,
+	"monthly_spending_limit_members" varchar(44)[],
 	"committed_amount" bigint NOT NULL,
 	"latest_launch_seq_num_applied" bigint NOT NULL,
 	"state" varchar NOT NULL,
@@ -221,17 +208,17 @@ CREATE TABLE IF NOT EXISTS "v0_5_swaps" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_pass_amm_addr_v0_4_amms_amm_addr_fk";
---> statement-breakpoint
-ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_fail_amm_addr_v0_4_amms_amm_addr_fk";
---> statement-breakpoint
-ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_base_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
---> statement-breakpoint
-ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_quote_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
---> statement-breakpoint
-ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_question_addr_v0_4_questions_question_addr_fk";
---> statement-breakpoint
-ALTER TABLE "v0_4_splits" DROP CONSTRAINT "v0_4_splits_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
+-- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_pass_amm_addr_v0_4_amms_amm_addr_fk";
+-- --> statement-breakpoint
+-- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_fail_amm_addr_v0_4_amms_amm_addr_fk";
+-- --> statement-breakpoint
+-- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_base_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
+-- --> statement-breakpoint
+-- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_quote_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
+-- --> statement-breakpoint
+-- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_question_addr_v0_4_questions_question_addr_fk";
+-- --> statement-breakpoint
+-- ALTER TABLE "v0_4_splits" DROP CONSTRAINT "v0_4_splits_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "v0_5_amms" ADD CONSTRAINT "v0_5_amms_lp_mint_addr_tokens_mint_acct_fk" FOREIGN KEY ("lp_mint_addr") REFERENCES "public"."tokens"("mint_acct") ON DELETE no action ON UPDATE no action;
@@ -313,12 +300,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "v0_5_funds" ADD CONSTRAINT "v0_5_funds_launch_addr_v0_5_launches_launch_addr_fk" FOREIGN KEY ("launch_addr") REFERENCES "public"."v0_5_launches"("launch_addr") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "v0_5_launch_details" ADD CONSTRAINT "v0_5_launch_details_launch_addr_v0_5_launches_launch_addr_fk" FOREIGN KEY ("launch_addr") REFERENCES "public"."v0_5_launches"("launch_addr") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -413,6 +394,6 @@ CREATE INDEX IF NOT EXISTS "v0_5_merge_seq_num_vault_index" ON "v0_5_merges" USI
 CREATE INDEX IF NOT EXISTS "v0_5_split_vault_index" ON "v0_5_splits" USING btree ("vault_addr");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "v0_5_split_signature_index" ON "v0_5_splits" USING btree ("signature");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "v0_5_split_seq_num_vault_index" ON "v0_5_splits" USING btree ("vault_seq_num","vault_addr");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "v05_swaps_amm_index" ON "v0_5_swaps" USING btree ("amm_addr");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "v05_swaps_signature_index" ON "v0_5_swaps" USING btree ("signature");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "v05_swaps_seq_num_amm_index" ON "v0_5_swaps" USING btree ("amm_seq_num","amm_addr");
+CREATE INDEX IF NOT EXISTS "v0_5_swaps_amm_index" ON "v0_5_swaps" USING btree ("amm_addr");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "v0_5_swaps_signature_index" ON "v0_5_swaps" USING btree ("signature");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "v0_5_swaps_seq_num_amm_index" ON "v0_5_swaps" USING btree ("amm_seq_num","amm_addr");

@@ -1568,24 +1568,6 @@ export const v0_5_funding_records = pgTable("v0_5_funding_records", {
   updatedAtSlot: slot("updated_at_slot").default(sql`0`).notNull(),
 });
 
-export const v0_5_launch_details = pgTable("v0_5_launch_details", {
-  launchAddr: pubkey("launch_addr").primaryKey().notNull().references(() => v0_5_launches.launchAddr),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  subDescription: text("sub_description"),
-  legalTerms: text("legal_terms"),
-  creatorName: text("creator_name"),
-  imageUrl: text("image_url"),
-  videoUrl: text("video_url"),
-  websiteUrl: text("website_url"),
-  twitterUrl: text("twitter_url"),
-  telegramUrl: text("telegram_url"),
-  discordUrl: text("discord_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .default(sql`now()`),
-});
-
 export const v0_5_refunds = pgTable("v0_5_refunds", {
   fundingRecordAddr: pubkey("funding_record_addr").primaryKey().notNull().references(() => v0_5_funding_records.fundingRecordAddr),
   launchAddr: pubkey("launch_addr").notNull().references(() => v0_5_launches.launchAddr),

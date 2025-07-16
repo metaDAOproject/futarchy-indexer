@@ -1,1 +1,0 @@
-ALTER TABLE "v0_5_daos" ALTER COLUMN "initial_spending_limit" DROP NOT NULL;
