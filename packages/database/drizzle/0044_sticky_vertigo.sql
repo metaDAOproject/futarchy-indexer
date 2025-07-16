@@ -208,17 +208,19 @@ CREATE TABLE IF NOT EXISTS "v0_5_swaps" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
--- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_pass_amm_addr_v0_4_amms_amm_addr_fk";
--- --> statement-breakpoint
--- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_fail_amm_addr_v0_4_amms_amm_addr_fk";
--- --> statement-breakpoint
--- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_base_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
--- --> statement-breakpoint
--- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_quote_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
--- --> statement-breakpoint
--- ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_question_addr_v0_4_questions_question_addr_fk";
--- --> statement-breakpoint
--- ALTER TABLE "v0_4_splits" DROP CONSTRAINT "v0_4_splits_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
+ALTER TABLE "launch_details" DROP CONSTRAINT "launch_details_launch_addr_v0_4_launches_launch_addr_fk";
+--> statement-breakpoint
+ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_pass_amm_addr_v0_4_amms_amm_addr_fk";
+--> statement-breakpoint
+ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_fail_amm_addr_v0_4_amms_amm_addr_fk";
+--> statement-breakpoint
+ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_base_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
+--> statement-breakpoint
+ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_quote_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
+--> statement-breakpoint
+ALTER TABLE "v0_4_proposals" DROP CONSTRAINT "v0_4_proposals_question_addr_v0_4_questions_question_addr_fk";
+--> statement-breakpoint
+ALTER TABLE "v0_4_splits" DROP CONSTRAINT "v0_4_splits_vault_addr_v0_4_conditional_vaults_conditional_vault_addr_fk";
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "v0_5_amms" ADD CONSTRAINT "v0_5_amms_lp_mint_addr_tokens_mint_acct_fk" FOREIGN KEY ("lp_mint_addr") REFERENCES "public"."tokens"("mint_acct") ON DELETE no action ON UPDATE no action;

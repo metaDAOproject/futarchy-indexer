@@ -1,5 +1,5 @@
 {
-  "id": "e6a1f920-e5c5-4791-906c-87d885f83bf5",
+  "id": "8e4d0845-58b1-48c8-a754-6694f4430fd5",
   "prevId": "d9600155-8999-4e07-8cc7-bc742bfd9e4a",
   "version": "7",
   "dialect": "postgresql",
@@ -880,21 +880,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "launch_details_launch_addr_v0_4_launches_launch_addr_fk": {
-          "name": "launch_details_launch_addr_v0_4_launches_launch_addr_fk",
-          "tableFrom": "launch_details",
-          "tableTo": "v0_4_launches",
-          "columnsFrom": [
-            "launch_addr"
-          ],
-          "columnsTo": [
-            "launch_addr"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
