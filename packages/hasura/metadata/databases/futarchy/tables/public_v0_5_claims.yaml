@@ -1,0 +1,23 @@
+table:
+  name: v0_5_claims
+  schema: public
+object_relationships:
+  - name: v0_5_funding_record
+    using:
+      foreign_key_constraint_on: funding_record_addr
+  - name: v0_5_launch
+    using:
+      foreign_key_constraint_on: launch_addr
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - slot
+        - funder_addr
+        - funding_record_addr
+        - launch_addr
+        - tokens_claimed
+        - created_at
+        - timestamp
+      filter: {}
+    comment: ""

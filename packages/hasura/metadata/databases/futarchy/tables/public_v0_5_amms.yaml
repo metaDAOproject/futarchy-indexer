@@ -1,0 +1,67 @@
+table:
+  name: v0_5_amms
+  schema: public
+object_relationships:
+  - name: base_token
+    using:
+      foreign_key_constraint_on: base_mint_addr
+  - name: lp_token
+    using:
+      foreign_key_constraint_on: lp_mint_addr
+  - name: quote_token
+    using:
+      foreign_key_constraint_on: quote_mint_addr
+array_relationships:
+  - name: decisions
+    using:
+      manual_configuration:
+        column_mapping:
+          amm_addr: amm_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_metric_decisions
+          schema: public
+  - name: market
+    using:
+      manual_configuration:
+        column_mapping:
+          amm_addr: market_acct
+        insertion_order: null
+        remote_table:
+          name: markets
+          schema: public
+  - name: v05ProposalsByPassAmmAddr
+    using:
+      manual_configuration:
+        column_mapping:
+          amm_addr: pass_amm_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_proposals
+          schema: public
+  - name: v0_5_proposals
+    using:
+      manual_configuration:
+        column_mapping:
+          amm_addr: fail_amm_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_proposals
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - base_reserves
+        - latest_amm_seq_num_applied
+        - quote_reserves
+        - amm_addr
+        - base_mint_addr
+        - lp_mint_addr
+        - quote_mint_addr
+        - vault_ata_base
+        - vault_ata_quote
+        - created_at_slot
+        - inserted_at
+      filter: {}
+    comment: ""

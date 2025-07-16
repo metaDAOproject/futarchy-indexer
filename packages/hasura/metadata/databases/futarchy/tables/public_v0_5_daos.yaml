@@ -1,0 +1,30 @@
+table:
+  name: v0_5_daos
+  schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - initial_spending_limit
+        - latest_dao_seq_num_applied
+        - min_base_futarchic_liquidity
+        - min_quote_futarchic_liquidity
+        - nonce
+        - organization_id
+        - proposal_count
+        - slots_per_proposal
+        - twap_start_delay_slots
+        - updated_at_slot
+        - base_mint_acct
+        - dao_addr
+        - dao_creator
+        - quote_mint_acct
+        - squads_multisig
+        - squads_multisig_vault
+        - twap_initial_observation
+        - twap_max_observation_change_per_update
+        - pass_threshold_bps
+        - pda_bump
+        - created_at
+      filter: {}
+    comment: ""

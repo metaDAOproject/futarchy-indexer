@@ -1,0 +1,54 @@
+table:
+  name: v0_5_questions
+  schema: public
+array_relationships:
+  - name: decisions
+    using:
+      manual_configuration:
+        column_mapping:
+          question_addr: outcome_question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_metric_decisions
+          schema: public
+  - name: metric_decisions
+    using:
+      manual_configuration:
+        column_mapping:
+          question_addr: metric_question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_metric_decisions
+          schema: public
+  - name: question_vaults
+    using:
+      manual_configuration:
+        column_mapping:
+          question_addr: question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_conditional_vaults
+          schema: public
+  - name: v0_5_proposals
+    using:
+      manual_configuration:
+        column_mapping:
+          question_addr: question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_proposals
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - payout_denominator
+        - is_resolved
+        - oracle_addr
+        - question_addr
+        - payout_numerators
+        - question_id
+        - num_outcomes
+        - created_at
+      filter: {}
+    comment: ""

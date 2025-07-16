@@ -1,0 +1,55 @@
+table:
+  name: v0_5_funding_records
+  schema: public
+object_relationships:
+  - name: v0_5_claim
+    using:
+      manual_configuration:
+        column_mapping:
+          funding_record_addr: funding_record_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_claims
+          schema: public
+  - name: v0_5_launch
+    using:
+      foreign_key_constraint_on: launch_addr
+  - name: v0_5_refund
+    using:
+      manual_configuration:
+        column_mapping:
+          funding_record_addr: funding_record_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_refunds
+          schema: public
+array_relationships:
+  - name: v0_5_claims
+    using:
+      foreign_key_constraint_on:
+        column: funding_record_addr
+        table:
+          name: v0_5_claims
+          schema: public
+  - name: v0_5_funds
+    using:
+      foreign_key_constraint_on:
+        column: funding_record_addr
+        table:
+          name: v0_5_funds
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - committed_amount
+        - latest_funding_record_seq_num_applied
+        - updated_at_slot
+        - is_claimed
+        - is_refunded
+        - funder_addr
+        - funding_record_addr
+        - launch_addr
+        - created_at
+      filter: {}
+    comment: ""

@@ -1,0 +1,76 @@
+table:
+  name: v0_5_metric_decisions
+  schema: public
+object_relationships:
+  - name: amm
+    using:
+      foreign_key_constraint_on: amm_addr
+  - name: dao_detail
+    using:
+      foreign_key_constraint_on: dao_id
+  - name: metric_question
+    using:
+      manual_configuration:
+        column_mapping:
+          metric_question_addr: question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_questions
+          schema: public
+  - name: metric_vault
+    using:
+      manual_configuration:
+        column_mapping:
+          metric_question_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_conditional_vaults
+          schema: public
+  - name: outcome_question
+    using:
+      manual_configuration:
+        column_mapping:
+          outcome_question_addr: question_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_questions
+          schema: public
+  - name: outcome_vault
+    using:
+      manual_configuration:
+        column_mapping:
+          outcome_vault_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_5_conditional_vaults
+          schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns:
+        - dao_id
+        - id
+        - is_binary
+        - amm_addr
+        - metric_question_addr
+        - metric_vault_addr
+        - outcome_question_addr
+        - outcome_vault_addr
+        - metric_threshold
+        - score_max_value
+        - score_min_value
+        - description
+        - discussion_link
+        - recipient
+        - score_term
+        - score_unit
+        - state
+        - summary
+        - title
+        - committee_evaluation
+        - completed_at
+        - created_at
+        - grant_awarded
+        - market_opened
+      filter: {}
+    comment: ""

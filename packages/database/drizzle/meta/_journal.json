@@ -309,6 +309,13 @@
       "when": 1744928087831,
       "tag": "0043_colorful_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1752679816115,
+      "tag": "0044_sticky_vertigo",
+      "breakpoints": true
     }
   ]
 }
