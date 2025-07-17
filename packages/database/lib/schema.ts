@@ -1331,10 +1331,10 @@ export const v0_5_metric_decisions = pgTable("v0_5_metric_decisions", {
     .references(() => v0_5_questions.questionAddr),
   outcomeVaultAddr: pubkey("outcome_vault_addr")
     .notNull()
-    .references(() => v0_5_conditional_vaults.conditionalVaultAddr),
+    .references(() => v0_4_conditional_vaults.conditionalVaultAddr),
   metricVaultAddr: pubkey("metric_vault_addr")
     .notNull()
-    .references(() => v0_5_conditional_vaults.conditionalVaultAddr),
+    .references(() => v0_4_conditional_vaults.conditionalVaultAddr),
   ammAddr: pubkey("amm_addr")
     .notNull()
     .references(() => v0_5_amms.ammAddr),
@@ -1472,7 +1472,7 @@ export const v0_5_splits = pgTable(
 );
 
 export const v0_5_merges = pgTable("v0_5_merges", {
-  vaultAddr: pubkey("vault_addr").notNull().references(() => v0_5_conditional_vaults.conditionalVaultAddr),
+  vaultAddr: pubkey("vault_addr").notNull().references(() => v0_4_conditional_vaults.conditionalVaultAddr),
   vaultSeqNum: bigint("vault_seq_num", { mode: "bigint" }),
   signature: transaction("signature").notNull().references(() => signatures.signature),
   slot: biggerSlot("slot").notNull(),
@@ -1501,27 +1501,6 @@ export const v0_5_questions = pgTable("v0_5_questions", {
     .default(sql`now()`),
 });
 
-export const v0_5_conditional_vaults = pgTable("v0_5_conditional_vaults", {
-  conditionalVaultAddr: pubkey("conditional_vault_addr").primaryKey(),
-  questionAddr: pubkey("question_addr")
-    .references(() => v0_5_questions.questionAddr)
-    .notNull()
-    .references(() => v0_5_questions.questionAddr),
-  underlyingMintAcct: pubkey("underlying_mint_acct")
-    .notNull()
-    .references(() => tokens.mintAcct),
-  underlyingTokenAcct: pubkey("underlying_token_acct")
-    .notNull()
-    .references(() => tokenAccts.tokenAcct),
-  pdaBump: smallint("pda_bump").notNull(),
-  latestVaultSeqNumApplied: bigint("latest_vault_seq_num_applied", {
-    mode: "bigint",
-  }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .default(sql`now()`),
-});
-
 export const v0_5_launches = pgTable("v0_5_launches", {
   launchAddr: pubkey("launch_addr").primaryKey(),
   minimumRaiseAmount: bigint("minimum_raise_amount", { mode: "bigint" }).notNull(),
@@ -1536,11 +1515,11 @@ export const v0_5_launches = pgTable("v0_5_launches", {
   pdaBump: smallint("pda_bump").notNull(),
   daoAddr: pubkey("dao_addr")
     .references(() => v0_5_daos.daoAddr),                    
-  squadsMultisigVault: pubkey("squads_multisig_vault").notNull(),      
-  squadsMultisig: pubkey("squads_multisig").notNull(),
-  monthlySpendingLimitAmount: bigint("monthly_spending_limit_amount", { mode: "bigint" }).notNull(),
+  squadsMultisigVault: pubkey("squads_multisig_vault"),      
+  squadsMultisig: pubkey("squads_multisig"),
+  monthlySpendingLimitAmount: bigint("monthly_spending_limit_amount", { mode: "bigint" }),
   monthlySpendingLimitMembers: varchar("monthly_spending_limit_members", { length: 44 }).array(),
-  committedAmount: bigint("committed_amount", { mode: "bigint" }).notNull(),
+  committedAmount: bigint("committed_amount", { mode: "bigint" }),
   latestLaunchSeqNumApplied: bigint("latest_launch_seq_num_applied", { mode: "bigint" }).notNull(),
   state: pgEnum("state", V05LaunchState).notNull(),
   unixTimestampStarted: bigint("unix_timestamp_started", { mode: "bigint" }).default(sql`0`).notNull(),

@@ -458,6 +458,38 @@
             filter: {}
           role: anonymous
     - fields:
+        - name: launch_addr
+          type:
+            nullable: false
+            scalar: varchar
+        - name: unix_timestamp_started
+          type:
+            nullable: false
+            scalar: bigint
+        - name: unix_timestamp_ended
+          type:
+            nullable: false
+            scalar: bigint
+        - name: num_funders
+          type:
+            nullable: false
+            scalar: bigint
+        - name: total_funded
+          type:
+            nullable: false
+            scalar: numeric
+      name: live_v0_5_launch_stats
+      select_permissions:
+        - permission:
+            columns:
+              - launch_addr
+              - unix_timestamp_started
+              - unix_timestamp_ended
+              - num_funders
+              - total_funded
+            filter: {}
+          role: anonymous
+    - fields:
         - name: total_volume
           type:
             nullable: false
@@ -993,6 +1025,29 @@
       code: "SELECT\r\n\tL.launch_addr,\r\n    L.unix_timestamp_started,\r\n    (L.seconds_for_launch + L.unix_timestamp_started) as unix_timestamp_ended,\r\n    count(R.*) as num_funders,\r\n    L.committed_amount::NUMERIC as total_funded\r\nFROM\r\n    PUBLIC.V0_4_LAUNCHES L\r\n    LEFT JOIN PUBLIC.V0_4_FUNDING_RECORDS R ON L.LAUNCH_ADDR = R.LAUNCH_ADDR\r\nWHERE\r\n    L.LAUNCH_ADDR = {{launch_addr}}\r\nGROUP BY\r\n\tL.launch_addr,\r\n    L.unix_timestamp_started,\r\n    L.seconds_for_launch"
       returns: live_v0_4_launch_stats
       root_field_name: live_v0_4_launch_stats
+    - arguments:
+        launch_addr:
+          description: The address of the launch
+          nullable: false
+          type: text
+      code: |-
+        SELECT
+        	L.launch_addr,
+            L.unix_timestamp_started,
+            (L.seconds_for_launch + L.unix_timestamp_started) as unix_timestamp_ended,
+            count(R.*) as num_funders,
+            L.committed_amount::NUMERIC as total_funded
+        FROM
+            PUBLIC.V0_5_LAUNCHES L
+            LEFT JOIN PUBLIC.V0_5_FUNDING_RECORDS R ON L.LAUNCH_ADDR = R.LAUNCH_ADDR
+        WHERE
+            L.LAUNCH_ADDR = {{launch_addr}}
+        GROUP BY
+        	L.launch_addr,
+            L.unix_timestamp_started,
+            L.seconds_for_launch
+      returns: live_v0_5_launch_stats
+      root_field_name: live_v0_5_launch_stats
     - arguments:
         market_key:
           description: ""

@@ -21,10 +21,10 @@ object_relationships:
     using:
       manual_configuration:
         column_mapping:
-          metric_question_addr: conditional_vault_addr
+          metric_vault_addr: conditional_vault_addr
         insertion_order: null
         remote_table:
-          name: v0_5_conditional_vaults
+          name: v0_4_conditional_vaults
           schema: public
   - name: outcome_question
     using:
@@ -42,7 +42,7 @@ object_relationships:
           outcome_vault_addr: conditional_vault_addr
         insertion_order: null
         remote_table:
-          name: v0_5_conditional_vaults
+          name: v0_4_conditional_vaults
           schema: public
 select_permissions:
   - role: anonymous

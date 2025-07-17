@@ -51,7 +51,6 @@
 - "!include public_v0_4_swaps.yaml"
 - "!include public_v0_5_amms.yaml"
 - "!include public_v0_5_claims.yaml"
-- "!include public_v0_5_conditional_vaults.yaml"
 - "!include public_v0_5_daos.yaml"
 - "!include public_v0_5_funding_records.yaml"
 - "!include public_v0_5_funds.yaml"

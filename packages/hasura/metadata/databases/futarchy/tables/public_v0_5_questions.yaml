@@ -27,7 +27,7 @@ array_relationships:
           question_addr: question_addr
         insertion_order: null
         remote_table:
-          name: v0_5_conditional_vaults
+          name: v0_4_conditional_vaults
           schema: public
   - name: v0_5_proposals
     using:
