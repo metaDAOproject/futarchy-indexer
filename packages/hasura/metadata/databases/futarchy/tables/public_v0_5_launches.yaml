@@ -2,6 +2,15 @@ table:
   name: v0_5_launches
   schema: public
 object_relationships:
+  - name: launch_detail
+    using:
+      manual_configuration:
+        column_mapping:
+          launch_addr: launch_addr
+        insertion_order: null
+        remote_table:
+          name: launch_details
+          schema: public
   - name: token
     using:
       foreign_key_constraint_on: base_mint_acct

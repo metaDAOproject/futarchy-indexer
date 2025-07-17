@@ -11,6 +11,15 @@ object_relationships:
         remote_table:
           name: proposal_details
           schema: public
+  - name: v04ConditionalVaultByQuoteVaultAddr
+    using:
+      manual_configuration:
+        column_mapping:
+          quote_vault_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_4_conditional_vaults
+          schema: public
   - name: v05AmmByPassAmmAddr
     using:
       manual_configuration:
@@ -20,14 +29,14 @@ object_relationships:
         remote_table:
           name: v0_5_amms
           schema: public
-  - name: v05ConditionalVaultByQuoteVaultAddr
+  - name: v0_4_conditional_vault
     using:
       manual_configuration:
         column_mapping:
-          quote_vault_addr: conditional_vault_addr
+          base_vault_addr: conditional_vault_addr
         insertion_order: null
         remote_table:
-          name: v0_5_conditional_vaults
+          name: v0_4_conditional_vaults
           schema: public
   - name: v0_5_amm
     using:
@@ -37,15 +46,6 @@ object_relationships:
         insertion_order: null
         remote_table:
           name: v0_5_amms
-          schema: public
-  - name: v0_5_conditional_vault
-    using:
-      manual_configuration:
-        column_mapping:
-          base_vault_addr: conditional_vault_addr
-        insertion_order: null
-        remote_table:
-          name: v0_5_conditional_vaults
           schema: public
   - name: v0_5_dao
     using:

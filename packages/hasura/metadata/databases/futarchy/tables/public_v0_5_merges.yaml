@@ -5,9 +5,15 @@ object_relationships:
   - name: signatureBySignature
     using:
       foreign_key_constraint_on: signature
-  - name: v0_5_conditional_vault
+  - name: v0_4_conditional_vault
     using:
-      foreign_key_constraint_on: vault_addr
+      manual_configuration:
+        column_mapping:
+          vault_addr: conditional_vault_addr
+        insertion_order: null
+        remote_table:
+          name: v0_4_conditional_vaults
+          schema: public
 select_permissions:
   - role: anonymous
     permission:
