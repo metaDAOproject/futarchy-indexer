@@ -1,5 +1,5 @@
 {
-  "id": "22adb905-d5d0-4987-97cc-05b8c1584231",
+  "id": "5729007d-f42a-488f-8efe-07a2dfc5ab71",
   "prevId": "00b2b347-8c4f-4028-85ae-085b5ae91c95",
   "version": "7",
   "dialect": "postgresql",
@@ -5403,14 +5403,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "amount_per_month": {
-          "name": "amount_per_month",
+        "spending_limit_amount_per_month": {
+          "name": "spending_limit_amount_per_month",
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
-        "members": {
-          "name": "members",
+        "spending_limit_members": {
+          "name": "spending_limit_members",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
